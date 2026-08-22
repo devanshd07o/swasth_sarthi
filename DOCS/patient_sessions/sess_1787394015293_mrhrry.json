@@ -1,0 +1,58 @@
+{
+  "session_id": "sess_1787394015293_mrhrry",
+  "created_at": 1787394305.1312423,
+  "rolling_summary": "Patient reports heavy, burning stomach pain that occurs nightly after eating, particularly after a heavy meal. The pain is attributed to a Pitta‑Vata imbalance. Recommended remedies include a warm ginger decoction, daily Triphala powder, a cup of warm milk with turmeric, light warm foods",
+  "turns": [
+    {
+      "user": "Kyon iska se",
+      "ai": "The pain is likely due to excess pitta from heavy, oily meals taken late, which slows digestion at night and irritates the stomach lining, causing that burning discomfort.",
+      "timestamp": 1787396176.3883126
+    },
+    {
+      "user": "hello Mere Sar Dard kar raha hai yaar",
+      "ai": "I think the headache is mainly due to excess Vata, especially with the morning stiffness you mentioned; sipping warm ginger‑cumin tea, doing a gentle self‑abhyanga with sesame oil on the scalp, and staying hydrated can help. If it persists or worsens, please see an Ayurvedic doctor.",
+      "timestamp": 1787396211.7243147
+    },
+    {
+      "user": "theek hai yaar main Soch Raha Hun Koi Achcha doctor hai aaspaas mere",
+      "ai": "Sure, you can check the Ministry of AYUSH’s doctor locator or simply search “Ayurvedic clinic near me” on Google; many reputable practitioners are listed with reviews, and you can call to confirm availability.",
+      "timestamp": 1787396247.9156427
+    },
+    {
+      "user": "hi there",
+      "ai": "Hi there! I'm glad you reached out. Let me know what health concern you have, and I’ll share some simple Ayurvedic tips to help you feel better.",
+      "timestamp": 1787396403.369676
+    },
+    {
+      "user": "hello there..",
+      "ai": "Hello! Happy to chat with you—let me know if there's anything health‑related you'd like to discuss.",
+      "timestamp": 1787396418.7802765
+    },
+    {
+      "user": "kya pagal ho yaar tum ka taiyar",
+      "ai": "Haha, I might sound a bit playful, but if you have any health question, just let me know—I’m here to help!",
+      "timestamp": 1787396440.3490064
+    },
+    {
+      "user": "hello",
+      "ai": "Hello! I'm here to help with any Ayurvedic or health questions you have—just let me know what's on your mind.",
+      "timestamp": 1787396646.13556
+    },
+    {
+      "user": "mera sar dard kar rha",
+      "ai": "I understand the headache can be uncomfortable; it often relates to a Vata‑Pitta imbalance. Try sipping warm ginger‑honey water and gently massaging the temples with a little sesame oil. How intense is the pain and since when?",
+      "timestamp": 1787396677.4181225
+    },
+    {
+      "user": "hii",
+      "ai": "Hi there! How are you feeling today? Let me know if there's anything specific you'd like to discuss.",
+      "timestamp": 1787397815.2594812
+    },
+    {
+      "user": "hii",
+      "ai": "Hey there! I'm here and ready to help—how are you feeling today? Let me know if there's anything on your mind or any discomfort you'd like to discuss.",
+      "timestamp": 1787402565.0547445
+    }
+  ],
+  "overview_summary": "Stomach pain at night after heavy meals, likely Amlapitta, was addressed with"
+}

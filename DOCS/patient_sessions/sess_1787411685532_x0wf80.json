@@ -1,0 +1,27 @@
+{
+  "session_id": "sess_1787411685532_x0wf80",
+  "created_at": 1787416113.3629107,
+  "overview_summary": "",
+  "turns": [
+    {
+      "user": "hello how are you",
+      "ai": "Hello! I'm feeling wonderful, thank you for asking. I'm here to listen and support you with any Ayurvedic advice you need. How can I assist you today?",
+      "timestamp": 1787416117.8668838
+    },
+    {
+      "user": "yaar mere pet Mein dard ho raha hai yaar kya karun main",
+      "ai": "I’m sorry you’re feeling abdominal pain; a warm ginger‑tea with a pinch of black pepper and a gentle abdominal massage using sesame oil can soothe the discomfort. How intense is the pain and since when have you been experiencing it?",
+      "timestamp": 1787416137.4563735
+    },
+    {
+      "user": "point Tumhara Ho Gaya Dard Kitna Tej aur kab se ho raha hai Mera Dard bataen Mujhe 4 din se lag raha hai yaar bahut din mein bahut Dinon Se Yaar Kuchh khaya nahin tha lag raha hai isiliye Mere pet Mein Dard Hai",
+      "ai": "I understand the abdominal discomfort can be unsettling; sipping warm ginger‑pepper tea and gently massaging the belly with warm sesame oil may help calm it. Could you tell me how intense the pain feels on a scale of 1‑10 and confirm it’s been present for about four days?",
+      "timestamp": 1787416170.732793
+    },
+    {
+      "user": "Yahan per vah user ko samjhata bhi ja raha hai ki bhai Tum chai vay Pi Lo badhiya hai na aur sath hi Sath Unse puchta Bhi Ja Raha Hai matlab ismein interactive Banaya Maine Yahi To Main Bata Raha Tumko Hamari",
+      "ai": "I see you’ve made our chat interactive, that’s wonderful! To guide you better for the abdominal pain, could you share how intense the discomfort feels on a scale of 1‑10?",
+      "timestamp": 1787416213.154168
+    }
+  ]
+}

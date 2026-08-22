@@ -1,0 +1,17 @@
+{
+  "session_id": "sess_flow_test",
+  "created_at": 1787395856.905505,
+  "overview_summary": "User reports a burning sensation",
+  "turns": [
+    {
+      "user": "mere pet me dard hai",
+      "ai": "I’m sorry you’re feeling abdominal pain; it often points to a Vata imbalance, so a warm ginger‑cinnamon tea and a teaspoon of cumin‑fennel water before meals can help soothe it. Does the discomfort worsen after eating cold or raw foods?",
+      "timestamp": 1787395860.0246253
+    },
+    {
+      "user": "khana khane ke baad hua tha aur thoda jalan bhi lag rha",
+      "ai": "I understand the burning after meals can be uncomfortable; a cup of warm coriander‑cumin water or a spoonful of aloe vera juice after eating can calm the fire. Does the burning start right after the food or a little later?",
+      "timestamp": 1787395863.265296
+    }
+  ]
+}

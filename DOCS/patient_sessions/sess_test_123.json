@@ -1,0 +1,12 @@
+{
+  "session_id": "sess_test_123",
+  "created_at": 1787393960.2943795,
+  "rolling_summary": "Patient reports morning stiffness lasting 2–3 weeks. Diagnosed with a Vata‑Pitta imbalance. Advised warm ginger water, warm sesame oil application, and light, freshly cooked meals while avoiding cold and dry foods.",
+  "turns": [
+    {
+      "user": "so I have a morning stiffness from last to weeks so what should I do",
+      "ai": "Your symptoms indicate a Vata-Pitta imbalance. I suggest taking warm ginger water, applying warm sesame oil to relieve stiffness, and eating freshly cooked light meals while avoiding cold and dry foods.",
+      "timestamp": 1787393963.2883146
+    }
+  ]
+}

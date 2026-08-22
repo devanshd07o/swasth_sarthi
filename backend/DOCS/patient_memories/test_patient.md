@@ -1,0 +1,1 @@
+- knee joint pain with morning stiffness for 2 months

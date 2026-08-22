@@ -1,0 +1,2 @@
+- severe burning in stomach and acid reflux
+- acid reflux

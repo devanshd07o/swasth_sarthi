@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Yograj Guggulu",
+    "category": "Guggulu Formulation",
+    "dosha": "Vata-Kapha",
+    "indications": "Sandhivata (Osteoarthritis), Amavata (Rheumatoid Arthritis), Katishoola (Lumbago), Neuromuscular pains",
+    "default_dosage": "2 tablets (500mg each) twice daily",
+    "anupana": "Warm Water / Maharasnadi Kwath",
+    "timing": "After meals (Adhobhakta)"
+  },
+  {
+    "name": "Avipattikar Churna",
+    "category": "Churna",
+    "dosha": "Pitta",
+    "indications": "Amlapitta (GERD/Hyperacidity), Vibandha (Constipation), Dahya (Burning sensation)",
+    "default_dosage": "3 to 6 grams at bedtime",
+    "anupana": "Warm Water / Milk",
+    "timing": "Bedtime (Nishi)"
+  },
+  {
+    "name": "Tribhuvan Kirti Ras",
+    "category": "Rasa Aushadhi",
+    "dosha": "Vata-Kapha",
+    "indications": "Jwara (Fever), Pratishyaya (Rhinitis/Cold), Influenza",
+    "default_dosage": "1 tablet (125mg) twice daily",
+    "anupana": "Honey / Ginger Juice",
+    "timing": "After meals"
+  },
+  {
+    "name": "Maharasnadi Kwath",
+    "category": "Kwath (Decoction)",
+    "dosha": "Vata",
+    "indications": "Sarvanga Vata, Pakshaghata (Hemiplegia), Sciatica, Joint degeneration",
+    "default_dosage": "15 to 20 ml with equal warm water",
+    "anupana": "Warm Water",
+    "timing": "Twice daily before meals (Pragbhakta)"
+  },
+  {
+    "name": "Ashwagandharishta",
+    "category": "Asava / Arishta",
+    "dosha": "Vata-Kapha",
+    "indications": "Dhatukshaya (Debility), Insomnia, Mental stress, Fatigue, Neurological disorders",
+    "default_dosage": "15 to 20 ml with equal water",
+    "anupana": "Water",
+    "timing": "After meals"
+  },
+  {
+    "name": "Kamdudha Ras (Muktayukta)",
+    "category": "Rasa / Bhasma",
+    "dosha": "Pitta",
+    "indications": "Severe Amlapitta, Somaroga, Epigastric burning, Bleeding disorders",
+    "default_dosage": "1 tablet (250mg) twice daily",
+    "anupana": "Cow Ghee / Milk / Honey",
+    "timing": "Before meals"
+  },
+  {
+    "name": "Arogyavardhini Vati",
+    "category": "Vati",
+    "dosha": "Kapha-Pitta",
+    "indications": "Yakrit Roga (Liver disorders), Medoroga (Obesity), Skin disorders (Kustha), Dyspepsia",
+    "default_dosage": "2 tablets twice daily",
+    "anupana": "Warm Water / Neem Juice",
+    "timing": "After meals"
+  },
+  {
+    "name": "Chyawanprash",
+    "category": "Rasayana / Lehya",
+    "dosha": "Tridoshahara",
+    "indications": "Immunity enhancement, Kasa (Cough), Respiratory health, General debility",
+    "default_dosage": "1 tablespoon (10-15g) in morning",
+    "anupana": "Warm Milk",
+    "timing": "Early Morning (Pratahkala)"
+  },
+  {
+    "name": "Sutashekhar Ras",
+    "category": "Rasa Aushadhi",
+    "dosha": "Pitta-Vata",
+    "indications": "Gastritis, Vomiting (Chhardi), Abdominal colic, Migraine (Suryavarta)",
+    "default_dosage": "1 tablet twice daily",
+    "anupana": "Pomegranate juice / Warm water",
+    "timing": "Before meals"
+  },
+  {
+    "name": "Punar navadi Mandoor",
+    "category": "Bhasma / Mandoor",
+    "dosha": "Kapha-Pitta",
+    "indications": "Pandu Roga (Anemia), Shopha (Edema), Splenomegaly",
+    "default_dosage": "2 tablets twice daily",
+    "anupana": "Takra (Buttermilk) / Warm water",
+    "timing": "After meals"
+  }
+]

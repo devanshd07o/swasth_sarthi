@@ -1,0 +1,17 @@
+{
+  "session_id": "sess_pet_live",
+  "created_at": 1787395248.441529,
+  "overview_summary": "User reports stomach pain",
+  "turns": [
+    {
+      "user": "mere pet dard kar rha hai yaar",
+      "ai": "I’m sorry you’re feeling stomach pain. It often points to a Pitta imbalance. You can try sipping warm water with a pinch of ajwain or ginger tea, and eat a light boiled vegetable soup with a dash of cumin. Could you tell me how long you’ve had this pain and how intense it is? If it persists or worsens, please consult a Kayachikitsa specialist.",
+      "timestamp": 1787395250.6724966
+    },
+    {
+      "user": "नमस्ते, आप कौन हैं?",
+      "ai": "Hello! I am AyurSaarthi, a young Ayurvedic doctor and health guide with the Ministry of AYUSH, here to help you with natural wellness and balanced living. How can I assist you with your health today?",
+      "timestamp": 1787395260.8916605
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+- morning stiffness for 2 weeks

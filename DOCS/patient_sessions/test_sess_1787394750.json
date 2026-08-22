@@ -1,0 +1,17 @@
+{
+  "session_id": "test_sess_1787394750",
+  "created_at": 1787394750.742083,
+  "overview_summary": "",
+  "turns": [
+    {
+      "user": "I have knee pain and burning sensation",
+      "ai": "Dear friend, your knee pain points to Vata‑driven Sandhivata while the burning sensation reflects Pitta‑aggravated Amlapitta. Warm ginger‑garlic decoction twice daily, a gentle massage of the knee with Mahanarayan Taila and nightly Triphala powder can pacify both doshas, and Yograj Guggulu can support the joints. Follow a pathya of cooked millets, warm vegetables, ginger‑spiced soups and avoid sour, spicy, fried foods, cold dairy and excess caffeine. Gentle walking, knee‑friendly yoga and regular meals will help restore harmony.",
+      "timestamp": 1787394754.6003134
+    },
+    {
+      "user": "what herbs should I take for this?",
+      "ai": "You can consider Yograj Guggulu, Mahanarayan Taila for knee massage, Triphala powder, and a warm ginger‑garlic decoction to balance Vata and Pitta.",
+      "timestamp": 1787394760.7284968
+    }
+  ]
+}

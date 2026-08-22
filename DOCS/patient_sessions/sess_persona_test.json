@@ -1,0 +1,17 @@
+{
+  "session_id": "sess_persona_test",
+  "created_at": 1787395036.1360621,
+  "overview_summary": "",
+  "turns": [
+    {
+      "user": "kaise ho tum",
+      "ai": "Hello! I'm doing well, thank you for asking. How can I assist you today?",
+      "timestamp": 1787395039.6927218
+    },
+    {
+      "user": "tum kaun ho aur mere ghutne ke dard me kya kar sakti ho",
+      "ai": "Hello! I'm doing well, thank you for asking. I’m AyurSaarthi, your Ayurvedic companion, and I can suggest gentle ways to ease your knee pain.",
+      "timestamp": 1787395050.813648
+    }
+  ]
+}
