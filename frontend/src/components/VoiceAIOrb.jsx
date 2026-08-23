@@ -46,7 +46,7 @@ async function fetchElevenLabsAudio(text, lang) {
         responseType: 'blob',
         timeout: 15000,
       });
-      if (res.data && res.data.size > 0) {
+      if (res.data && res.data.size > 0 && (res.data.type.includes('audio') || res.data.type === 'audio/mpeg')) {
         return URL.createObjectURL(res.data);
       }
     } catch (_) {}

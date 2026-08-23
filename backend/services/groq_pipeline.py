@@ -244,18 +244,40 @@ Return JSON:
     except Exception:
         pass
 
-    # Intelligent fallback (Warm, interactive clinical persona)
-    if intent == "medical":
+    # Dynamic Intelligent Query-Specific Fallback
+    q_lower = query.lower()
+    if any(k in q_lower for k in ["pet", "stomach", "gas", "acidity", "kabz", "digestion", "pachan"]):
         return {
-            "reply_en": "I understand your discomfort. You can sip warm water with a pinch of ajwain and keep your meals light. Is the pain sharp or dull, and does it get worse after eating?",
-            "reply_hi": "मैं आपकी परेशानी समझ सकती हूँ। आराम के लिए आप गुनगुने पानी में थोड़ा अजवाइन लेकर पी सकते हैं और सुपाच्य भोजन लें। क्या यह दर्द खाने के बाद बढ़ता है या खाली पेट ज्यादा महसूस होता है?",
-            "dosha_imbalance": "Vata-Pitta Imbalance",
+            "reply_en": "I understand your digestion concern. Drinking warm water with cumin seeds can help soothe your stomach. Are you experiencing acidity or bloating?",
+            "reply_hi": "मैं आपकी पाचन संबंधी समस्या समझ सकती हूँ। गुनगुने पानी में जीरा उबालकर पीना पेट के लिए लाभकारी है। क्या आपको गैस या एसिडिटी की शिकायत है?",
+            "dosha_imbalance": "Pitta-Vata Imbalance",
+            "urgency": "Routine",
+        }
+    elif any(k in q_lower for k in ["sar", "sir", "headache", "head"]):
+        return {
+            "reply_en": "Headaches often stem from stress or Pitta imbalance. Applying cool Brahmi or coconut oil to your scalp can bring relief. How long have you had this headache?",
+            "reply_hi": "सिरदर्द अक्सर तनाव या पित्त बढ़ने से होता है। नारियल तेल या ब्राह्मी तेल से सिर की हल्की मालिश करने से राहत मिलती है। यह दर्द कब से हो रहा है?",
+            "dosha_imbalance": "Pitta Imbalance",
+            "urgency": "Routine",
+        }
+    elif any(k in q_lower for k in ["ghutna", "joint", "knee", "jod"]):
+        return {
+            "reply_en": "Joint discomfort is closely linked with Vata aggravation. Gently massaging warm sesame oil onto the joints provides great relief. Is the pain constant or during movement?",
+            "reply_hi": "जोड़ों में दर्द वात असंतुलन का मुख्य लक्षण है। तिल के तेल को हल्का गुनगुना करके जोड़ों की मालिश करने से काफी आराम मिलता है। क्या दर्द चलने-फिरने पर बढ़ता है?",
+            "dosha_imbalance": "Vata Imbalance",
+            "urgency": "Routine",
+        }
+    elif intent == "medical":
+        return {
+            "reply_en": "I understand your health query. To guide you accurately, could you tell me a bit more about your symptoms, their duration, and severity?",
+            "reply_hi": "मैं आपकी स्वास्थ्य संबंधी बात समझ रही हूँ। आपको सही मार्गदर्शन देने के लिए, क्या आप मुझे अपने लक्षणों और वे कब से हैं, इसके बारे में थोड़ा और बता सकते हैं?",
+            "dosha_imbalance": "Tridosha Assessment",
             "urgency": "Routine",
         }
     else:
         return {
-            "reply_en": "Namaste! I am AyurSaarthi, your dedicated Ayurvedic health guide. How are you feeling today, and how can I help you?",
-            "reply_hi": "नमस्ते! मैं आयुसारथी हूँ, आपकी आयुर्वेदिक स्वास्थ्य साथी। आज आप कैसा महसूस कर रहे हैं, क्या कोई स्वास्थ्य संबंधी परेशानी है?",
+            "reply_en": "Namaste! I am AyurSaarthi, your dedicated Ayurvedic health guide. Feel free to ask me about any symptoms, remedies, or lifestyle habits.",
+            "reply_hi": "नमस्ते! मैं आयुसारथी हूँ, आपकी आयुर्वेदिक स्वास्थ्य साथी। आप मुझसे किसी भी लक्षण, घरेलू उपचार या स्वास्थ्य संबंधी सवाल पूछ सकते हैं।",
             "dosha_imbalance": None,
             "urgency": "Routine",
         }
