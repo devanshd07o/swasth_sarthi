@@ -69,7 +69,7 @@ export default function RobotAvatarAnimation({
       mainTimer = setInterval(() => {
         stepIndex = (stepIndex + 1) % aliveIdlePattern.length;
         setCurrentFrameIndex(aliveIdlePattern[stepIndex]);
-      }, 220); // 220ms per step = smooth, calm, continuous organic life
+      }, 480); // Slower, super calm & relaxed idle speed (480ms per frame)
     }
 
     return () => {
@@ -97,12 +97,12 @@ export default function RobotAvatarAnimation({
     <div
       onClick={onClick}
       className={`relative inline-flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 ${sizeClasses} ${className}`}
-      style={{ animation: 'avatarFloat 3.5s ease-in-out infinite' }}
+      style={{ animation: 'avatarFloat 5s ease-in-out infinite' }}
     >
       <style>{`
         @keyframes avatarFloat {
           0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-5px) scale(1.03); }
+          50% { transform: translateY(-4px) scale(1.02); }
         }
       `}</style>
       <img
