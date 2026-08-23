@@ -111,7 +111,7 @@ export default function App() {
   };
 
   return (
-    <div key={i18n.language} className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 font-sans antialiased text-slate-900 selection:bg-emerald-500 selection:text-white">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 font-sans antialiased text-slate-900 selection:bg-emerald-500 selection:text-white">
       
       {/* Top Header */}
       <Header
