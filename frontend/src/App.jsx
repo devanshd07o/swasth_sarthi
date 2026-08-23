@@ -178,10 +178,6 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         lang={lang}
       />
-
-      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs font-medium text-slate-500">
-        SwasthSaarthi / MediKiosk — Integrated AyurSaarthi AI Platform • Ministry of Ayush (SIH26047)
-      </footer>
     </div>
   );
 }
