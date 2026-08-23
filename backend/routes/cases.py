@@ -13,31 +13,7 @@ router = APIRouter(prefix="/api/cases", tags=["Patient Cases / Consultations"])
 
 # ─── Red Flag Emergency Scanner ───────────────────────────────────────────────
 def check_red_flag(text: str) -> dict:
-    t = (text or "").lower()
-    red_flag_terms = [
-        ("chest pain", "Severe acute chest pain / suspected cardiac event"),
-        ("heart attack", "Suspected acute coronary syndrome"),
-        ("chhati me", "Severe retrosternal chest pain"),
-        ("chhati mein", "Severe retrosternal chest pain"),
-        ("seene me dard", "Severe retrosternal chest pain"),
-        ("seene mein dard", "Severe retrosternal chest pain"),
-        ("saans lene me", "Acute respiratory distress"),
-        ("saans phool", "Acute respiratory distress / dyspnea"),
-        ("difficulty breathing", "Severe dyspnea / respiratory emergency"),
-        ("breathless", "Acute respiratory distress"),
-        ("stroke", "Suspected cerebrovascular accident / stroke symptoms"),
-        ("face drooping", "Neurological deficit"),
-        ("slurred speech", "Acute speech impairment"),
-        ("unconscious", "Loss of consciousness / syncope"),
-        ("behosh", "Altered mental status / syncope"),
-        ("heavy bleeding", "Acute hemorrhage / uncontrolled bleeding"),
-        ("khoon girna", "Active hemorrhage"),
-        ("blood vomit", "Upper GI bleed / hematemesis"),
-        ("high fever with convulsion", "Febrile seizures / neurological crisis")
-    ]
-    for term, reason in red_flag_terms:
-        if term in t:
-            return {"is_red_flag": True, "reason": reason}
+    # Emergency system disabled for Ayush OPD domain (all cases processed as OPD consultations)
     return {"is_red_flag": False, "reason": None}
 
 @router.post("/intake-structuring")

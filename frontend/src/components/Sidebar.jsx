@@ -37,11 +37,11 @@ export default function Sidebar({
       return [
         { id: 'triage', label: t('sidebar.triage', 'Self Symptom Triage'), icon: Activity },
         { id: 'timeline', label: t('sidebar.timeline', 'My Health Timeline'), icon: FileText },
-        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'MedRoute AYUSH Grid'), icon: HeartPulse },
+        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'AYUSH Wellness Grid'), icon: HeartPulse },
       ];
     } else if (role === 'hospital_admin') {
       return [
-        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'MedRoute AYUSH Grid'), icon: HeartPulse },
+        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'AYUSH Wellness Grid'), icon: HeartPulse },
         { id: 'inventory', label: t('sidebar.inventory', 'Panchakarma & Bed Inventory'), icon: Building2 },
       ];
     } else if (role === 'super_admin') {
@@ -55,7 +55,7 @@ export default function Sidebar({
         { id: 'case_form', label: t('sidebar.caseForm', 'Ashtavidha Case Sheet'), icon: Stethoscope },
         { id: 'patients', label: t('sidebar.patientDirectory', 'Patient Directory'), icon: Users },
         { id: 'timeline', label: t('sidebar.longitudinalHistory', 'Patient Timeline'), icon: FileText },
-        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'MedRoute AYUSH Grid'), icon: HeartPulse },
+        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'AYUSH Wellness Grid'), icon: HeartPulse },
       ];
     } else {
       return [

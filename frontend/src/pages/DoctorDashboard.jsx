@@ -92,18 +92,14 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
           <p className="text-2xl font-bold text-slate-900">{patients.length}</p>
         </div>
 
-        {/* 🚨 Emergency Red-Flag Triage */}
-        <div className={`p-4 rounded-2xl border shadow-sm transition-all ${
-          emergencyCount > 0
-            ? 'bg-rose-50 border-rose-300'
-            : 'bg-white border-slate-100'
-        }`}>
+        {/* Active OPD Queue */}
+        <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold text-slate-600">{t('doctorDashboard.medrouteRedFlags', 'Emergency Red Flags')}</span>
-            <AlertTriangle className={`w-4 h-4 ${emergencyCount > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
+            <span className="text-xs font-bold text-slate-600">{t('doctorDashboard.activeQueueCard', 'Active OPD Queue')}</span>
+            <Stethoscope className="w-4 h-4 text-emerald-600" />
           </div>
-          <p className={`text-2xl font-bold ${emergencyCount > 0 ? 'text-rose-700' : 'text-slate-900'}`}>
-            {emergencyCount}
+          <p className="text-2xl font-bold text-slate-900">
+            {patients.length}
           </p>
         </div>
 
