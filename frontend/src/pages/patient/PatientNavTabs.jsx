@@ -1,8 +1,8 @@
 import React from 'react';
-import { ClipboardList, Stethoscope, BookOpen, FolderOpen, Check } from 'lucide-react';
+import { ClipboardList, Stethoscope, BookOpen, FolderOpen, Check, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-export default function PatientNavTabs({ activeView, setActiveView, wizardStep, setWizardStep, documentCount }) {
+export default function PatientNavTabs({ activeView, setActiveView, wizardStep, setWizardStep, documentCount, maxUnlockedStep = 1 }) {
   const { t } = useTranslation();
 
   const steps = [
@@ -80,7 +80,7 @@ export default function PatientNavTabs({ activeView, setActiveView, wizardStep, 
         </div>
       </div>
 
-      {/* ─── TIER 2: 5-STEP INTAKE STEPPER BAR (RESPONSIVE) ──────────────────── */}
+      {/* ─── TIER 2: 5-STEP INTAKE STEPPER BAR (RESPONSIVE & LOCKED PROGRESSION) ─ */}
       {activeView === 'wizard_flow' && (
         <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-100 shadow-sm animate-fade-in space-y-3">
           
@@ -97,21 +97,28 @@ export default function PatientNavTabs({ activeView, setActiveView, wizardStep, 
 
             {/* Quick Mobile Step Selectors */}
             <div className="flex items-center gap-1">
-              {steps.map((sObj) => (
-                <button
-                  key={sObj.s}
-                  onClick={() => setWizardStep(sObj.s)}
-                  className={`w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center transition-all ${
-                    sObj.s === wizardStep
-                      ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-200'
-                      : sObj.s < wizardStep
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-white border border-slate-300 text-slate-400'
-                  }`}
-                >
-                  {sObj.s < wizardStep ? <Check className="w-3 h-3" /> : sObj.s}
-                </button>
-              ))}
+              {steps.map((sObj) => {
+                const isLocked = sObj.s > maxUnlockedStep;
+                return (
+                  <button
+                    key={sObj.s}
+                    type="button"
+                    disabled={isLocked}
+                    onClick={() => !isLocked && setWizardStep(sObj.s)}
+                    className={`w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center transition-all ${
+                      sObj.s === wizardStep
+                        ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-200'
+                        : sObj.s < wizardStep
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : isLocked
+                        ? 'bg-slate-100 border border-slate-200 text-slate-300 cursor-not-allowed'
+                        : 'bg-white border border-slate-300 text-slate-400'
+                    }`}
+                  >
+                    {isLocked ? <Lock className="w-2.5 h-2.5" /> : sObj.s < wizardStep ? <Check className="w-3 h-3" /> : sObj.s}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -120,34 +127,42 @@ export default function PatientNavTabs({ activeView, setActiveView, wizardStep, 
             {steps.map((stepObj) => {
               const isCompleted = stepObj.s < wizardStep;
               const isActive = stepObj.s === wizardStep;
+              const isLocked = stepObj.s > maxUnlockedStep;
 
               return (
                 <button
                   key={stepObj.s}
                   type="button"
-                  onClick={() => setWizardStep(stepObj.s)}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl transition-all cursor-pointer border ${
-                    isActive
-                      ? 'bg-emerald-50 border-emerald-300 ring-2 ring-emerald-100'
+                  disabled={isLocked}
+                  onClick={() => !isLocked && setWizardStep(stepObj.s)}
+                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl transition-all border ${
+                    isLocked
+                      ? 'bg-slate-50/60 border-slate-200/60 text-slate-300 cursor-not-allowed opacity-60'
+                      : isActive
+                      ? 'bg-emerald-50 border-emerald-300 ring-2 ring-emerald-100 cursor-pointer'
                       : isCompleted
-                      ? 'bg-white border-emerald-200 text-emerald-800'
-                      : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                      ? 'bg-white border-emerald-200 text-emerald-800 cursor-pointer'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 cursor-pointer'
                   }`}
                 >
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-all ${
-                      isActive
+                      isLocked
+                        ? 'bg-slate-100 text-slate-300'
+                        : isActive
                         ? 'bg-emerald-600 text-white shadow-sm'
                         : isCompleted
                         ? 'bg-emerald-600 text-white'
                         : 'bg-slate-100 text-slate-400'
                     }`}
                   >
-                    {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepObj.s}
+                    {isLocked ? <Lock className="w-3 h-3 text-slate-400" /> : isCompleted ? <Check className="w-3.5 h-3.5" /> : stepObj.s}
                   </div>
                   <span
                     className={`text-xs font-semibold truncate text-left ${
-                      isActive
+                      isLocked
+                        ? 'text-slate-300'
+                        : isActive
                         ? 'text-emerald-900 font-bold'
                         : isCompleted
                         ? 'text-slate-800 font-medium'

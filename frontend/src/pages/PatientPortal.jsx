@@ -26,6 +26,12 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
 
   const [activeView, setActiveView] = useState('wizard_flow');
   const [wizardStep, setWizardStep] = useState(1);
+  const [maxUnlockedStep, setMaxUnlockedStep] = useState(1);
+
+  const changeWizardStep = (stepNum) => {
+    setWizardStep(stepNum);
+    setMaxUnlockedStep(prev => Math.max(prev, stepNum));
+  };
 
   // Step 1 State
   const [abhaInput, setAbhaInput] = useState(currentUser?.abha_id || 'ABHA-9821-4501');
@@ -716,7 +722,8 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
         activeView={activeView}
         setActiveView={setActiveView}
         wizardStep={wizardStep}
-        setWizardStep={setWizardStep}
+        setWizardStep={changeWizardStep}
+        maxUnlockedStep={maxUnlockedStep}
         documentCount={patientDocs.length}
       />
 
@@ -729,7 +736,7 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               isNewRegistration={isNewRegistration} setIsNewRegistration={setIsNewRegistration}
               handleLookupAbha={handleLookupAbha} isLookingUpAbha={isLookingUpAbha} lookupError={lookupError}
               consentAccepted={consentAccepted} setConsentAccepted={setConsentAccepted}
-              onNext={() => setWizardStep(2)} currentUser={currentUser}
+              onNext={() => changeWizardStep(2)} currentUser={currentUser}
               regForm={regForm} setRegForm={setRegForm}
               regOtpStep={regOtpStep} setRegOtpStep={setRegOtpStep}
               regOtpCode={regOtpCode} setRegOtpCode={setRegOtpCode}
@@ -764,7 +771,7 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               toggleGapListening={toggleGapListening}
               handleSendToDoctor={handleSendToDoctor}
               handleResetIntake={handleResetIntake}
-              onBack={() => setWizardStep(1)} onNext={() => setWizardStep(3)}
+              onBack={() => setWizardStep(1)} onNext={() => changeWizardStep(3)}
             />
           )}
 
@@ -773,7 +780,7 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               patientDocs={patientDocs} setPatientDocs={setPatientDocs}
               isVaultModalOpen={isVaultModalOpen} setIsVaultModalOpen={setIsVaultModalOpen}
               activePatient={activePatient}
-              onBack={() => setWizardStep(2)} onNext={() => setWizardStep(4)}
+              onBack={() => setWizardStep(2)} onNext={() => changeWizardStep(4)}
             />
           )}
 

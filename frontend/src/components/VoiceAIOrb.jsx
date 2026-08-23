@@ -104,6 +104,21 @@ export default function VoiceAIOrb({ lang = 'en' }) {
     `sess_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
   );
 
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (isExpanded && containerRef.current && !containerRef.current.contains(event.target)) {
+        stopAll();
+        setIsExpanded(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isExpanded]);
+
   useEffect(() => {
     sessionStorage.setItem('ss_session_id', sessionIdRef.current);
   }, []);
@@ -397,7 +412,7 @@ export default function VoiceAIOrb({ lang = 'en' }) {
   }
 
   return (
-    <div className="w-80 sm:w-96 max-h-[85vh] overflow-y-auto bg-white rounded-3xl border border-slate-200 shadow-2xl p-4 md:p-5 flex flex-col items-center text-center gap-3 relative animate-fade-in">
+    <div ref={containerRef} className="w-80 sm:w-96 max-h-[85vh] overflow-y-auto bg-white rounded-3xl border border-slate-200 shadow-2xl p-4 md:p-5 flex flex-col items-center text-center gap-3 relative animate-fade-in">
       <div className="w-full flex items-center justify-between border-b border-slate-100 pb-2">
         <div className="flex items-center gap-1.5 text-left">
           <HeartPulse className="w-4 h-4 text-emerald-600" />
