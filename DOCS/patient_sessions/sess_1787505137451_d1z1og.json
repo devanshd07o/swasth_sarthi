@@ -37,6 +37,16 @@
       "user": "hello",
       "ai": "Hello! I'm AyurSaarthi, your Ayurvedic companion. How can I help you feel balanced and healthy today?",
       "timestamp": 1787512519.2123277
+    },
+    {
+      "user": "hello how are you",
+      "ai": "Hi there! I'm feeling great and ready to help you with any Ayurvedic advice you need, whether it's about diet, lifestyle, or simple home remedies. How are you doing today?",
+      "timestamp": 1787513050.557755
+    },
+    {
+      "user": "I am feeling good",
+      "ai": "That's wonderful to hear! I'm glad you're feeling good. Let me know if there's anything specific you'd like to discuss-diet, lifestyle, or any Ayurvedic tips you're curious about.",
+      "timestamp": 1787513083.3622303
     }
   ]
 }

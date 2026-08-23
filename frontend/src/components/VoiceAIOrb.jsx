@@ -192,6 +192,18 @@ export default function VoiceAIOrb({ lang = 'en' }) {
     };
   }, []);
 
+  const startListeningRef = useRef(null);
+
+  const onSpeechFinish = useCallback(() => {
+    setAiState('idle');
+    if (autoListenTimerRef.current) clearTimeout(autoListenTimerRef.current);
+    autoListenTimerRef.current = setTimeout(() => {
+      if (isExpandedRef.current && startListeningRef.current) {
+        startListeningRef.current();
+      }
+    }, 1000); // 1 Sec Auto-Mic ON
+  }, []);
+
   // ─── Voice Response Player (Strict Single-Source TTS: ElevenLabs OR Browser) ─
   const playVoiceResponse = useCallback(async (textToSpeak) => {
     if (!textToSpeak || !textToSpeak.trim()) return;
@@ -202,6 +214,8 @@ export default function VoiceAIOrb({ lang = 'en' }) {
       try {
         audioPlayerRef.current.pause();
         audioPlayerRef.current.currentTime = 0;
+        audioPlayerRef.current.onended = null;
+        audioPlayerRef.current.onerror = null;
       } catch (_) {}
     }
     setAiState('speaking');
@@ -220,12 +234,19 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         audio.src = audioUrl;
         audio.playbackRate = VOICE_PLAYBACK_SPEED;
         
+        let playedSuccessfully = false;
+
         audio.onended = () => {
+          audio.onended = null;
+          audio.onerror = null;
           onSpeechFinish();
         };
-        audio.onerror = () => {
-          // Fallback to browser if ElevenLabs playback fails
-          if (isTtsEnabledRef.current) {
+
+        audio.onerror = (e) => {
+          console.warn('[ElevenLabs Audio Element Error]', e);
+          audio.onended = null;
+          audio.onerror = null;
+          if (!playedSuccessfully && isTtsEnabledRef.current) {
             speakWithBrowser(textToSpeak, currentLang, () => {
               onSpeechFinish();
             });
@@ -236,9 +257,10 @@ export default function VoiceAIOrb({ lang = 'en' }) {
 
         try {
           await audio.play();
+          playedSuccessfully = true;
         } catch (e) {
-          console.warn('[ElevenLabs Audio Play Exception - using fallback]', e);
-          if (isTtsEnabledRef.current) {
+          console.warn('[ElevenLabs Audio Play Exception]', e);
+          if (!playedSuccessfully && isTtsEnabledRef.current) {
             speakWithBrowser(textToSpeak, currentLang, () => {
               onSpeechFinish();
             });
@@ -246,9 +268,12 @@ export default function VoiceAIOrb({ lang = 'en' }) {
             onSpeechFinish();
           }
         }
+        return; // EXIT! NEVER REACH BROWSER TTS FALLBACK IF ELEVENLABS WAS TRIGGERED
       }
-    } else if (isTtsEnabledRef.current) {
-      // Single Browser TTS fallback if ElevenLabs disabled or returned null
+    }
+
+    // Single Browser TTS fallback ONLY if ElevenLabs disabled or returned null
+    if (isTtsEnabledRef.current) {
       speakWithBrowser(textToSpeak, currentLang, () => {
         onSpeechFinish();
       });
@@ -376,6 +401,11 @@ export default function VoiceAIOrb({ lang = 'en' }) {
       setAiState('idle');
     }
   }, [currentLang, sendQueryToPipeline]);
+
+  useEffect(() => {
+    startListeningRef.current = startListening;
+  }, [startListening]);
+
   const handleOrbClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -507,11 +537,25 @@ export default function VoiceAIOrb({ lang = 'en' }) {
       )}
 
       {aiState === 'thinking' && !response && (
-        <div className="p-4 rounded-2xl max-w-xl w-full text-left bg-emerald-50/70 border border-emerald-200/80 animate-pulse flex items-center gap-3 shadow-2xs">
-          <Sparkles className="w-5 h-5 text-emerald-600 animate-spin shrink-0" />
-          <span className="text-xs md:text-sm font-semibold text-emerald-900 font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif]">
-            {t('orb.preparingResponse', 'AyurSaarthi AI is preparing response...')}
-          </span>
+        <div className="p-4 md:p-4.5 rounded-2xl max-w-xl w-full text-left bg-gradient-to-r from-emerald-50/90 via-teal-50/90 to-emerald-50/90 border border-emerald-300/80 shadow-md shadow-emerald-600/10 backdrop-blur-md animate-fade-in flex flex-col gap-2.5 relative overflow-hidden">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-700 shadow-2xs shrink-0 animate-spin">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 block">
+                {currentLang === 'hi' || /[\u0900-\u097F]/.test(activeQuery) ? 'वैद्य AI चिंतन' : 'AYURSAARTHI CLINICAL REASONING'}
+              </span>
+              <p className="text-xs md:text-sm font-bold text-slate-800 font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif] leading-tight mt-0.5">
+                {(currentLang === 'hi' || /[\u0900-\u097F]/.test(activeQuery) || /\b(dard|pet|mera|meri|mere|mujhe|kya|kaise|hai|ho|yaar|sar|sir|bukhar|acidity|jalan|ghutna|khansi|ulti|dawa)\b/i.test(activeQuery))
+                  ? t('orb.preparingResponseHi', '🌿 आयुष AI चिंतन कर रहा है... त्रिदोष, संप्राप्ति एवं नैदानिक निष्कर्ष का विश्लेषण जारी...')
+                  : t('orb.preparingResponseEn', '✨ AyurSaarthi AI is synthesizing clinical insights & Ayurvedic formulations...')}
+              </p>
+            </div>
+          </div>
+          <div className="w-full bg-emerald-200/60 h-1.5 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 rounded-full animate-pulse w-3/4" />
+          </div>
         </div>
       )}
 
