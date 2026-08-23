@@ -56,33 +56,18 @@ export default function RobotAvatarAnimation({
         setCurrentFrameIndex(thinkSequence[idx]);
       }, 200);
     } else {
-      // 🌿 IDLE MODE:
-      // 1. Character rests naturally on frame 0 (eyes wide open).
-      // 2. Fixed duration (interval) between blinks: Every 3.5 seconds.
-      // 3. Crisp, natural eye-blink speed (40ms per frame step = 280ms total blink).
-      setCurrentFrameIndex(0);
+      // 🌿 IDLE BLINK SEQUENCE (Exact User Specification)
+      // Frame 1 repeated 28 times for ~4.5 sec open eyes, then smooth 2 -> 3 -> 4 -> 5 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 blink @ 160ms
+      const idleBlinkSequence = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        1, 2, 3, 4, 5, 4, 3, 2, 1, 0
+      ];
+      let seqIndex = 0;
 
-      const triggerCrispBlink = () => {
-        if (isBlinkingRef.current) return;
-        isBlinkingRef.current = true;
-
-        const blinkSequence = [0, 1, 2, 4, 5, 4, 2, 1, 0];
-        let step = 0;
-
-        const timer = setInterval(() => {
-          step++;
-          if (step < blinkSequence.length) {
-            setCurrentFrameIndex(blinkSequence[step]);
-          } else {
-            clearInterval(timer);
-            setCurrentFrameIndex(0); // Lock back on default open eyes
-            isBlinkingRef.current = false;
-          }
-        }, 40); // 40ms per frame = crisp natural eye-blink
-      };
-
-      // Fixed 3.5 second interval between blinks
-      mainTimer = setInterval(triggerCrispBlink, 3500);
+      mainTimer = setInterval(() => {
+        seqIndex = (seqIndex + 1) % idleBlinkSequence.length;
+        setCurrentFrameIndex(idleBlinkSequence[seqIndex]);
+      }, 160); // 160ms interval
     }
 
     return () => {
