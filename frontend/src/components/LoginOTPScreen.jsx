@@ -41,6 +41,41 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
     prakriti: 'Vata-Pitta'
   });
 
+  const [adminRegForm, setAdminRegForm] = useState({
+    name: '',
+    employee_id: '',
+    email: '',
+    contact: '',
+    hospital_name: 'Ministry of Ayush Head Office, New Delhi',
+    designation: 'Ministry Admin Officer'
+  });
+
+  const handleRegisterAdminSubmit = (e) => {
+    e.preventDefault();
+    if (!adminRegForm.name || !adminRegForm.employee_id || !adminRegForm.email) {
+      setErrorMsg('Please fill out Name, Employee ID, and Official Email.');
+      return;
+    }
+    const newEmpId = adminRegForm.employee_id.toUpperCase().startsWith('AYUSH-EMP') 
+      ? adminRegForm.employee_id.toUpperCase() 
+      : `AYUSH-EMP-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newAdminData = {
+      id: newEmpId,
+      employee_id: newEmpId,
+      name: adminRegForm.name,
+      email: adminRegForm.email,
+      contact: adminRegForm.contact || '+91 9811002233',
+      hospital_name: adminRegForm.hospital_name,
+      designation: adminRegForm.designation,
+      role: 'hospital_admin',
+      token: `jwt_admin_${Date.now()}`
+    };
+    localStorage.setItem('swasth_jwt_token', newAdminData.token);
+    localStorage.setItem('swasth_user', JSON.stringify(newAdminData));
+    onLoginSuccess(newAdminData);
+  };
+
   const handleRegisterDoctorSubmit = (e) => {
     e.preventDefault();
     if (!docRegForm.name || !docRegForm.registration_no || !docRegForm.hospital_name) {
@@ -427,26 +462,71 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
             <ArrowRight className="w-4 h-4 text-amber-300" />
           </button>
 
-          {/* New User / Practitioner Onboarding Link */}
-          <div className="text-center pt-1 border-t border-slate-100">
+          {/* New User / Practitioner / Ministry Officer Onboarding Link */}
+          <div className="text-center pt-2 border-t border-slate-100 space-y-2">
             {role === 'doctor' ? (
-              <button
-                type="button"
-                onClick={() => { setStep('register_doctor'); setErrorMsg(''); }}
-                className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
-              >
-                <Stethoscope className="w-3.5 h-3.5" />
-                <span>New Vaidya / Practitioner? Register Practice →</span>
-              </button>
+              <div className="flex flex-col gap-1.5 items-center">
+                <button
+                  type="button"
+                  onClick={() => { setStep('register_doctor'); setErrorMsg(''); }}
+                  className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <Stethoscope className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>New Vaidya / Practitioner? Register Practice →</span>
+                </button>
+                <a
+                  href="https://ncismindia.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-slate-600 hover:text-emerald-900 font-semibold flex items-center gap-1.5 bg-slate-50 hover:bg-emerald-50 px-3 py-1.5 rounded-xl border border-slate-200 transition-all cursor-pointer shadow-2xs group"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>🏛️ Official NCISM / State Ayush Council Registry (ncismindia.org)</span>
+                  <ExternalLink className="w-3 h-3 text-emerald-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </a>
+              </div>
+            ) : role === 'admin' ? (
+              <div className="flex flex-col gap-1.5 items-center">
+                <button
+                  type="button"
+                  onClick={() => { setStep('register_admin'); setErrorMsg(''); }}
+                  className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>New Ministry Admin Officer? Register Staff Employee ID →</span>
+                </button>
+                <a
+                  href="https://ayush.gov.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-slate-600 hover:text-emerald-900 font-semibold flex items-center gap-1.5 bg-slate-50 hover:bg-emerald-50 px-3 py-1.5 rounded-xl border border-slate-200 transition-all cursor-pointer shadow-2xs group"
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span>🏛️ Official Ministry of Ayush Portal (ayush.gov.in)</span>
+                  <ExternalLink className="w-3 h-3 text-emerald-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </a>
+              </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => { setStep('register_patient'); setErrorMsg(''); }}
-                className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>New Citizen / Patient? Register ABHA Pass →</span>
-              </button>
+              <div className="flex flex-col gap-1.5 items-center">
+                <button
+                  type="button"
+                  onClick={() => { setStep('register_patient'); setErrorMsg(''); }}
+                  className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <User className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>New Citizen / Patient? Register ABHA Pass →</span>
+                </button>
+                <a
+                  href="https://abha.abdm.gov.in/abha/v3/register"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-slate-600 hover:text-emerald-900 font-semibold flex items-center gap-1.5 bg-slate-50 hover:bg-emerald-50 px-3 py-1.5 rounded-xl border border-slate-200 transition-all cursor-pointer shadow-2xs group"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>🏛️ ABDM Official Govt ABHA Registration Portal (abha.abdm.gov.in)</span>
+                  <ExternalLink className="w-3 h-3 text-emerald-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </a>
+              </div>
             )}
           </div>
         </form>
@@ -764,6 +844,93 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
           >
             <ShieldCheck className="w-4 h-4 text-amber-300" />
             <span>Generate ABHA & Access Citizen Portal</span>
+          </button>
+        </form>
+      )}
+
+      {/* ─── STEP 6: NEW MINISTRY ADMIN REGISTRATION FORM ─────────────────── */}
+      {step === 'register_admin' && (
+        <form onSubmit={handleRegisterAdminSubmit} className="space-y-3 animate-fade-in">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950 flex items-center justify-between">
+            <span className="font-extrabold text-xs flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-emerald-700" />
+              New Ministry Admin Officer Onboarding
+            </span>
+            <button
+              type="button"
+              onClick={() => setStep('input')}
+              className="text-[10px] font-bold text-slate-500 hover:text-slate-800"
+            >
+              ← Back to Login
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Officer Full Name *</label>
+            <input
+              type="text"
+              required
+              value={adminRegForm.name}
+              onChange={(e) => setAdminRegForm({ ...adminRegForm, name: e.target.value })}
+              placeholder="e.g. Shri Rakesh Varma"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-emerald-500 font-medium"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Govt Employee ID *</label>
+              <input
+                type="text"
+                required
+                value={adminRegForm.employee_id}
+                onChange={(e) => setAdminRegForm({ ...adminRegForm, employee_id: e.target.value })}
+                placeholder="AYUSH-EMP-9001"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-emerald-500 font-medium"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Contact Mobile *</label>
+              <input
+                type="tel"
+                required
+                value={adminRegForm.contact}
+                onChange={(e) => setAdminRegForm({ ...adminRegForm, contact: e.target.value })}
+                placeholder="9811002233"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-emerald-500 font-medium"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Official Govt Email Address *</label>
+            <input
+              type="email"
+              required
+              value={adminRegForm.email}
+              onChange={(e) => setAdminRegForm({ ...adminRegForm, email: e.target.value })}
+              placeholder="e.g. rakesh.varma@ayush.gov.in"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-emerald-500 font-medium"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-0.5">Ministry Division / Institution</label>
+            <input
+              type="text"
+              value={adminRegForm.hospital_name}
+              onChange={(e) => setAdminRegForm({ ...adminRegForm, hospital_name: e.target.value })}
+              placeholder="Ministry of Ayush Head Office, New Delhi"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-emerald-500 font-medium"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3 bg-[#12372A] hover:bg-[#0B2B20] text-white font-extrabold text-xs rounded-2xl shadow-md cursor-pointer flex items-center justify-center gap-2 mt-2"
+          >
+            <ShieldCheck className="w-4 h-4 text-amber-300" />
+            <span>Verify Employee ID & Launch Ministry Portal</span>
           </button>
         </form>
       )}
