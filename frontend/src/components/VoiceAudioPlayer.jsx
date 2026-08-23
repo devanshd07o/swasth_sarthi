@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Volume2, VolumeX, Play, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import SwasthSaarthiVideoLoader from './SwasthSaarthiVideoLoader';
 import { getVoiceNarration } from '../services/api';
 
 export default function VoiceAudioPlayer({ text, language = 'en' }) {
@@ -68,7 +69,10 @@ export default function VoiceAudioPlayer({ text, language = 'en' }) {
       }`}
     >
       {loading ? (
-        <span className="animate-spin text-amber-400">⏳ {t('common.loading', 'Loading Voice...')}</span>
+        <span className="flex items-center gap-1.5 text-amber-400">
+          <SwasthSaarthiVideoLoader size="xs" inline />
+          <span>{t('common.loading', 'Loading Voice...')}</span>
+        </span>
       ) : isPlaying ? (
         <>
           <Square className="w-3.5 h-3.5 text-white" />

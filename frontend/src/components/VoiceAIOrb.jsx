@@ -4,9 +4,39 @@ import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
 import RobotAvatarAnimation from './RobotAvatarAnimation';
+import SwasthSaarthiVideoLoader from './SwasthSaarthiVideoLoader';
 
 const ELEVENLABS_VOICE_ID = 'cgSgspJ2msm6clMCkdW9'; // Jessica (Young/Teen Female Voice)
 const VOICE_PLAYBACK_SPEED = 1.0; // Standard 1.0x voice narration speed
+
+const THINKING_PHRASES_HI = [
+  "चिंतन...",
+  "मनन...",
+  "विश्लेषण...",
+  "निदान...",
+  "मंथन...",
+  "मूल्यांकन...",
+  "अनुसंधान...",
+  "समीक्षा...",
+  "निष्कर्ष...",
+  "परामर्श..."
+];
+
+const THINKING_PHRASES_EN = [
+  "Thinking...",
+  "Reasoning...",
+  "Processing...",
+  "Analyzing...",
+  "Evaluating...",
+  "Synthesizing...",
+  "Pondering...",
+  "Examining...",
+  "Distilling...",
+  "Connecting...",
+  "Refining...",
+  "Deliberating...",
+  "Deciphering..."
+];
 
 // ─── Resilient API Caller (Vite Proxy -> 127.0.0.1:8000 -> localhost:8000) ───
 async function callSmartChatApi(queryText, sessionId, lang) {
@@ -99,6 +129,7 @@ export default function VoiceAIOrb({ lang = 'en' }) {
   const [response, setResponse] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [isTtsEnabled, setIsTtsEnabled] = useState(true); // TTS Voice Narration Toggle (ON / OFF)
+  const [thinkingPhrase, setThinkingPhrase] = useState('');
 
   // Persistent session ID per browser session
   const sessionIdRef = useRef(
@@ -296,6 +327,13 @@ export default function VoiceAIOrb({ lang = 'en' }) {
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
     }
+
+    const isHindiMode = currentLang === 'hi' || /[\u0900-\u097F]/.test(cleanQuery) ||
+      /\b(dard|pet|mera|meri|mere|mujhe|kya|kaise|hai|ho|yaar|sar|sir|bukhar|acidity|jalan|ghutna|khansi|ulti|dawa)\b/i.test(cleanQuery);
+
+    const pool = isHindiMode ? THINKING_PHRASES_HI : THINKING_PHRASES_EN;
+    const randomPhrase = pool[Math.floor(Math.random() * pool.length)];
+    setThinkingPhrase(randomPhrase);
 
     setAiState('thinking');
     setErrorMsg('');
@@ -537,25 +575,11 @@ export default function VoiceAIOrb({ lang = 'en' }) {
       )}
 
       {aiState === 'thinking' && !response && (
-        <div className="p-4 md:p-4.5 rounded-2xl max-w-xl w-full text-left bg-gradient-to-r from-emerald-50/90 via-teal-50/90 to-emerald-50/90 border border-emerald-300/80 shadow-md shadow-emerald-600/10 backdrop-blur-md animate-fade-in flex flex-col gap-2.5 relative overflow-hidden">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-700 shadow-2xs shrink-0 animate-spin">
-              <Sparkles className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="flex-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 block">
-                {currentLang === 'hi' || /[\u0900-\u097F]/.test(activeQuery) ? 'वैद्य AI चिंतन' : 'AYURSAARTHI CLINICAL REASONING'}
-              </span>
-              <p className="text-xs md:text-sm font-bold text-slate-800 font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif] leading-tight mt-0.5">
-                {(currentLang === 'hi' || /[\u0900-\u097F]/.test(activeQuery) || /\b(dard|pet|mera|meri|mere|mujhe|kya|kaise|hai|ho|yaar|sar|sir|bukhar|acidity|jalan|ghutna|khansi|ulti|dawa)\b/i.test(activeQuery))
-                  ? t('orb.preparingResponseHi', '🌿 आयुष AI चिंतन कर रहा है... त्रिदोष, संप्राप्ति एवं नैदानिक निष्कर्ष का विश्लेषण जारी...')
-                  : t('orb.preparingResponseEn', '✨ AyurSaarthi AI is synthesizing clinical insights & Ayurvedic formulations...')}
-              </p>
-            </div>
-          </div>
-          <div className="w-full bg-emerald-200/60 h-1.5 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 rounded-full animate-pulse w-3/4" />
-          </div>
+        <div className="py-2 px-4 rounded-full bg-emerald-50/90 border border-emerald-200 shadow-2xs backdrop-blur-sm animate-fade-in flex items-center justify-center gap-2.5 my-1">
+          <SwasthSaarthiVideoLoader size="xs" inline />
+          <span className="text-xs md:text-sm font-black tracking-wide font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif] animate-ai-text-glow">
+            {thinkingPhrase || (currentLang === 'hi' ? 'चिंतन...' : 'Reasoning...')}
+          </span>
         </div>
       )}
 

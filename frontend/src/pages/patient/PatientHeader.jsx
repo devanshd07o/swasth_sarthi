@@ -15,7 +15,7 @@ export default function PatientHeader({ activePatient, currentUser }) {
   const bloodGroup = displayPatient?.blood_group || 'B+';
   const contact = displayPatient?.contact || '+91 9876543210';
   const prakriti = displayPatient?.prakriti || 'Vata-Pitta';
-  const avatarUrl = displayPatient?.avatar_url || (gender === 'FEMALE' ? "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80");
+  const avatarUrl = displayPatient?.avatar_url || (gender === 'FEMALE' ? "/avatars/sunita_sharma.png" : "/avatars/rajesh_kumar.jpeg");
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left">
@@ -23,6 +23,10 @@ export default function PatientHeader({ activePatient, currentUser }) {
         <img
           src={avatarUrl}
           alt={patientName}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = '/avatars/rajesh_kumar.jpeg';
+          }}
           className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-sm shrink-0"
         />
         <div className="space-y-1.5">

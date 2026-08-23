@@ -145,13 +145,32 @@
   }
 }
 
+/* AI Thinking Text Lighting / Glow Shimmer Animation */
+@keyframes text-light-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-ai-text-glow {
+  background: linear-gradient(90deg, #059669 0%, #10B981 25%, #6EE7B7 50%, #10B981 75%, #059669 100%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: text-light-shimmer 2.2s linear infinite;
+}
+
 /* Respect Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .nadi-path {
     stroke-dashoffset: 0;
     animation: none;
   }
-  .pulse-ring-1, .pulse-ring-2, .stagger-fade-in {
+  .pulse-ring-1, .pulse-ring-2, .stagger-fade-in, .animate-ai-text-glow {
     animation: none;
     transform: none;
     opacity: 1;

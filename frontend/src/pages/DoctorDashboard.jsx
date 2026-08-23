@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getDoctorPatients, getDoctorById, signCase as apiSignCase, completeCaseToken } from '../services/api';
+import DoctorReferralModal from '../components/DoctorReferralModal';
+import BrandedLoader from '../components/BrandedLoader';
 
 export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTimeline, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en', initialFocusRegister = false }) {
   const { t } = useTranslation();
@@ -13,6 +15,14 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
   const [doctorInfo, setDoctorInfo] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [referralPatient, setReferralPatient] = useState(null);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+
+  const handleOpenReferral = (e, patient) => {
+    e.stopPropagation();
+    setReferralPatient(patient);
+    setIsReferralModalOpen(true);
+  };
 
   const handleSearch = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -184,8 +194,12 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <img
-            src={activeDoctor?.avatar_url || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"}
+            src={activeDoctor?.avatar_url || "/avatars/dr_rajesh_vaidya.png"}
             alt={activeDoctor?.name || "Doctor"}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/avatars/dr_rajesh_vaidya.png';
+            }}
             className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-sm"
           />
           <div className="space-y-1">
@@ -208,11 +222,11 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
         </div>
 
         <button
-          onClick={onNewCase}
-          className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+          onClick={() => onSelectPatient ? onSelectPatient('patients') : null}
+          className="px-5 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
         >
-          <Stethoscope className="w-4 h-4" />
-          <span>{t('doctorDashboard.openCaseSheet', 'Open Clinical Case Sheet')}</span>
+          <Users className="w-4 h-4" />
+          <span>Open Master Patient Directory</span>
         </button>
       </div>
 
@@ -290,9 +304,7 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-slate-400 text-xs font-medium">
-            {t('common.loading', 'Loading...')}
-          </div>
+          <BrandedLoader message={t('doctorDashboard.loadingQueue', 'Loading Live OPD Queue...')} />
         ) : patients.length === 0 ? (
           <div className="p-8 bg-slate-50 rounded-xl text-center text-slate-500 text-xs font-medium">
             {t('doctorDashboard.noPatientsFound', 'No patients found in queue today.')}
@@ -356,24 +368,36 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
                       </p>
                     </div>
 
-                    {isFirstInLine ? (
+                    <div className="flex items-center gap-2">
+                      {isFirstInLine ? (
+                        <button
+                          type="button"
+                          onClick={(e) => handleCloseToken(e, p)}
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />
+                          <span>Complete Consult (Close Token #{queueNum})</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="flex-1 py-1.5 bg-slate-100 text-slate-400 font-bold text-[10px] rounded-xl border border-slate-200 flex items-center justify-center gap-1 cursor-not-allowed opacity-75"
+                        >
+                          <span>⏳ Waiting in Queue (Token #{idx} active)</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        onClick={(e) => handleCloseToken(e, p)}
-                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                        onClick={(e) => handleOpenReferral(e, p)}
+                        title="Refer Patient to Specialist or General Vaidya"
+                        className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] rounded-xl shadow-xs flex items-center justify-center gap-1 cursor-pointer transition-all shrink-0"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />
-                        <span>Complete Consult (Close Token #{queueNum})</span>
+                        <Stethoscope className="w-3.5 h-3.5" />
+                        <span>Refer</span>
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="w-full py-1.5 bg-slate-100 text-slate-400 font-bold text-[10px] rounded-xl border border-slate-200 flex items-center justify-center gap-1 cursor-not-allowed opacity-75"
-                      >
-                        <span>⏳ Waiting in Queue (Token #{idx} active)</span>
-                      </button>
-                    )}
+                    </div>
                   </div>
                 </div>
               );
@@ -424,6 +448,19 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
           </div>
         </div>
       </div>
+
+      <DoctorReferralModal
+        isOpen={isReferralModalOpen}
+        onClose={() => setIsReferralModalOpen(false)}
+        patient={referralPatient}
+        currentDoctorId={currentDoctorId}
+        onReferralSuccess={(refData) => {
+          console.log('[Inter-Doctor Patient Referral Recorded]', refData);
+          if (referralPatient) {
+            setPatients(prev => prev.filter(p => p.patient_id !== referralPatient.patient_id));
+          }
+        }}
+      />
 
     </div>
   );

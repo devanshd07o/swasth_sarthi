@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getDoctorPatients } from '../services/api';
+import PrescriptionPrintModal from '../components/PrescriptionPrintModal';
+import BrandedLoader from '../components/BrandedLoader';
 
 export default function DailyOPDRegister({ 
   onSelectPatient, 
@@ -213,7 +215,9 @@ export default function DailyOPDRegister({
         </div>
 
         {/* Filtered Patient Cards Grid */}
-        {filteredHistory.length === 0 ? (
+        {loading ? (
+          <BrandedLoader message="Loading Daily OPD Register History..." />
+        ) : filteredHistory.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-xs font-medium bg-slate-50 rounded-xl border border-dashed border-slate-200">
             No completed consultation records found matching your filters.
           </div>

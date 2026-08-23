@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, UserCheck, Plus, Calendar, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getPatients } from '../services/api';
+import BrandedLoader from '../components/BrandedLoader';
 
 export default function PatientDirectory({ onSelectPatient, onNewCase }) {
   const { t } = useTranslation();
@@ -60,9 +61,7 @@ export default function PatientDirectory({ onSelectPatient, onNewCase }) {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-500 text-xs font-medium">
-          {t('directory.loading', 'Loading patients database...')}
-        </div>
+        <BrandedLoader message={t('directory.loading', 'Loading patients database...')} />
       ) : patients.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 text-slate-500 text-xs font-medium">
           {t('directory.noPatients', 'No matching patients found.')}

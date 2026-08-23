@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Sparkles, Star, MapPin } from 'lucide-react';
+import { Search, Sparkles, Star, MapPin, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function WizardStep4Discover({
@@ -56,8 +56,12 @@ export default function WizardStep4Discover({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
             <div className="flex items-center gap-4">
               <img
-                src={previousDoctor.avatar_url || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"}
+                src={previousDoctor.avatar_url || "/avatars/dr_rajesh_vaidya.png"}
                 alt={previousDoctor.name}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/avatars/dr_rajesh_vaidya.png';
+                }}
                 className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-400 shadow-sm"
               />
               <div>
@@ -216,8 +220,12 @@ export default function WizardStep4Discover({
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <img
-                  src={doc.avatar_url || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"}
+                  src={doc.avatar_url || "/avatars/dr_rajesh_vaidya.png"}
                   alt={doc.name}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/avatars/dr_rajesh_vaidya.png';
+                  }}
                   className="w-14 h-14 rounded-xl object-cover border border-slate-200 shadow-sm"
                 />
                 <div className="space-y-0.5">
@@ -248,6 +256,24 @@ export default function WizardStep4Discover({
                   </span>
                 ))}
               </div>
+
+              {/* Availability & Slot Info */}
+              <div className="p-2.5 bg-slate-50 border border-slate-200/90 rounded-xl flex items-center justify-between text-[11px] font-sans">
+                <span className="font-semibold text-slate-700 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>OPD Hours: <strong>Mon–Sat • 09:00 AM – 02:00 PM</strong></span>
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                  🟢 LIVE OPD AVAILABLE
+                </span>
+              </div>
+
+              {/* General Physician Recommendation for Multi-Problem Patients */}
+              {(doc.name.includes("Rajesh") || (doc.specializations || []).some(s => s.toLowerCase().includes("kayachikitsa"))) && (
+                <div className="p-2 bg-amber-50/90 border border-amber-200/90 rounded-xl text-[10px] text-amber-900 font-extrabold flex items-center gap-1">
+                  <span>⭐ General Physician OPD (Recommended for Patients with Multiple Symptoms / Full Body Check)</span>
+                </div>
+              )}
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">

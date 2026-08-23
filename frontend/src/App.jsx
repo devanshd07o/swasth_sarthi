@@ -93,6 +93,10 @@ export default function App() {
   };
 
   const handleOpenCaseSheet = (patientId) => {
+    if (patientId === 'directory' || patientId === 'patients') {
+      setActiveTab('patients');
+      return;
+    }
     setSelectedPatientId(patientId);
     setActiveTab('case_form');
   };
@@ -134,7 +138,7 @@ export default function App() {
           if (currentUser?.role === 'patient') {
             setActiveTab('triage');
           } else if (currentUser?.role === 'doctor') {
-            setActiveTab('case_form');
+            setActiveTab('patients');
           }
         }}
         lang={lang}

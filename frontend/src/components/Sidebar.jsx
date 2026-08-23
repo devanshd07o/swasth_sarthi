@@ -22,6 +22,7 @@ export default function Sidebar({
   const role = currentUser?.role || 'public';
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [isFullyExpanded, setIsFullyExpanded] = React.useState(isExpanded);
+  const [logoHovered, setLogoHovered] = useState(false);
 
   React.useEffect(() => {
     if (isExpanded) {
@@ -85,16 +86,27 @@ export default function Sidebar({
         <div className="w-full space-y-4">
           <div className={`flex items-center ${isExpanded ? 'justify-between pb-3 border-b border-slate-100' : 'justify-center py-2'}`}>
             {isExpanded ? (
-              <div className="flex items-center gap-2 overflow-hidden">
+              <div 
+                className="flex items-center gap-2 overflow-hidden cursor-pointer"
+                onMouseEnter={() => setLogoHovered(true)}
+                onMouseLeave={() => setLogoHovered(false)}
+              >
                 <img 
-                  src="/swasthsaarthi_logo.png" 
+                  src={logoHovered ? "/loading_animation.gif" : "/swasthsaarthi_static_logo.png"} 
                   alt="SwasthSaarthi" 
-                  className="h-9 w-auto object-contain shrink-0" 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/swasthsaarthi_static_logo.png';
+                  }}
+                  className="h-9 w-auto object-contain shrink-0 transition-transform duration-300 hover:scale-105" 
                 />
                 {isFullyExpanded && (
-                  <div className="text-left overflow-hidden animate-fade-in">
-                    <span className="font-mono text-[9px] uppercase font-extrabold text-emerald-800 tracking-widest block truncate">
-                      {role === 'patient' ? 'CITIZEN' : role.replace('_', ' ')} PORTAL
+                  <div className="text-left overflow-hidden animate-fade-in flex flex-col justify-center">
+                    <span className="font-['Philosopher','Cinzel',serif] italic font-black text-[#12372A] text-xs sm:text-sm tracking-widest leading-tight uppercase drop-shadow-2xs">
+                      {role === 'patient' ? 'CITIZEN PORTAL' : (role.replace('_', ' ') + ' CONSOLE').toUpperCase()}
+                    </span>
+                    <span className="font-mono text-[8px] font-extrabold uppercase tracking-widest text-emerald-700 block truncate mt-0.5">
+                      Ministry of Ayush • ABDM
                     </span>
                   </div>
                 )}
@@ -216,6 +228,10 @@ export default function Sidebar({
                       <img
                         src={currentUser.avatar_url}
                         alt={currentUser.name}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/swasthsaarthi_logo.png';
+                        }}
                         className="w-9 h-9 rounded-xl object-cover border border-emerald-600/40 shrink-0"
                       />
                     ) : (

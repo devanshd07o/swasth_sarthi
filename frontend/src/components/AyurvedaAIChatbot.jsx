@@ -3,6 +3,7 @@ import { Sparkles, Send, Mic, Volume2, Bot, User, RefreshCw } from 'lucide-react
 import { useTranslation } from 'react-i18next';
 import SpeechMicButton from './SpeechMicButton';
 import VoiceAudioPlayer from './VoiceAudioPlayer';
+import SwasthSaarthiVideoLoader from './SwasthSaarthiVideoLoader';
 import axios from 'axios';
 
 export default function AyurvedaAIChatbot({ lang = 'hi' }) {
@@ -139,7 +140,7 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
 
         {loading && (
           <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl text-xs text-slate-600 font-bold max-w-xs animate-pulse">
-            <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
+            <SwasthSaarthiVideoLoader size="xs" inline />
             <span>{t('aiChat.analyzing', 'AyurSaarthi AI is analyzing symptoms...')}</span>
           </div>
         )}

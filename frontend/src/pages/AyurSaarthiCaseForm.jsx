@@ -11,6 +11,7 @@ import {
   createCase, createPatient, getPatients, generateAISummary, 
   searchAyurvedicMedicines, getPathyaAdvice, signCase 
 } from '../services/api';
+import DoctorReferralModal from '../components/DoctorReferralModal';
 
 export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientId, onCaseSaved, onSelectPatientTimeline, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en' }) {
   const { t } = useTranslation();
@@ -78,6 +79,7 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
   const [loadingAi, setLoadingAi] = useState(false);
   const [savingCase, setSavingCase] = useState(false);
   const [savedCaseForPrint, setSavedCaseForPrint] = useState(null);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
 
   useEffect(() => {
     if (initialPatientId) setSelectedPatientId(initialPatientId);
@@ -442,6 +444,10 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
           <img
             src={activePatient?.avatar_url || "/avatars/rajesh_kumar.jpeg"}
             alt={activePatient?.name || "Patient"}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/avatars/rajesh_kumar.jpeg';
+            }}
             className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-xs shrink-0"
           />
           <div className="space-y-1 w-full sm:w-auto">
@@ -469,6 +475,14 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsReferralModalOpen(true)}
+            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
+          >
+            <Stethoscope className="w-4 h-4 text-white" />
+            <span>🔁 Refer Patient</span>
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -1237,6 +1251,17 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
           setSavedCaseForPrint(null);
           setStep(1);
           setIsExamining(false);
+        }}
+      />
+
+      <DoctorReferralModal
+        isOpen={isReferralModalOpen}
+        onClose={() => setIsReferralModalOpen(false)}
+        patient={activePatient}
+        currentDoctorId={currentDoctorId}
+        onReferralSuccess={(refData) => {
+          console.log('[Case Sheet Referral Recorded]', refData);
+          alert(`Patient ${activePatient?.name} successfully referred to ${refData.to_doctor_name}!`);
         }}
       />
 

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { getPatientTimeline, getPatients, getDoctorPatients } from '../services/api';
 import PrescriptionPrintModal from '../components/PrescriptionPrintModal';
 import DocumentVaultModal from '../components/DocumentVaultModal';
+import BrandedLoader from '../components/BrandedLoader';
 
 export default function PatientTimeline({ patientId, onBack, onSelectPatientId, onOpenCaseSheet, currentDoctorId = "DOC-AYUR-101" }) {
   const { t } = useTranslation();
@@ -75,12 +76,7 @@ export default function PatientTimeline({ patientId, onBack, onSelectPatientId, 
   };
 
   if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto p-12 text-center text-slate-500 text-xs font-medium">
-        <div className="animate-spin w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full mx-auto mb-3"></div>
-        <span>{t('common.loading')}</span>
-      </div>
-    );
+    return <BrandedLoader message={t('patientTimeline.loading', 'Loading Patient Records...')} />;
   }
 
   if (!timelineData || !timelineData.patient) {

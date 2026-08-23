@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, ShieldCheck, Clock, MapPin, Award, Calendar, CheckCircle2, User, X, MessageSquare, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getDoctorRatings, addDoctorRating } from '../services/api';
+import BrandedLoader from './BrandedLoader';
 
 export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookConsultation, lang = 'en' }) {
   const { t } = useTranslation();
@@ -206,7 +207,7 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
 
             {/* Ratings List */}
             {loadingRatings ? (
-              <div className="p-4 text-center text-slate-400">{t('common.loading', 'Loading reviews...')}</div>
+              <BrandedLoader size="sm" message={t('common.loading', 'Loading reviews...')} />
             ) : ratings.length === 0 ? (
               <div className="p-4 bg-slate-50 rounded-2xl text-center text-slate-500">
                 {t('doctorModal.noReviewsYet', 'No reviews yet. Be the first to consult and leave feedback!')}
