@@ -101,8 +101,107 @@ function DocumentPreviewModal({ doc, onClose }) {
                     <iframe src={doc.file_url} title={doc.file_name} className="w-full h-full border-0" />
                   </div>
                 )
+              ) : doc.file_name?.includes('XRay') || doc.file_name?.includes('X_Ray') || doc.file_type === 'Diagnostic Report' ? (
+                /* Rich Digital Radiology X-Ray Report Visualization */
+                <div className="p-5 bg-white text-slate-900 rounded-xl shadow-lg border border-slate-200 space-y-3 font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif]">
+                  <div className="flex items-center justify-between border-b-2 border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-lg bg-slate-900 text-amber-400 font-black text-xs flex items-center justify-center border border-slate-700">
+                        ⚡
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-xs text-slate-900 leading-tight">{doc.source_doctor_or_hospital || 'City Care Diagnostic & Imaging Centre'}</h4>
+                        <span className="text-[10px] font-semibold text-slate-500 block">Department of Radiology & Digital Imaging • NABL Accredited</span>
+                      </div>
+                    </div>
+                    <div className="text-right text-[10px] text-slate-500">
+                      <span className="font-bold block text-slate-800">Date: {doc.date}</span>
+                      <span>Accession #: RAD-2026-8891</span>
+                    </div>
+                  </div>
+
+                  {/* Simulated Dark X-Ray Film Canvas Box */}
+                  <div className="p-4 bg-slate-950 text-slate-100 rounded-xl border border-slate-800 text-center space-y-2 relative overflow-hidden">
+                    <div className="absolute top-2 left-3 text-[9px] font-mono text-emerald-400 font-bold uppercase tracking-wider">RIGHT KNEE AP / LATERAL VIEW</div>
+                    <div className="absolute top-2 right-3 text-[9px] font-mono text-amber-400 font-bold uppercase">R • WEIGHT BEARING</div>
+
+                    <div className="py-6 flex flex-col items-center justify-center gap-2">
+                      <div className="w-24 h-28 border-2 border-dashed border-slate-600 rounded-2xl flex flex-col items-center justify-center bg-slate-900/80 shadow-inner relative">
+                        <div className="w-12 h-10 border-b-2 border-emerald-400/60 rounded-b-full mb-1"></div>
+                        <div className="w-10 h-10 border-t-2 border-emerald-400/60 rounded-t-full"></div>
+                        <span className="text-[9px] font-mono text-emerald-300 font-bold mt-1">JOINT SPACE: 2.4mm</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-300 font-bold">DIGITAL RADIOGRAPH SCAN — HIGH RESOLUTION (100% COMPRESSED)</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1 text-left">
+                    <span className="font-extrabold text-slate-900 block text-[11px]">RADIOLOGY FINDINGS & IMPRESSION:</span>
+                    <p className="text-slate-700 text-[11px] leading-relaxed">
+                      1. AP and Lateral views of the Right Knee Joint show mild-to-moderate loss of joint space in medial compartment.<br />
+                      2. Subchondral sclerosis and prominent marginal osteophyte formation at tibial condyles.<br />
+                      3. Patellofemoral joint space is preserved. No suprapatellar joint effusion.<br />
+                      <strong className="text-emerald-900 block mt-1">IMPRESSION: Grade II Osteoarthritis Right Knee (Sandhivata).</strong>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                    <div>Ref Vaidya: Dr. Rajesh Vaidya</div>
+                    <div className="font-bold text-slate-800">Radiologist: Dr. S. K. Gupta, MD (Radiology) ✓</div>
+                  </div>
+                </div>
+              ) : doc.file_name?.includes('Prescription') || doc.file_type === 'Prescription' ? (
+                /* Rich AIIA Government OPD Prescription Parchaa Sheet */
+                <div className="p-5 bg-white text-slate-900 rounded-xl shadow-lg border border-slate-200 space-y-3 font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif]">
+                  <div className="flex items-center justify-between border-b-2 border-emerald-800 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-[#12372A] text-amber-300 font-black text-sm flex items-center justify-center shadow-xs">
+                        🌿
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-xs text-slate-900 leading-tight">All India Institute of Ayurveda (AIIA), New Delhi</h4>
+                        <span className="text-[10px] font-bold text-emerald-800 block">Ministry of Ayush • Govt. of India OPD Health Record</span>
+                      </div>
+                    </div>
+                    <div className="text-right text-[10px] text-slate-500">
+                      <span className="font-bold block text-slate-800">OPD Ticket: AIIA-2026-9920</span>
+                      <span>Date: {doc.date}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2 bg-emerald-50/60 rounded-xl text-[10px] border border-emerald-200">
+                    <div><span className="text-slate-500 block">Patient:</span> <strong className="text-slate-900">Ramesh Sharma</strong></div>
+                    <div><span className="text-slate-500 block">ABHA ID:</span> <strong className="text-slate-900">ABHA-9821-4501</strong></div>
+                    <div><span className="text-slate-500 block">Prakriti:</span> <strong className="text-emerald-800">Vata-Pitta</strong></div>
+                    <div><span className="text-slate-500 block">Vaidya:</span> <strong className="text-slate-900">Dr. Rajesh Vaidya</strong></div>
+                  </div>
+
+                  <div className="space-y-1.5 text-left text-xs">
+                    <span className="font-extrabold text-slate-900 text-[11px] block text-emerald-900">Rx PRESCRIPTION REGIMEN (चिकित्सा योजना):</span>
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-[11px] text-slate-800">
+                      <div>1. <strong>Yograj Guggulu 250mg</strong> — 2 tabs BID after meals with lukewarm water (30 Days)</div>
+                      <div>2. <strong>Rasnadi Kwath</strong> — 15 ml BID with equal lukewarm water (30 Days)</div>
+                      <div>3. <strong>Mahanarayana Taila</strong> — Local gentle application on right knee (BID)</div>
+                      <div>4. <strong>Janu Basti Therapy</strong> — 7 consecutive OPD sessions recommended</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="p-2 bg-amber-50 rounded-lg border border-amber-200 text-amber-950">
+                      <strong className="block text-amber-900">Pathya (पथ्य):</strong> Warm cooked food, lukewarm water, light gentle walks.
+                    </div>
+                    <div className="p-2 bg-rose-50 rounded-lg border border-rose-200 text-rose-950">
+                      <strong className="block text-rose-900">Apathya (अपथ्य):</strong> Avoid cold food, curd at night, heavy weight lifting.
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-slate-100">
+                    <span>Central ABDM Health Pass Signed Record</span>
+                    <span className="font-bold text-emerald-800">Signed: Dr. Rajesh Vaidya (MD Kayachikitsa) ✓</span>
+                  </div>
+                </div>
               ) : (
-                /* Realistic Digitized Report Preview Sheet for ABDM records */
+                /* Realistic Digitized Report Preview Sheet for general records */
                 <div className="p-5 bg-white text-slate-900 rounded-xl shadow-lg border border-slate-200 space-y-4 font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif]">
                   <div className="flex items-center justify-between border-b-2 border-emerald-800 pb-3">
                     <div className="flex items-center gap-2">
