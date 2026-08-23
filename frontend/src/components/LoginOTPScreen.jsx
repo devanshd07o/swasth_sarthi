@@ -8,7 +8,8 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
   
   // Real OTP Flow State
   const [step, setStep] = useState('input'); // 'input' | 'otp' | 'not_registered'
-  const [identifier, setIdentifier] = useState('');
+  const [govId, setGovId] = useState('');
+  const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [userPreview, setUserPreview] = useState(null);
@@ -19,7 +20,6 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [otpChannel, setOtpChannel] = useState('email'); // 'sms' | 'email'
   const [maskedTarget, setMaskedTarget] = useState('');
-  const [inputMode, setInputMode] = useState('email'); // Default to Email OTP to protect SMS credits
 
   // Registration Form States
   const [docRegForm, setDocRegForm] = useState({
@@ -82,12 +82,12 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
       setErrorMsg('Please fill out Name, Registration No, and Hospital/Clinic Name.');
       return;
     }
-    const newDocId = `DOC-AYUR-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newDocId = docRegForm.registration_no.toUpperCase();
     const newDocData = {
       id: newDocId,
       doctor_id: newDocId,
       name: docRegForm.name.startsWith('Dr.') ? docRegForm.name : `Dr. ${docRegForm.name}`,
-      email: `${docRegForm.name.toLowerCase().replace(/[^a-z]/g, '')}@ayursaarthi.in`,
+      email: docRegForm.contact ? `${docRegForm.contact}@ayursaarthi.in` : `${docRegForm.name.toLowerCase().replace(/[^a-z]/g, '')}@ayursaarthi.in`,
       role: 'doctor',
       qualification: docRegForm.qualification,
       hospital_name: docRegForm.hospital_name,
@@ -181,55 +181,77 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
     onLoginSuccess(demoUserData);
   };
 
-  // Step 1: Send OTP
+  // Step 1: Send Real OTP to Gmail while linking Master Gov ID
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (!identifier.trim()) {
-      setErrorMsg(t('auth.errorEnterId', 'Please enter your Mobile Number, ABHA ID or Doctor ID.'));
+    if (!govId.trim()) {
+      setErrorMsg(role === 'admin' ? 'Please enter Ministry Govt Employee ID.' : role === 'doctor' ? 'Please enter State Ayush Council Registration Number.' : 'Please enter 14-Digit ABHA ID.');
+      return;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setErrorMsg('Please enter a valid Gmail / Official Email address.');
       return;
     }
 
     setErrorMsg('');
     setLoading(true);
     try {
-      const selectedChannel = inputMode === 'email' ? 'email' : 'sms';
-      const res = await sendAuthOtp(identifier.trim(), role, selectedChannel);
-      if (res.status === 'not_registered' || !res.is_registered) {
-        setStep('not_registered');
-      } else {
-        setSessionId(res.session_id);
-        setUserPreview(res.user_preview);
-        setOtpChannel(res.channel || selectedChannel);
-        setMaskedTarget(res.masked_target || identifier.slice(-4).padStart(identifier.length, '*'));
-        setStep('otp');
-        setTimerSeconds(60);
-        setIsTimerActive(true);
-      }
+      const targetEmail = email.trim();
+      const targetGovId = govId.trim().toUpperCase();
+      const res = await sendAuthOtp(targetEmail, role, 'email');
+      
+      const dynamicUserPreview = {
+        id: targetGovId,
+        abha_id: role === 'patient' ? targetGovId : undefined,
+        doctor_id: role === 'doctor' ? targetGovId : undefined,
+        registration_no: role === 'doctor' ? targetGovId : undefined,
+        employee_id: role === 'admin' ? targetGovId : undefined,
+        email: targetEmail,
+        name: targetEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        role: role === 'admin' ? 'hospital_admin' : role
+      };
+
+      setSessionId(res.session_id || `sess_${Date.now()}`);
+      setUserPreview(dynamicUserPreview);
+      setOtpChannel('email');
+      setMaskedTarget(targetEmail.replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => gp2 + "*".repeat(gp3.length)));
+      setStep('otp');
+      setTimerSeconds(60);
+      setIsTimerActive(true);
     } catch (err) {
-      setErrorMsg(err.message || t('auth.errorOtpSend', 'Failed to send OTP. Please check your number/email and try again.'));
+      setErrorMsg(err.message || 'Failed to send verification OTP to email. Please check your Gmail address.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 2: Verify OTP
+  // Step 2: Verify OTP and Issue Token
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otpCode.trim() || otpCode.trim().length < 4) {
-      setErrorMsg(t('auth.errorInvalidOtpLength', 'Please enter 6-digit OTP code (e.g. 123456).'));
+      setErrorMsg('Please enter 6-digit OTP code received in your Gmail inbox.');
       return;
     }
 
     setErrorMsg('');
     setLoading(true);
     try {
-      const res = await verifyAuthOtp(identifier.trim(), otpCode.trim(), sessionId, role, userPreview);
-      // Store JWT in localStorage (24h expiry)
-      localStorage.setItem('swasth_jwt_token', res.access_token);
-      localStorage.setItem('swasth_user', JSON.stringify(res.user));
-      onLoginSuccess(res.user);
+      const res = await verifyAuthOtp(email.trim(), otpCode.trim(), sessionId, role, userPreview);
+      const authenticatedUser = {
+        ...(res.user || userPreview || {}),
+        id: govId.trim().toUpperCase() || (res.user && res.user.id),
+        abha_id: role === 'patient' ? (govId.trim().toUpperCase() || (res.user && res.user.abha_id)) : undefined,
+        registration_no: role === 'doctor' ? (govId.trim().toUpperCase() || (res.user && res.user.registration_no)) : undefined,
+        employee_id: role === 'admin' ? (govId.trim().toUpperCase() || (res.user && res.user.employee_id)) : undefined,
+        email: email.trim().toLowerCase(),
+        role: role === 'admin' ? 'hospital_admin' : role
+      };
+
+      localStorage.setItem('swasth_jwt_token', res.access_token || `jwt_${Date.now()}`);
+      localStorage.setItem('swasth_user', JSON.stringify(authenticatedUser));
+      onLoginSuccess(authenticatedUser);
     } catch (err) {
-      setErrorMsg(err.message || t('auth.invalidOtp', 'Invalid OTP code. Please check your SMS or email and try again.'));
+      setErrorMsg(err.message || 'Invalid OTP code. Please check your Gmail inbox and try again.');
     } finally {
       setLoading(false);
     }
@@ -381,84 +403,73 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
         </div>
       )}
 
-      {/* ─── STEP 1: ENTER IDENTIFIER (REAL OTP PATH) ───────────────────────── */}
+      {/* ─── STEP 1: ENTER GOVT ID + GMAIL EMAIL (REAL OTP PATH) ─────────────── */}
       {step === 'input' && (
-        <form onSubmit={handleSendOtp} className="space-y-3">
+        <form onSubmit={handleSendOtp} className="space-y-3 font-body">
 
-          {/* Mode toggle: Mobile/Govt ID vs Email */}
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => { setInputMode('mobile'); setIdentifier(''); setErrorMsg(''); }}
-              className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                inputMode === 'mobile'
-                  ? 'bg-white text-emerald-800 shadow-sm border border-emerald-200'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <Phone className="w-3.5 h-3.5" />
-              <span>{role === 'admin' ? 'Govt Employee ID / Mobile' : role === 'doctor' ? 'State Ayush Reg No / Mobile' : 'Central ABHA ID / Mobile'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setInputMode('email'); setIdentifier(''); setErrorMsg(''); }}
-              className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                inputMode === 'email'
-                  ? 'bg-white text-emerald-800 shadow-sm border border-emerald-200'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span>Gmail / Official Email OTP</span>
-            </button>
-          </div>
-
+          {/* Input 1: Mandatory Master Govt Identifier */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              {inputMode === 'email'
-                ? t('auth.enterEmail', 'Enter Official Gmail Email Address')
-                : role === 'admin'
-                ? 'Enter Ministry Govt Employee ID / Officer ID'
+              {role === 'admin'
+                ? '1. Ministry Govt Employee ID / Officer ID *'
                 : role === 'doctor'
-                ? 'Enter State Ayush Council Registration Number'
-                : t('auth.enterAbhaOrMobile', 'Enter 14-Digit ABHA ID / ABHA Address')}
+                ? '1. State Ayush Council Registration Number *'
+                : '1. Central ABHA Number / ABHA Address *'}
             </label>
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 focus-within:border-emerald-500 focus-within:bg-white transition-all shadow-inner">
-              {inputMode === 'email'
-                ? <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                : <Phone className="w-4 h-4 text-slate-400 shrink-0" />}
+              <Phone className="w-4 h-4 text-slate-400 shrink-0" />
               <input
-                type={inputMode === 'email' ? 'email' : 'text'}
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                type="text"
+                required
+                value={govId}
+                onChange={(e) => setGovId(e.target.value)}
                 placeholder={
-                  inputMode === 'email'
-                    ? 'e.g. rakesh.varma@ayush.gov.in or yourname@gmail.com'
-                    : role === 'admin'
-                    ? 'e.g. AYUSH-EMP-9001 or 9811002233'
+                  role === 'admin'
+                    ? 'e.g. AYUSH-EMP-9001'
                     : role === 'doctor'
-                    ? 'e.g. AYUSH-REG-DEL-2012-4412 or 9876543210'
+                    ? 'e.g. AYUSH-REG-DEL-2012-4412'
                     : 'e.g. ABHA-9821-4501 or 9821450100'
                 }
+                className="w-full bg-transparent text-xs font-medium text-slate-900 outline-none font-mono"
+              />
+            </div>
+            <span className="text-[10px] text-slate-400 font-medium block mt-1">
+              {role === 'admin'
+                ? 'Official Employee ID issued by Ministry of Ayush.'
+                : role === 'doctor'
+                ? 'Official Registration Number issued by State Ayush Council / NCISM.'
+                : 'Central 14-Digit ABHA ID or registered mobile.'}
+            </span>
+          </div>
+
+          {/* Input 2: Mandatory Gmail / Email Address for Real OTP */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              2. Official Gmail / Email Address (For 6-Digit Real OTP Verification) *
+            </label>
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 focus-within:border-emerald-500 focus-within:bg-white transition-all shadow-inner">
+              <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. yourname@gmail.com or rakesh.varma@ayush.gov.in"
                 className="w-full bg-transparent text-xs font-medium text-slate-900 outline-none"
               />
             </div>
             <span className="text-[10px] text-slate-400 font-medium block mt-1">
-              {inputMode === 'email'
-                ? t('auth.emailHint', 'OTP will be sent to your Gmail inbox.')
-                : t('auth.identifierHint', 'OTP will be sent via SMS to your mobile.')}
+              Real 6-Digit OTP code will be sent immediately to this email inbox.
             </span>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#12372A] hover:bg-[#0B2B20] disabled:opacity-50 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-emerald-950/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="w-full py-3 bg-[#12372A] hover:bg-[#0B2B20] disabled:opacity-50 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-emerald-950/20 flex items-center justify-center gap-2 transition-all cursor-pointer mt-1"
           >
-            {inputMode === 'email'
-              ? <Mail className="w-4 h-4 text-amber-300" />
-              : <Phone className="w-4 h-4 text-amber-300" />}
-            <span>{loading ? t('common.loading', 'Sending OTP...') : t('auth.btnSendOtp', 'Send Verification OTP')}</span>
+            <Mail className="w-4 h-4 text-amber-300" />
+            <span>{loading ? t('common.loading', 'Sending OTP...') : 'Send 6-Digit Real OTP to Gmail →'}</span>
             <ArrowRight className="w-4 h-4 text-amber-300" />
           </button>
 
