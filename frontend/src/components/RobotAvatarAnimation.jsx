@@ -30,16 +30,15 @@ export default function RobotAvatarAnimation({
   // Natural Eye-Blink & State-Based Motion Logic
   useEffect(() => {
     let mainTimer = null;
-    let blinkTimeout = null;
 
     if (state === 'speaking') {
       // Mouth / Eye movement synced to speech rhythm (frames 0 -> 1 -> 2 -> 3 -> 2 -> 1 -> 0)
-      const speechSequence = [0, 1, 2, 3, 2, 1, 0, 1, 4, 1];
+      const speechSequence = [0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 3, 1];
       let idx = 0;
       mainTimer = setInterval(() => {
         idx = (idx + 1) % speechSequence.length;
         setCurrentFrameIndex(speechSequence[idx]);
-      }, 140);
+      }, 130);
     } else if (state === 'listening') {
       // Attentive wide-eyed pose with periodic quick dip
       const listenSequence = [0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 1, 0];
@@ -47,7 +46,7 @@ export default function RobotAvatarAnimation({
       mainTimer = setInterval(() => {
         idx = (idx + 1) % listenSequence.length;
         setCurrentFrameIndex(listenSequence[idx]);
-      }, 200);
+      }, 180);
     } else if (state === 'thinking') {
       // Thoughtful eye-narrowing (frames 1 -> 2 -> 3 -> 2 -> 1)
       const thinkSequence = [1, 2, 3, 2, 1, 2];
@@ -55,45 +54,26 @@ export default function RobotAvatarAnimation({
       mainTimer = setInterval(() => {
         idx = (idx + 1) % thinkSequence.length;
         setCurrentFrameIndex(thinkSequence[idx]);
-      }, 220);
+      }, 200);
     } else {
-      // 🌿 NATURAL IDLE MODE:
-      // Default to frame 0 (eyes wide open). Character stays on frame 0 ~92% of the time.
-      // Every 3.8 - 5.5 seconds, executes a fast, natural 280ms eye-blink sequence (0 -> 1 -> 2 -> 4 -> 5 -> 4 -> 2 -> 1 -> 0).
-      setCurrentFrameIndex(0);
+      // 🌿 100% ALIVE IDLE MODE:
+      // Continuous organic eye-shimmer, micro-dips, and periodic full eye blinks.
+      // Never sits frozen; eyes gently move, shimmer, and blink in a fluid biological rhythm.
+      const aliveIdlePattern = [
+        0, 0, 0, 1, 0, 0, 0, 0, 2, 1, 0, 0,
+        0, 1, 2, 4, 5, 4, 2, 1, 0, 0, 0, 0,
+        0, 0, 1, 2, 1, 0, 0, 0, 3, 2, 1, 0
+      ];
+      let stepIndex = 0;
 
-      const triggerNaturalBlink = () => {
-        if (isBlinkingRef.current) return;
-        isBlinkingRef.current = true;
-
-        // Realistic fast blink sequence (approx 35ms per frame)
-        const blinkSteps = [0, 1, 2, 4, 5, 4, 2, 1, 0];
-        let stepIndex = 0;
-
-        const blinkInterval = setInterval(() => {
-          stepIndex++;
-          if (stepIndex < blinkSteps.length) {
-            setCurrentFrameIndex(blinkSteps[stepIndex]);
-          } else {
-            clearInterval(blinkInterval);
-            setCurrentFrameIndex(0); // Return to default eyes-open
-            isBlinkingRef.current = false;
-            
-            // Schedule next blink randomly between 3.8s and 5.5s
-            const nextBlinkDelay = Math.floor(Math.random() * 1700) + 3800;
-            blinkTimeout = setTimeout(triggerNaturalBlink, nextBlinkDelay);
-          }
-        }, 35);
-      };
-
-      // Start initial blink timer
-      const initialDelay = Math.floor(Math.random() * 1500) + 2500;
-      blinkTimeout = setTimeout(triggerNaturalBlink, initialDelay);
+      mainTimer = setInterval(() => {
+        stepIndex = (stepIndex + 1) % aliveIdlePattern.length;
+        setCurrentFrameIndex(aliveIdlePattern[stepIndex]);
+      }, 220); // 220ms per step = smooth, calm, continuous organic life
     }
 
     return () => {
       if (mainTimer) clearInterval(mainTimer);
-      if (blinkTimeout) clearTimeout(blinkTimeout);
     };
   }, [state]);
 
@@ -107,21 +87,28 @@ export default function RobotAvatarAnimation({
 
   // Glow aura ring based on AI state
   const glowClasses = {
-    idle: 'drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]',
-    listening: 'drop-shadow-[0_0_20px_rgba(244,63,94,0.7)] animate-pulse',
-    thinking: 'drop-shadow-[0_0_20px_rgba(245,158,11,0.7)]',
-    speaking: 'drop-shadow-[0_0_20px_rgba(20,184,166,0.7)] animate-pulse',
+    idle: 'drop-shadow-[0_0_15px_rgba(16,185,129,0.35)]',
+    listening: 'drop-shadow-[0_0_22px_rgba(244,63,94,0.75)] animate-pulse',
+    thinking: 'drop-shadow-[0_0_22px_rgba(245,158,11,0.75)]',
+    speaking: 'drop-shadow-[0_0_22px_rgba(20,184,166,0.75)] animate-pulse',
   }[state] || '';
 
   return (
     <div
       onClick={onClick}
       className={`relative inline-flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 ${sizeClasses} ${className}`}
+      style={{ animation: 'avatarFloat 3.5s ease-in-out infinite' }}
     >
+      <style>{`
+        @keyframes avatarFloat {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-5px) scale(1.03); }
+        }
+      `}</style>
       <img
         src={ROBOT_FRAMES[currentFrameIndex]}
         alt="AyurSaarthi AI Robot Avatar"
-        className={`w-full h-full object-contain pointer-events-none transition-all ${glowClasses}`}
+        className={`w-full h-full object-contain pointer-events-none transition-all duration-200 ${glowClasses}`}
       />
     </div>
   );
