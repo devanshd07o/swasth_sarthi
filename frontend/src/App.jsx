@@ -15,6 +15,11 @@ import PatientPortal from './pages/PatientPortal';
 import SuperAdminPortal from './pages/SuperAdminPortal';
 import VoiceAIOrb from './components/VoiceAIOrb';
 import HeaderPortalModal from './components/HeaderPortalModal';
+import MinistryCommandCenter from './pages/admin/MinistryCommandCenter';
+import PanIndiaHospitalNetwork from './pages/admin/PanIndiaHospitalNetwork';
+import VaidyaDoctorRoster from './pages/admin/VaidyaDoctorRoster';
+import PanchakarmaBedInventory from './pages/admin/PanchakarmaBedInventory';
+import AbdmComplianceLogs from './pages/admin/AbdmComplianceLogs';
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -239,12 +244,11 @@ export default function App() {
             {/* HOSPITAL ADMIN & SUPER ADMIN ROLE TABS */}
             {(currentUser.role === 'hospital_admin' || currentUser.role === 'super_admin') && (
               <>
-                {activeTab === 'admin_command' && <SuperAdminPortal initialTab="hospitals" lang={lang} />}
-                {activeTab === 'hospital_network' && <SuperAdminPortal initialTab="hospitals" lang={lang} />}
-                {activeTab === 'doctor_roster' && <SuperAdminPortal initialTab="doctors" lang={lang} />}
-                {activeTab === 'medroute' && <MedRouteDashboard lang={lang} />}
-                {activeTab === 'icu_inventory' && <SuperAdminPortal initialTab="medroute" lang={lang} />}
-                {activeTab === 'audit_logs' && <SuperAdminPortal initialTab="audit" lang={lang} />}
+                {activeTab === 'admin_command' && <MinistryCommandCenter lang={lang} />}
+                {activeTab === 'hospital_network' && <PanIndiaHospitalNetwork lang={lang} />}
+                {activeTab === 'doctor_roster' && <VaidyaDoctorRoster lang={lang} />}
+                {(activeTab === 'panchakarma_inventory' || activeTab === 'icu_inventory') && <PanchakarmaBedInventory lang={lang} />}
+                {activeTab === 'audit_logs' && <AbdmComplianceLogs lang={lang} />}
               </>
             )}
 

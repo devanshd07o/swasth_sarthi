@@ -44,7 +44,7 @@ export default function Sidebar({
         { id: 'admin_command', label: t('sidebar.adminCommand', 'Ministry Command Portal'), icon: ShieldCheck },
         { id: 'hospital_network', label: t('sidebar.hospitalNetwork', 'Pan-India Hospital Network'), icon: Building2 },
         { id: 'doctor_roster', label: t('sidebar.doctorRoster', 'Vaidya Doctor Roster'), icon: Stethoscope },
-        { id: 'icu_inventory', label: t('sidebar.inventory', 'ICU & Bed Capacity Fleet'), icon: Activity },
+        { id: 'panchakarma_inventory', label: t('sidebar.inventory', 'Panchakarma & Ayush Wards'), icon: Activity },
         { id: 'audit_logs', label: t('sidebar.auditLogs', 'ABDM Compliance Logs'), icon: FileText },
       ];
     } else if (role === 'doctor') {
