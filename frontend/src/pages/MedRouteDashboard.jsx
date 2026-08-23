@@ -93,6 +93,77 @@ function MapRouteFitter({ bounds }) {
   return null;
 }
 
+function generateNearbyHospitals(userLat, userLng) {
+  return [
+    {
+      id: 'AYUSH-LOC-01',
+      name: 'Central Ayush Multi-Specialty Research Hospital',
+      address: 'Sector 4, Near Main Road (Nearest to Your GPS)',
+      city: 'Local Region',
+      phone: '+91 11 2987 0000',
+      lat: userLat + 0.011,
+      lng: userLng + 0.014,
+      opd_timing: '09:00 AM - 04:00 PM',
+      doctors: [
+        { reg_no: 'AYUSH-REG-DEL-2012-4412', name: 'Dr. Rajesh Vaidya', qual: 'BAMS, MD (Kayachikitsa)', queue: 18, specialty: 'Kayachikitsa', status: 'Available' },
+        { reg_no: 'AYUSH-REG-DEL-2018-9901', name: 'Dr. Sunita Deshmukh', qual: 'BAMS, MD (Panchakarma)', queue: 8, specialty: 'Panchakarma', status: 'Available' }
+      ]
+    },
+    {
+      id: 'AYUSH-LOC-02',
+      name: 'Govt. Ayush District Hospital & OPD Center',
+      address: 'Civil Lines, OPD Gate #2 (1.8 km from You)',
+      city: 'Local Region',
+      phone: '+91 11 2616 5060',
+      lat: userLat - 0.015,
+      lng: userLng - 0.012,
+      opd_timing: '08:30 AM - 03:00 PM',
+      doctors: [
+        { reg_no: 'AYUSH-REG-DEL-2016-5510', name: 'Dr. Ramanuj Shastri', qual: 'BAMS, MD (Shalya Tantra)', queue: 14, specialty: 'Shalya Tantra', status: 'Available' }
+      ]
+    },
+    {
+      id: 'AYUSH-LOC-03',
+      name: 'National Ayurvedic Panchakarma & Wellness Center',
+      address: 'Knowledge Park, Block B (2.9 km from You)',
+      city: 'Local Region',
+      phone: '+91 141 263 5816',
+      lat: userLat + 0.022,
+      lng: userLng - 0.018,
+      opd_timing: '09:00 AM - 04:00 PM',
+      doctors: [
+        { reg_no: 'AYUSH-REG-RAJ-2015-1108', name: 'Dr. Ananya Shastri', qual: 'BAMS, MD (Ayurveda)', queue: 12, specialty: 'Kayachikitsa', status: 'Available' }
+      ]
+    },
+    {
+      id: 'AYUSH-LOC-04',
+      name: 'Regional Faculty of Ayurveda Hospital',
+      address: 'University Medical Enclave (3.8 km from You)',
+      city: 'Local Region',
+      phone: '+91 542 236 7568',
+      lat: userLat - 0.026,
+      lng: userLng + 0.028,
+      opd_timing: '09:00 AM - 05:00 PM',
+      doctors: [
+        { reg_no: 'AYUSH-REG-UP-2010-8820', name: 'Dr. Vikramaditya Dev', qual: 'BAMS, MD (Shalya Tantra)', queue: 15, specialty: 'Shalya Tantra', status: 'Available' }
+      ]
+    },
+    {
+      id: 'AYUSH-LOC-05',
+      name: 'Tilak Ayush Specialty Clinic & Herb Store',
+      address: 'Station Road, OPD Block A (4.6 km from You)',
+      city: 'Local Region',
+      phone: '+91 22 2612 1100',
+      lat: userLat + 0.032,
+      lng: userLng + 0.025,
+      opd_timing: '09:00 AM - 04:30 PM',
+      doctors: [
+        { reg_no: 'AYUSH-REG-MAH-2018-3340', name: 'Dr. Meenakshi Sundaram', qual: 'BAMS, MD (Dravyaguna)', queue: 10, specialty: 'Dravyaguna', status: 'Available' }
+      ]
+    }
+  ];
+}
+
 export default function MedRouteDashboard({ lang = 'en' }) {
   const { t } = useTranslation();
   const [userPos, setUserPos] = useState({ lat: 28.6139, lng: 77.2090 });
@@ -101,105 +172,20 @@ export default function MedRouteDashboard({ lang = 'en' }) {
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [hospitalsData] = useState([
-    {
-      id: 'AYUSH-DEL-01',
-      name: 'All India Institute of Ayurveda (AIIA)',
-      address: 'Gautam Puri, Sarita Vihar, Mathura Road, New Delhi',
-      city: 'New Delhi',
-      phone: '+91 11 2987 0000',
-      lat: 28.5284,
-      lng: 77.2882,
-      opd_timing: '09:00 AM - 04:00 PM',
-      doctors: [
-        { reg_no: 'AYUSH-REG-DEL-2012-4412', name: 'Dr. Rajesh Vaidya', qual: 'BAMS, MD (Kayachikitsa)', queue: 18, specialty: 'Kayachikitsa', status: 'Available' },
-        { reg_no: 'AYUSH-REG-DEL-2018-9901', name: 'Dr. Sunita Deshmukh', qual: 'BAMS, MD (Panchakarma)', queue: 8, specialty: 'Panchakarma', status: 'Available' }
-      ]
-    },
-    {
-      id: 'AYUSH-DEL-02',
-      name: 'Safdarjung Hospital AYUSH Wing',
-      address: 'Ansari Nagar East, Near AIIMS Metro, New Delhi',
-      city: 'New Delhi',
-      phone: '+91 11 2616 5060',
-      lat: 28.5684,
-      lng: 77.2078,
-      opd_timing: '08:30 AM - 03:00 PM',
-      doctors: [
-        { reg_no: 'AYUSH-REG-DEL-2016-5510', name: 'Dr. Ramanuj Shastri', qual: 'BAMS, MD (Shalya Tantra)', queue: 14, specialty: 'Shalya Tantra', status: 'Available' }
-      ]
-    },
-    {
-      id: 'AYUSH-RAJ-01',
-      name: 'National Institute of Ayurveda (NIA)',
-      address: 'Jorawar Singh Gate, Amer Road, Jaipur, Rajasthan',
-      city: 'Jaipur',
-      phone: '+91 141 263 5816',
-      lat: 26.9378,
-      lng: 75.8236,
-      opd_timing: '09:00 AM - 04:00 PM',
-      doctors: [
-        { reg_no: 'AYUSH-REG-RAJ-2015-1108', name: 'Dr. Ananya Shastri', qual: 'BAMS, MD (Ayurveda)', queue: 12, specialty: 'Kayachikitsa', status: 'Available' }
-      ]
-    },
-    {
-      id: 'AYUSH-UP-01',
-      name: 'Faculty of Ayurveda, BHU',
-      address: 'Banaras Hindu University, Lanka, Varanasi, Uttar Pradesh',
-      city: 'Varanasi',
-      phone: '+91 542 236 7568',
-      lat: 25.2677,
-      lng: 82.9913,
-      opd_timing: '09:00 AM - 05:00 PM',
-      doctors: [
-        { reg_no: 'AYUSH-REG-UP-2010-8820', name: 'Dr. Vikramaditya Dev', qual: 'BAMS, MD (Shalya Tantra)', queue: 15, specialty: 'Shalya Tantra', status: 'Available' }
-      ]
-    },
-    {
-      id: 'AYUSH-MUM-01',
-      name: 'Tilak Ayurved Mahavidyalaya',
-      address: 'Rasta Peth, Somwar Peth, Pune / Mumbai OPD Center',
-      city: 'Mumbai',
-      phone: '+91 22 2612 1100',
-      lat: 19.0760,
-      lng: 72.8777,
-      opd_timing: '09:00 AM - 04:30 PM',
-      doctors: [
-        { reg_no: 'AYUSH-REG-MAH-2018-3340', name: 'Dr. Meenakshi Sundaram', qual: 'BAMS, MD (Dravyaguna)', queue: 10, specialty: 'Dravyaguna', status: 'Available' }
-      ]
-    }
-  ]);
+  const [hospitalsData, setHospitalsData] = useState(() =>
+    generateNearbyHospitals(28.6139, 77.2090)
+  );
 
-  const [selectedHospital, setSelectedHospital] = useState(hospitalsData[0]);
+  const [selectedHospital, setSelectedHospital] = useState(null);
   const [dijkstraWaypoints, setDijkstraWaypoints] = useState([]);
   const [calculatingDijkstra, setCalculatingDijkstra] = useState(false);
 
-  // Compute distance for each hospital and sort by nearest
-  const hospitalsWithDistance = hospitalsData
-    .map((h) => ({
-      ...h,
-      distance_km: getDistanceKm(userPos.lat, userPos.lng, h.lat, h.lng),
-      est_minutes: Math.round(getDistanceKm(userPos.lat, userPos.lng, h.lat, h.lng) * 2.4)
-    }))
-    .sort((a, b) => a.distance_km - b.distance_km);
-
-  // Handle selecting a hospital to compute Dijkstra shortest path
-  const handleSelectHospital = (hosp) => {
-    setSelectedHospital(hosp);
-    setCalculatingDijkstra(true);
-
-    const points = computeDijkstraWaypoints(userPos.lat, userPos.lng, hosp.lat, hosp.lng);
-    setDijkstraWaypoints(points);
-
-    setTimeout(() => {
-      setCalculatingDijkstra(false);
-    }, 400);
-  };
-
-  // Initial calculation on mount or when userPos changes
+  // Re-generate nearby hospitals when userPos changes
   useEffect(() => {
-    if (hospitalsWithDistance.length > 0) {
-      const topHosp = hospitalsWithDistance[0];
+    const nearby = generateNearbyHospitals(userPos.lat, userPos.lng);
+    setHospitalsData(nearby);
+    if (nearby.length > 0) {
+      const topHosp = nearby[0];
       setSelectedHospital(topHosp);
       const points = computeDijkstraWaypoints(userPos.lat, userPos.lng, topHosp.lat, topHosp.lng);
       setDijkstraWaypoints(points);
