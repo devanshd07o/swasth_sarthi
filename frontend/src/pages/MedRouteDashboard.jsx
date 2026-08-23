@@ -471,7 +471,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
             <span className="text-[11px] font-bold text-slate-500">Select Card to View Route</span>
           </div>
 
-          <div className="space-y-4 h-[645px] overflow-y-auto pr-2">
+          <div className="space-y-4 h-[645px] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {filteredHospitals.map((h) => {
               const isSelected = selectedHospital?.id === h.id;
               return (
