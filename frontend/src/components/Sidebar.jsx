@@ -39,15 +39,14 @@ export default function Sidebar({
         { id: 'timeline', label: t('sidebar.timeline', 'My Health Timeline'), icon: FileText },
         { id: 'medroute', label: t('sidebar.medrouteEmergency', 'AYUSH Wellness Grid'), icon: HeartPulse },
       ];
-    } else if (role === 'hospital_admin') {
+    } else if (role === 'hospital_admin' || role === 'super_admin') {
       return [
-        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'AYUSH Wellness Grid'), icon: HeartPulse },
-        { id: 'inventory', label: t('sidebar.inventory', 'Panchakarma & Bed Inventory'), icon: Building2 },
-      ];
-    } else if (role === 'super_admin') {
-      return [
-        { id: 'national_analytics', label: t('sidebar.analytics', 'National Analytics'), icon: ShieldCheck },
-        { id: 'hospital_registry', label: t('sidebar.registry', 'Hospital Registry'), icon: Building2 },
+        { id: 'admin_command', label: t('sidebar.adminCommand', 'Ministry Command Portal'), icon: ShieldCheck },
+        { id: 'hospital_network', label: t('sidebar.hospitalNetwork', 'Pan-India Hospital Network'), icon: Building2 },
+        { id: 'doctor_roster', label: t('sidebar.doctorRoster', 'Vaidya Doctor Roster'), icon: Stethoscope },
+        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'MedRoute Emergency ICU Dispatch'), icon: HeartPulse },
+        { id: 'icu_inventory', label: t('sidebar.inventory', 'ICU & Bed Capacity Fleet'), icon: Activity },
+        { id: 'audit_logs', label: t('sidebar.auditLogs', 'ABDM Compliance Logs'), icon: FileText },
       ];
     } else if (role === 'doctor') {
       return [

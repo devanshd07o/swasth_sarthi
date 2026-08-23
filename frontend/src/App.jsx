@@ -74,10 +74,8 @@ export default function App() {
       const pId = userData.abha_id || userData.id || 'ABHA-9821-4501';
       setSelectedPatientId(pId);
       setActiveTab('triage');
-    } else if (userData.role === 'super_admin') {
-      setActiveTab('national_analytics');
-    } else if (userData.role === 'hospital_admin') {
-      setActiveTab('medroute');
+    } else if (userData.role === 'super_admin' || userData.role === 'hospital_admin') {
+      setActiveTab('admin_command');
     } else {
       setActiveTab('dashboard');
     }
@@ -238,20 +236,15 @@ export default function App() {
               </>
             )}
 
-            {/* HOSPITAL ADMIN ROLE TABS */}
-            {currentUser.role === 'hospital_admin' && (
+            {/* HOSPITAL ADMIN & SUPER ADMIN ROLE TABS */}
+            {(currentUser.role === 'hospital_admin' || currentUser.role === 'super_admin') && (
               <>
+                {activeTab === 'admin_command' && <SuperAdminPortal initialTab="hospitals" lang={lang} />}
+                {activeTab === 'hospital_network' && <SuperAdminPortal initialTab="hospitals" lang={lang} />}
+                {activeTab === 'doctor_roster' && <SuperAdminPortal initialTab="doctors" lang={lang} />}
                 {activeTab === 'medroute' && <MedRouteDashboard lang={lang} />}
-                {activeTab === 'inventory' && <MedRouteDashboard lang={lang} />}
-              </>
-            )}
-
-            {/* SUPER ADMIN ROLE TABS */}
-            {currentUser.role === 'super_admin' && (
-              <>
-                {(activeTab === 'national_analytics' || activeTab === 'hospital_registry') && (
-                  <SuperAdminPortal lang={lang} />
-                )}
+                {activeTab === 'icu_inventory' && <SuperAdminPortal initialTab="medroute" lang={lang} />}
+                {activeTab === 'audit_logs' && <SuperAdminPortal initialTab="audit" lang={lang} />}
               </>
             )}
 

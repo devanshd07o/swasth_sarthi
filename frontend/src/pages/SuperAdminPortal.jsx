@@ -25,9 +25,15 @@ import {
   Sparkles
 } from 'lucide-react';
 
-export default function SuperAdminPortal() {
+export default function SuperAdminPortal({ initialTab = 'hospitals' }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('hospitals'); // 'hospitals' | 'doctors' | 'medroute' | 'audit'
+  const [activeTab, setActiveTab] = useState(initialTab); // 'hospitals' | 'doctors' | 'medroute' | 'audit'
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortCol, setSortCol] = useState('id');
   const [sortDir, setSortDir] = useState('asc');
