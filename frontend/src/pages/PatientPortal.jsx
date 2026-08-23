@@ -912,48 +912,34 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               />
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm">
-              <div>
-                <span className="text-[10px] font-semibold text-slate-600 uppercase block">Attach Old Reports / Prescriptions</span>
-                <span className="text-[11px] font-medium text-slate-700">
-                  {patientDocs.length > 0 ? `${patientDocs.length} Documents Linked in Vault` : "No old records attached"}
-                </span>
+            {/* Attached Scanned Reports Section */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-semibold text-slate-600 uppercase block">Attach Old Reports / Prescriptions</span>
+                  <span className="text-[11px] font-medium text-slate-700">
+                    {patientDocs.length > 0 ? `${patientDocs.length} Documents Linked in Vault` : "No old records attached"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsVaultModalOpen(true)}
+                  className="px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-700 font-semibold rounded-lg border border-slate-200 text-xs flex items-center gap-1 cursor-pointer shadow-sm transition-all"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>+ Attach Scanned Report</span>
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsVaultModalOpen(true)}
-                className="px-3 py-1.5 bg-white hover:bg-slate-50 text-emerald-700 font-semibold rounded-lg border border-slate-200 text-xs flex items-center gap-1 cursor-pointer shadow-sm transition-all"
-              >
-                <UploadCloud className="w-3.5 h-3.5 text-emerald-600" />
-                <span>+ Attach Scanned Report</span>
-              </button>
-            </div>
 
-            <div className={`p-3.5 rounded-xl border shadow-sm transition-all flex items-center justify-between ${
-              isRedFlag ? 'bg-rose-50 border-rose-200' : 'bg-white border-slate-200'
-            }`}>
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-semibold uppercase text-slate-600 block">
-                  Priority Triage / Emergency Status
-                </span>
-                <span className={`text-[11px] font-bold ${isRedFlag ? 'text-rose-700 animate-pulse' : 'text-slate-500'}`}>
-                  {isRedFlag ? '🚨 Priority 1: Emergency Red-Flag Active' : 'Standard Routine OPD Queue'}
-                </span>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isRedFlag}
-                  onChange={(e) => {
-                    setIsRedFlag(e.target.checked);
-                    if (e.target.checked && !redFlagReason) {
-                      setRedFlagReason('Manual Emergency Override tagged during booking.');
-                    }
-                  }}
-                  className="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer"
-                />
-                <span className="text-xs font-semibold text-slate-800">Mark Emergency</span>
-              </label>
+              {patientDocs.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {patientDocs.map((doc, dIdx) => (
+                    <span key={dIdx} className="text-[10px] font-bold bg-white text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
+                      📄 {doc.file_name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center justify-between shadow-sm">
