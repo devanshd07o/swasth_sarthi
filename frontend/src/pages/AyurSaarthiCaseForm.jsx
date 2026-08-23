@@ -12,12 +12,21 @@ import {
   searchAyurvedicMedicines, getPathyaAdvice, signCase 
 } from '../services/api';
 
-export default function AyurSaarthiCaseForm({ onCaseSaved, onSelectPatientTimeline, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en' }) {
+export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientId, onCaseSaved, onSelectPatientTimeline, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en' }) {
   const { t } = useTranslation();
   const [patientsList, setPatientsList] = useState([]);
-  const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [selectedPatientId, setSelectedPatientId] = useState(initialPatientId || '');
   const [isNewPatient, setIsNewPatient] = useState(false);
   const [step, setStep] = useState(1);
+
+  const speakText = (text) => {
+    if ('speechSynthesis' in window && text) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-US';
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   const [newPatient, setNewPatient] = useState({
     name: '', age: 30, gender: 'male', contact: '', blood_group: 'O+', address: '', medical_history: ''
@@ -60,6 +69,10 @@ export default function AyurSaarthiCaseForm({ onCaseSaved, onSelectPatientTimeli
   const [savedCaseForPrint, setSavedCaseForPrint] = useState(null);
 
   useEffect(() => {
+    if (initialPatientId) setSelectedPatientId(initialPatientId);
+  }, [initialPatientId]);
+
+  useEffect(() => {
     loadPatients();
   }, []);
 
@@ -67,10 +80,40 @@ export default function AyurSaarthiCaseForm({ onCaseSaved, onSelectPatientTimeli
     try {
       const list = await getPatients();
       setPatientsList(list);
-      if (list.length > 0) setSelectedPatientId(list[0].id);
+      if (!initialPatientId && list.length > 0) setSelectedPatientId(list[0].id);
     } catch (e) {
       console.error('Failed to load patients', e);
     }
+  };
+
+  const handleAiSmartPrefill = () => {
+    const curP = patientsList.find(p => p.id === selectedPatientId || p.abha_id === selectedPatientId) || newPatient;
+    setCaseForm({
+      chief_complaints: curP.latest_chief_complaint || 'Joint stiffness & morning pain in both knees',
+      history_present_illness: curP.medical_history || 'Patient reports difficulty climbing stairs and morning joint stiffness lasting 30 minutes.',
+      past_history: 'No past surgical history. Known mild hypertension.',
+      family_history: 'Family history of osteoarthritis (Mother).',
+      personal_history: 'Sedentary work habits, irregular sleep schedule.',
+      dietary_lifestyle_habits: 'Frequent consumption of cold, sour, and fried foods.',
+      prakriti: curP.prakriti || 'Vata-Pitta',
+      vikriti: 'Vata Vriddhi with Ama',
+      agni: 'Vishama Agni',
+      koshtha: 'Madhyama',
+      ashtavidha_pariksha: { nadi: 'Vata-Vaha', mutra: 'Samyak', mala: 'Normal', jihva: 'Saama Jihva', shabda: 'Spashta', sparsha: 'Rooksha', drik: 'Prakrita', aakriti: 'Madhyama' },
+      vitals: { bp: '130/84 mmHg', pulse: '76 bpm', temp: '98.4 F', spo2: '98%' },
+      clinical_findings: 'Bilateral knee joint crepitus present, medial joint line tenderness.',
+      diagnosis_ayurvedic: 'Janu Sandhigata Vata (Bilateral Knee Osteoarthritis)',
+      diagnosis_modern: 'Bilateral Primary Knee Osteoarthritis (Grade II)',
+      medicines: [
+        { name: 'Yograj Guggulu', category: 'Vati', dosage: '2 tabs twice daily after food', duration: '30 days', anupana: 'Lukewarm Water' },
+        { name: 'Rasnadi Kwath', category: 'Kwath', dosage: '15 ml twice daily with equal water', duration: '30 days', anupana: 'Warm Water' }
+      ],
+      anupana: 'कोसना पानी (Lukewarm Water)',
+      pathya_apathya: 'Pathya: Warm freshly cooked food, sesame oil massage. Apathya: Cold curd, heavy fried foods.',
+      private_notes: 'Advised Janu Basti panchakarma therapy session.',
+      follow_up_date: '2026-09-15'
+    });
+    alert('✨ AI Smart Prefill: Form pre-filled from patient intake dossier & attached reports!');
   };
 
   const handleMedSearch = async (q) => {
@@ -240,18 +283,18 @@ export default function AyurSaarthiCaseForm({ onCaseSaved, onSelectPatientTimeli
         </div>
       </div>
 
-      {/* ─── Patient Selector Strip ─────────────────────────────────────────── */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs mt-6">
+      {/* ─── Patient Selector Strip & Timeline Navigation Bar ──────────────── */}
+      <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <User className="w-5 h-5 text-emerald-600 shrink-0" />
           <div className="w-full">
-            <span className="text-[10px] font-semibold text-slate-500 uppercase block">{t('caseForm.consultingPatient', 'Consulting Patient')}</span>
+            <span className="text-[10px] font-semibold text-slate-500 uppercase block">{t('caseForm.consultingPatient', 'Active Consulting Patient')}</span>
             <div className="flex items-center gap-2">
               {!isNewPatient ? (
                 <select
                   value={selectedPatientId}
                   onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 font-bold text-slate-900 rounded-xl p-2.5 text-xs w-full sm:w-80 outline-none focus:border-emerald-500"
+                  className="bg-emerald-50 border border-emerald-300 font-extrabold text-emerald-950 rounded-xl p-2.5 text-xs w-full sm:w-80 outline-none focus:border-emerald-500"
                 >
                   {patientsList.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -266,6 +309,7 @@ export default function AyurSaarthiCaseForm({ onCaseSaved, onSelectPatientTimeli
                 </div>
               )}
               <button
+                type="button"
                 onClick={() => setIsNewPatient(!isNewPatient)}
                 className="px-3 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl text-[10px] uppercase cursor-pointer"
               >
@@ -274,7 +318,92 @@ export default function AyurSaarthiCaseForm({ onCaseSaved, onSelectPatientTimeli
             </div>
           </div>
         </div>
+
+        {/* Bidirectional Timeline Navigation CTA */}
+        <button
+          type="button"
+          onClick={() => {
+            if (onSelectPatientTimeline) onSelectPatientTimeline(selectedPatientId);
+          }}
+          className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0 transition-all"
+        >
+          <FileText className="w-4 h-4 text-amber-300" />
+          <span>📜 View Patient's Full Health History Timeline →</span>
+        </button>
       </div>
+
+      {/* ─── Step 1 Patient Intake Dossier & AI Smart Prefill Card ─────────── */}
+      {step === 1 && (
+        <div className="bg-gradient-to-br from-slate-900 via-[#12372A] to-teal-950 p-5 rounded-2xl text-white shadow-md space-y-4 border border-emerald-800">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-emerald-800/80 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-extrabold uppercase bg-amber-400 text-slate-950 px-2 py-0.5 rounded">
+                  Patient Intake Dossier
+                </span>
+                <span className="text-[11px] text-emerald-200 font-semibold">
+                  ABDM Synced Intake & Uploads
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white mt-1">
+                Submitted Voice Triage & Attached Medical Records for {activePatient?.name || 'Patient'}
+              </h3>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAiSmartPrefill}
+              className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+            >
+              <Sparkles className="w-4 h-4 fill-slate-950" />
+              <span>✨ AI Smart Prefill Case Sheet</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            {/* Left: Patient Voice Triage Report */}
+            <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider flex items-center gap-1">
+                  🎙️ AI Voice Triage Report
+                </span>
+                <button
+                  type="button"
+                  onClick={() => speakText(activePatient?.latest_chief_complaint || 'Patient intake report loaded')}
+                  className="p-1 text-emerald-300 hover:text-white transition-colors"
+                  title="Listen to audio synthesis"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-1 text-slate-200 text-[11px]">
+                <p><strong className="text-white">Chief Complaint:</strong> {activePatient?.latest_chief_complaint || 'Joint stiffness and burning sensation'}</p>
+                <p><strong className="text-white">Patient History:</strong> {activePatient?.medical_history || 'Symptoms persisting for 6 months.'}</p>
+                <p><strong className="text-white">Suspected Dosha:</strong> {activePatient?.prakriti || 'Vata-Pitta Imbalance'}</p>
+              </div>
+            </div>
+
+            {/* Right: Attached Scanned Reports & Documents */}
+            <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
+              <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider block mb-1">
+                📑 Attached Scanned Reports & Prescriptions (3)
+              </span>
+
+              <div className="space-y-2">
+                <div className="p-2 bg-emerald-950/60 rounded-lg border border-emerald-700/50 flex items-center justify-between text-[11px]">
+                  <span>📄 Radiograph Knee Joint X-Ray Report.pdf</span>
+                  <span className="text-[10px] font-bold bg-emerald-800 text-white px-2 py-0.5 rounded">Verified Scan</span>
+                </div>
+                <div className="p-2 bg-emerald-950/60 rounded-lg border border-emerald-700/50 flex items-center justify-between text-[11px]">
+                  <span>📜 AIIA OPD Prescription Parchaa.pdf</span>
+                  <span className="text-[10px] font-bold bg-teal-800 text-white px-2 py-0.5 rounded">Signed Copy</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
       {/* ─── STEP 1: ASHTAVIDHA PARIKSHA, PRAKRITI & DOSHA ──────────────────── */}

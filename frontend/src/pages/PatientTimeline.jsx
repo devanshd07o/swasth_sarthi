@@ -8,7 +8,7 @@ import { getPatientTimeline, getPatients, getDoctorPatients } from '../services/
 import PrescriptionPrintModal from '../components/PrescriptionPrintModal';
 import DocumentVaultModal from '../components/DocumentVaultModal';
 
-export default function PatientTimeline({ patientId, onBack, onSelectPatientId, currentDoctorId = "DOC-AYUR-101" }) {
+export default function PatientTimeline({ patientId, onBack, onSelectPatientId, onOpenCaseSheet, currentDoctorId = "DOC-AYUR-101" }) {
   const { t } = useTranslation();
   const [activePatientId, setActivePatientId] = useState(patientId || '');
   const [allPatients, setAllPatients] = useState([]);
@@ -179,7 +179,17 @@ export default function PatientTimeline({ patientId, onBack, onSelectPatientId, 
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {onOpenCaseSheet && (
+            <button
+              onClick={() => onOpenCaseSheet(activePatientId)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <Stethoscope className="w-4 h-4 text-amber-300" />
+              <span>🩺 Open Active Case Sheet →</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsVaultModalOpen(true)}
             className="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"

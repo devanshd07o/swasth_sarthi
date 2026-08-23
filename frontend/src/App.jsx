@@ -88,6 +88,11 @@ export default function App() {
     localStorage.removeItem('ss_active_tab');
   };
 
+  const handleOpenCaseSheet = (patientId) => {
+    setSelectedPatientId(patientId);
+    setActiveTab('case_form');
+  };
+
   const handleOpenTimeline = (patientId) => {
     setSelectedPatientId(patientId);
     setActiveTab('timeline');
@@ -163,14 +168,27 @@ export default function App() {
                 {activeTab === 'dashboard' && (
                   <DoctorDashboard
                     onNewCase={() => setActiveTab('case_form')}
-                    onSelectPatient={handleOpenTimeline}
+                    onSelectPatient={handleOpenCaseSheet}
+                    onOpenTimeline={handleOpenTimeline}
                     currentDoctorId={currentUser?.doctor_id || currentUser?.id || "DOC-AYUR-101"}
                     currentUser={currentUser}
                     lang={lang}
                   />
                 )}
+                {activeTab === 'register' && (
+                  <DoctorDashboard
+                    onNewCase={() => setActiveTab('case_form')}
+                    onSelectPatient={handleOpenCaseSheet}
+                    onOpenTimeline={handleOpenTimeline}
+                    currentDoctorId={currentUser?.doctor_id || currentUser?.id || "DOC-AYUR-101"}
+                    currentUser={currentUser}
+                    lang={lang}
+                    initialFocusRegister={true}
+                  />
+                )}
                 {activeTab === 'case_form' && (
                   <AyurSaarthiCaseForm
+                    selectedPatientId={selectedPatientId}
                     onCaseSaved={() => setActiveTab('dashboard')}
                     onSelectPatientTimeline={handleOpenTimeline}
                     currentDoctorId={currentUser?.doctor_id || currentUser?.id || "DOC-AYUR-101"}
@@ -180,7 +198,7 @@ export default function App() {
                 )}
                 {activeTab === 'patients' && (
                   <PatientDirectory
-                    onSelectPatient={handleOpenTimeline}
+                    onSelectPatient={handleOpenCaseSheet}
                     onNewCase={() => setActiveTab('case_form')}
                     currentUser={currentUser}
                     lang={lang}
@@ -190,6 +208,7 @@ export default function App() {
                   <PatientTimeline
                     patientId={selectedPatientId}
                     onSelectPatientId={(id) => setSelectedPatientId(id)}
+                    onOpenCaseSheet={handleOpenCaseSheet}
                     onBack={() => setActiveTab('dashboard')}
                     currentUser={currentUser}
                     lang={lang}

@@ -55,6 +55,7 @@ export default function Sidebar({
         { id: 'case_form', label: t('sidebar.caseForm', 'Ashtavidha Case Sheet'), icon: Stethoscope },
         { id: 'patients', label: t('sidebar.patientDirectory', 'Patient Directory'), icon: Users },
         { id: 'timeline', label: t('sidebar.longitudinalHistory', 'Patient Timeline'), icon: FileText },
+        { id: 'register', label: t('sidebar.dailyRegister', 'Daily OPD Register'), icon: Activity },
         { id: 'medroute', label: t('sidebar.medrouteEmergency', 'AYUSH Wellness Grid'), icon: HeartPulse },
       ];
     } else {
