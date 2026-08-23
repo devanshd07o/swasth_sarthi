@@ -217,6 +217,28 @@ export default function MedRouteDashboard({ lang = 'en' }) {
     );
   };
 
+  // Compute distance for each hospital and sort by nearest
+  const hospitalsWithDistance = (hospitalsData || [])
+    .map((h) => ({
+      ...h,
+      distance_km: getDistanceKm(userPos.lat, userPos.lng, h.lat, h.lng),
+      est_minutes: Math.round(getDistanceKm(userPos.lat, userPos.lng, h.lat, h.lng) * 2.4)
+    }))
+    .sort((a, b) => a.distance_km - b.distance_km);
+
+  // Handle selecting a hospital to compute Dijkstra shortest path
+  const handleSelectHospital = (hosp) => {
+    setSelectedHospital(hosp);
+    setCalculatingDijkstra(true);
+
+    const points = computeDijkstraWaypoints(userPos.lat, userPos.lng, hosp.lat, hosp.lng);
+    setDijkstraWaypoints(points);
+
+    setTimeout(() => {
+      setCalculatingDijkstra(false);
+    }, 400);
+  };
+
   // Filter hospitals based on search & specialty
   const filteredHospitals = hospitalsWithDistance.filter((h) => {
     const matchesSearch =
