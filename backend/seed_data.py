@@ -3,10 +3,17 @@ from datetime import datetime, timedelta
 from database import SessionLocal, engine, Base
 import models
 
-def seed_database():
+def seed_database(force=False):
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     
+    # Check if doctors already exist
+    existing_user = db.query(models.User).first()
+    if existing_user and not force:
+        print("[+] Database already populated with clinical records. Instant startup ready.")
+        db.close()
+        return
+
     # Clean previous demo rows to cleanly re-populate rich data
     db.query(models.DoctorRating).delete()
     db.query(models.Document).delete()

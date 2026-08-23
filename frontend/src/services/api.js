@@ -44,8 +44,13 @@ export const getDoctorPatients = async (doctorId, search = '') => {
 
 // ─── Patient & ABHA APIs ─────────────────────────────────────────────────────
 export const lookupAbhaId = async (abhaId) => {
-  const res = await api.get(`/patients/lookup-abha/${encodeURIComponent(abhaId)}`);
-  return res.data;
+  try {
+    const res = await api.get(`/patients/lookup-abha/${encodeURIComponent(abhaId)}`);
+    return res.data;
+  } catch (err) {
+    console.warn('ABHA lookup error:', err);
+    return { found: false, patient: null, message: err.message };
+  }
 };
 
 export const getPatients = async (search = '') => {

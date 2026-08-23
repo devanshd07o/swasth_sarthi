@@ -14,7 +14,7 @@ def lookup_abha_id(abha_id: str, db: Session = Depends(get_db)):
     """
     Looks up patient by ABHA ID. Returns patient profile + consultation counts.
     """
-    clean_id = abha_id.strip()
+    clean_id = (abha_id or "").strip()
     patient = db.query(models.Patient).filter(
         (models.Patient.abha_id.ilike(clean_id)) | 
         (models.Patient.uhid.ilike(clean_id)) |
@@ -22,7 +22,12 @@ def lookup_abha_id(abha_id: str, db: Session = Depends(get_db)):
     ).first()
     
     if not patient:
-        raise HTTPException(status_code=404, detail="No patient record found for this ABHA ID")
+        return {
+            "found": False,
+            "patient": None,
+            "total_consultations": 0,
+            "message": f"No patient record found for ABHA ID '{clean_id}'"
+        }
     
     total_cases = db.query(models.PatientCase).filter(models.PatientCase.patient_id == patient.id).count()
     
