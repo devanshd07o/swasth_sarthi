@@ -189,6 +189,7 @@ export default function App() {
                 {activeTab === 'timeline' && (
                   <PatientTimeline
                     patientId={selectedPatientId}
+                    onSelectPatientId={(id) => setSelectedPatientId(id)}
                     onBack={() => setActiveTab('dashboard')}
                     currentUser={currentUser}
                     lang={lang}

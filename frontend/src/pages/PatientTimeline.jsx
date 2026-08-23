@@ -4,12 +4,14 @@ import {
   Lock, Unlock, Sparkles, UploadCloud, Eye, AlertTriangle, Stethoscope, Building2, CheckCircle2 
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getPatientTimeline } from '../services/api';
+import { getPatientTimeline, getPatients } from '../services/api';
 import PrescriptionPrintModal from '../components/PrescriptionPrintModal';
 import DocumentVaultModal from '../components/DocumentVaultModal';
 
-export default function PatientTimeline({ patientId, onBack, currentDoctorId = "DOC-AYUR-101" }) {
+export default function PatientTimeline({ patientId, onBack, onSelectPatientId, currentDoctorId = "DOC-AYUR-101" }) {
   const { t } = useTranslation();
+  const [activePatientId, setActivePatientId] = useState(patientId || 'ABHA-9821-4501');
+  const [allPatients, setAllPatients] = useState([]);
   const [timelineData, setTimelineData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activePrescriptionForPrint, setActivePrescriptionForPrint] = useState(null);
@@ -17,19 +19,42 @@ export default function PatientTimeline({ patientId, onBack, currentDoctorId = "
   const [selectedDocForOverlay, setSelectedDocForOverlay] = useState(null);
 
   useEffect(() => {
-    if (patientId) loadTimeline();
-  }, [patientId, currentDoctorId]);
+    if (patientId && patientId !== activePatientId) {
+      setActivePatientId(patientId);
+    }
+  }, [patientId]);
 
-  const loadTimeline = async () => {
+  useEffect(() => {
+    loadPatientsList();
+  }, []);
+
+  useEffect(() => {
+    if (activePatientId) loadTimeline(activePatientId);
+  }, [activePatientId, currentDoctorId]);
+
+  const loadPatientsList = async () => {
+    try {
+      const list = await getPatients();
+      setAllPatients(list || []);
+    } catch (_) {}
+  };
+
+  const loadTimeline = async (targetId) => {
     setLoading(true);
     try {
-      const data = await getPatientTimeline(patientId, currentDoctorId);
+      const idToFetch = targetId || activePatientId || 'ABHA-9821-4501';
+      const data = await getPatientTimeline(idToFetch, currentDoctorId);
       setTimelineData(data);
     } catch (e) {
       console.error('Failed to load patient timeline', e);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePatientSwitch = (newId) => {
+    setActivePatientId(newId);
+    if (onSelectPatientId) onSelectPatientId(newId);
   };
 
   if (loading) {
@@ -81,7 +106,33 @@ export default function PatientTimeline({ patientId, onBack, currentDoctorId = "
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Patient Switcher Dropdown */}
+          <div className="flex items-center gap-1.5 bg-emerald-50/70 p-1.5 rounded-xl border border-emerald-200">
+            <User className="w-4 h-4 text-emerald-700 ml-1 shrink-0" />
+            <select
+              value={activePatientId}
+              onChange={(e) => handlePatientSwitch(e.target.value)}
+              className="bg-transparent text-xs font-extrabold text-emerald-950 outline-none cursor-pointer py-1 pr-2"
+            >
+              {allPatients.length > 0 ? (
+                allPatients.map(p => (
+                  <option key={p.id || p.abha_id} value={p.id || p.abha_id}>
+                    {p.name} ({p.abha_id || p.uhid || 'ABHA'})
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="ABHA-9821-4501">Ramesh Sharma (ABHA-9821-4501)</option>
+                  <option value="ABHA-3412-8902">Sunita Sharma (ABHA-3412-8902)</option>
+                  <option value="ABHA-3344-1102">Priya Deshmukh (ABHA-3344-1102)</option>
+                  <option value="ABHA-5544-7788">Amitabh Verma (ABHA-5544-7788)</option>
+                  <option value="ABHA-7700-9999">Kailash Chandra (ABHA-7700-9999)</option>
+                </>
+              )}
+            </select>
+          </div>
+
           <button
             onClick={() => setIsVaultModalOpen(true)}
             className="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
