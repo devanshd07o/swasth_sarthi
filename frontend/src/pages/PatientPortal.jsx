@@ -25,12 +25,33 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
   const { t } = useTranslation();
 
   const [activeView, setActiveView] = useState('wizard_flow');
-  const [wizardStep, setWizardStep] = useState(1);
-  const [maxUnlockedStep, setMaxUnlockedStep] = useState(1);
+
+  const [wizardStep, setWizardStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ss_wizard_step');
+      return saved ? parseInt(saved, 10) : 1;
+    } catch (_) {
+      return 1;
+    }
+  });
+
+  const [maxUnlockedStep, setMaxUnlockedStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ss_max_unlocked_step');
+      return saved ? parseInt(saved, 10) : 1;
+    } catch (_) {
+      return 1;
+    }
+  });
 
   const changeWizardStep = (stepNum) => {
     setWizardStep(stepNum);
-    setMaxUnlockedStep(prev => Math.max(prev, stepNum));
+    setMaxUnlockedStep(prev => {
+      const nextMax = Math.max(prev, stepNum);
+      localStorage.setItem('ss_max_unlocked_step', String(nextMax));
+      return nextMax;
+    });
+    localStorage.setItem('ss_wizard_step', String(stepNum));
   };
 
   // Step 1 State
@@ -772,7 +793,7 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               toggleGapListening={toggleGapListening}
               handleSendToDoctor={handleSendToDoctor}
               handleResetIntake={handleResetIntake}
-              onBack={() => setWizardStep(1)} onNext={() => changeWizardStep(3)}
+              onBack={() => changeWizardStep(1)} onNext={() => changeWizardStep(3)}
             />
           )}
 
@@ -781,7 +802,7 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               patientDocs={patientDocs} setPatientDocs={setPatientDocs}
               isVaultModalOpen={isVaultModalOpen} setIsVaultModalOpen={setIsVaultModalOpen}
               activePatient={activePatient}
-              onBack={() => setWizardStep(2)} onNext={() => changeWizardStep(4)}
+              onBack={() => changeWizardStep(2)} onNext={() => changeWizardStep(4)}
             />
           )}
 
@@ -801,7 +822,7 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               bookingSuccessCase={bookingSuccessCase}
               timelineData={timelineData}
               setActiveView={setActiveView}
-              setWizardStep={setWizardStep}
+              setWizardStep={changeWizardStep}
               setActivePrescriptionForPrint={setActivePrescriptionForPrint}
               isDashboard={false}
             />
@@ -814,7 +835,7 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
           bookingSuccessCase={bookingSuccessCase}
           timelineData={timelineData}
           setActiveView={setActiveView}
-          setWizardStep={setWizardStep}
+          setWizardStep={changeWizardStep}
           setActivePrescriptionForPrint={setActivePrescriptionForPrint}
           isDashboard={true}
         />
