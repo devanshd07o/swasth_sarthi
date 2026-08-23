@@ -21,11 +21,8 @@ and bypass the entire OTP system.
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-import models
-from datetime import datetime, timedelta
-import secrets
 import logging
-
+from config import settings
 from jose import jwt
 import random
 

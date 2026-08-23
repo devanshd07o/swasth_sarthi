@@ -156,22 +156,22 @@ async def analyse_transcript_gaps(req: schemas.IntakeStructuringRequest):
     )
     user_prompt = f"Patient transcript: \"{transcript}\""
 
+    import json_repair
     parsed = None
     try:
         raw = _chat(
             messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}],
             model="openai/gpt-oss-120b",
             key_idx=0,
-            max_tokens=600
+            max_tokens=1000
         )
         if raw:
-            # Clean raw response
             clean_raw = raw.replace("```json", "").replace("```", "").strip()
             clean_raw = clean_raw.replace("\u2011", "-").replace("\u2013", "-").replace("\u2014", "-")
             match = _re.search(r"\{[\s\S]*\}", clean_raw)
             if match:
                 clean_raw = match.group(0).strip()
-            parsed = _json.loads(clean_raw)
+            parsed = json_repair.loads(clean_raw)
     except Exception as err:
         print("Analyse gaps LLM parse error:", err)
 
@@ -276,13 +276,14 @@ async def complete_full_structuring(req: schemas.CompleteStructuringRequest):
         f"Follow-up answers:\n{qa_context if qa_context else 'No additional information provided.'}"
     )
 
+    import json_repair
     parsed = None
     try:
         raw = _chat(
             messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}],
             model="openai/gpt-oss-120b",
             key_idx=0,
-            max_tokens=1500
+            max_tokens=1800
         )
         if raw:
             clean_raw = raw.replace("```json", "").replace("```", "").strip()
@@ -291,7 +292,7 @@ async def complete_full_structuring(req: schemas.CompleteStructuringRequest):
             match = _re.search(r"\{[\s\S]*\}", clean_raw)
             if match:
                 clean_raw = match.group(0).strip()
-            parsed = _json.loads(clean_raw)
+            parsed = json_repair.loads(clean_raw)
     except Exception as err:
         print("Complete structuring LLM parse error:", err)
 
