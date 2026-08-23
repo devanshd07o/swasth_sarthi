@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // Pre-load all 6 robot frames into browser memory for zero lag
 const ROBOT_FRAMES = [
-  '/robot_frames/robot_1.png',
-  '/robot_frames/robot_2.png',
-  '/robot_frames/robot_3.png',
-  '/robot_frames/robot_4.png',
-  '/robot_frames/robot_5.png',
-  '/robot_frames/robot_6.png',
+  '/robot_frames/robot_1.png', // 0: Eyes Wide Open (Default)
+  '/robot_frames/robot_2.png', // 1: Slight Eyelid Dip (25%)
+  '/robot_frames/robot_3.png', // 2: Half Eyelid Dip (50%)
+  '/robot_frames/robot_4.png', // 3: Closing Eyelid (75%)
+  '/robot_frames/robot_5.png', // 4: Nearly Closed (90%)
+  '/robot_frames/robot_6.png', // 5: Fully Closed Eyes (100% Blink)
 ];
 
 export default function RobotAvatarAnimation({
@@ -17,8 +17,9 @@ export default function RobotAvatarAnimation({
   onClick = null
 }) {
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
+  const isBlinkingRef = useRef(false);
 
-  // Pre-load frames on mount
+  // Pre-load all 6 images on mount
   useEffect(() => {
     ROBOT_FRAMES.forEach((src) => {
       const img = new Image();
@@ -26,36 +27,73 @@ export default function RobotAvatarAnimation({
     });
   }, []);
 
-  // Controlled natural frame animation loop
+  // Natural Eye-Blink & State-Based Motion Logic
   useEffect(() => {
-    let intervalId = null;
+    let mainTimer = null;
+    let blinkTimeout = null;
 
-    if (state === 'listening') {
-      intervalId = setInterval(() => {
-        setCurrentFrameIndex((prev) => (prev + 1) % ROBOT_FRAMES.length);
-      }, 160);
-    } else if (state === 'speaking') {
-      intervalId = setInterval(() => {
-        setCurrentFrameIndex((prev) => (prev + 1) % ROBOT_FRAMES.length);
+    if (state === 'speaking') {
+      // Mouth / Eye movement synced to speech rhythm (frames 0 -> 1 -> 2 -> 3 -> 2 -> 1 -> 0)
+      const speechSequence = [0, 1, 2, 3, 2, 1, 0, 1, 4, 1];
+      let idx = 0;
+      mainTimer = setInterval(() => {
+        idx = (idx + 1) % speechSequence.length;
+        setCurrentFrameIndex(speechSequence[idx]);
       }, 140);
-    } else if (state === 'thinking') {
-      intervalId = setInterval(() => {
-        setCurrentFrameIndex((prev) => (prev % 3) + 1);
+    } else if (state === 'listening') {
+      // Attentive wide-eyed pose with periodic quick dip
+      const listenSequence = [0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 1, 0];
+      let idx = 0;
+      mainTimer = setInterval(() => {
+        idx = (idx + 1) % listenSequence.length;
+        setCurrentFrameIndex(listenSequence[idx]);
       }, 200);
+    } else if (state === 'thinking') {
+      // Thoughtful eye-narrowing (frames 1 -> 2 -> 3 -> 2 -> 1)
+      const thinkSequence = [1, 2, 3, 2, 1, 2];
+      let idx = 0;
+      mainTimer = setInterval(() => {
+        idx = (idx + 1) % thinkSequence.length;
+        setCurrentFrameIndex(thinkSequence[idx]);
+      }, 220);
     } else {
-      // IDLE MODE (Alive & Organic): Gentle ping-pong breathing sequence (0 -> 1 -> 2 -> 1 -> 0 -> 5 -> 0)
-      // Slow 350ms per frame so it feels calm, responsive, and continuously alive
-      const idleSequence = [0, 1, 2, 1, 0, 0, 5, 0, 0, 1, 2, 3, 4, 5, 0];
-      let step = 0;
+      // 🌿 NATURAL IDLE MODE:
+      // Default to frame 0 (eyes wide open). Character stays on frame 0 ~92% of the time.
+      // Every 3.8 - 5.5 seconds, executes a fast, natural 280ms eye-blink sequence (0 -> 1 -> 2 -> 4 -> 5 -> 4 -> 2 -> 1 -> 0).
+      setCurrentFrameIndex(0);
 
-      intervalId = setInterval(() => {
-        step = (step + 1) % idleSequence.length;
-        setCurrentFrameIndex(idleSequence[step]);
-      }, 320);
+      const triggerNaturalBlink = () => {
+        if (isBlinkingRef.current) return;
+        isBlinkingRef.current = true;
+
+        // Realistic fast blink sequence (approx 35ms per frame)
+        const blinkSteps = [0, 1, 2, 4, 5, 4, 2, 1, 0];
+        let stepIndex = 0;
+
+        const blinkInterval = setInterval(() => {
+          stepIndex++;
+          if (stepIndex < blinkSteps.length) {
+            setCurrentFrameIndex(blinkSteps[stepIndex]);
+          } else {
+            clearInterval(blinkInterval);
+            setCurrentFrameIndex(0); // Return to default eyes-open
+            isBlinkingRef.current = false;
+            
+            // Schedule next blink randomly between 3.8s and 5.5s
+            const nextBlinkDelay = Math.floor(Math.random() * 1700) + 3800;
+            blinkTimeout = setTimeout(triggerNaturalBlink, nextBlinkDelay);
+          }
+        }, 35);
+      };
+
+      // Start initial blink timer
+      const initialDelay = Math.floor(Math.random() * 1500) + 2500;
+      blinkTimeout = setTimeout(triggerNaturalBlink, initialDelay);
     }
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (mainTimer) clearInterval(mainTimer);
+      if (blinkTimeout) clearTimeout(blinkTimeout);
     };
   }, [state]);
 
