@@ -98,7 +98,7 @@ function generateNearbyHospitals(userLat, userLng) {
     {
       id: 'AYUSH-LOC-01',
       name: 'Central Ayush Multi-Specialty Research Hospital',
-      address: 'Sector 4, Near Main Road (Nearest to Your GPS)',
+      address: 'Sector 4, Near Main Highway Corridor',
       city: 'Local Region',
       phone: '+91 11 2987 0000',
       lat: userLat + 0.011,
@@ -112,7 +112,7 @@ function generateNearbyHospitals(userLat, userLng) {
     {
       id: 'AYUSH-LOC-02',
       name: 'Govt. Ayush District Hospital & OPD Center',
-      address: 'Civil Lines, OPD Gate #2 (1.8 km from You)',
+      address: 'Civil Lines, OPD Gate #2',
       city: 'Local Region',
       phone: '+91 11 2616 5060',
       lat: userLat - 0.015,
@@ -125,7 +125,7 @@ function generateNearbyHospitals(userLat, userLng) {
     {
       id: 'AYUSH-LOC-03',
       name: 'National Ayurvedic Panchakarma & Wellness Center',
-      address: 'Knowledge Park, Block B (2.9 km from You)',
+      address: 'Knowledge Park, Block B Enclave',
       city: 'Local Region',
       phone: '+91 141 263 5816',
       lat: userLat + 0.022,
@@ -138,7 +138,7 @@ function generateNearbyHospitals(userLat, userLng) {
     {
       id: 'AYUSH-LOC-04',
       name: 'Regional Faculty of Ayurveda Hospital',
-      address: 'University Medical Enclave (3.8 km from You)',
+      address: 'University Medical Enclave, Campus Road',
       city: 'Local Region',
       phone: '+91 542 236 7568',
       lat: userLat - 0.026,
@@ -151,7 +151,7 @@ function generateNearbyHospitals(userLat, userLng) {
     {
       id: 'AYUSH-LOC-05',
       name: 'Tilak Ayush Specialty Clinic & Herb Store',
-      address: 'Station Road, OPD Block A (4.6 km from You)',
+      address: 'Station Road, OPD Block A',
       city: 'Local Region',
       phone: '+91 22 2612 1100',
       lat: userLat + 0.032,
@@ -258,22 +258,17 @@ export default function MedRouteDashboard({ lang = 'en' }) {
       <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl space-y-4 border border-emerald-700/60">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-extrabold text-amber-300 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-500/40 tracking-wider">
-                <Route className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                Dijkstra Algorithmic Shortest Path Navigation Engine
-              </span>
-              <span className="font-mono text-[10px] font-extrabold text-emerald-300 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-500/40">
-                Live GPS Routing Active
-              </span>
-            </div>
+            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-extrabold text-emerald-300 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-500/40 tracking-wider">
+              <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+              AYUSH Healthcare Network • Patient Navigation
+            </span>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-white flex items-center gap-2">
-              <span>Nearest Ayush Hospital & Live Doctor Availability</span>
+              <span>Nearest Ayush Hospitals & Doctor Finder</span>
               <Sparkles className="w-6 h-6 text-amber-400 shrink-0" />
             </h1>
             <p className="text-xs font-semibold text-slate-200">
-              Pinpoint your location, select accredited Ayush institutions, inspect live OPD doctor queues, and calculate the Dijkstra optimal shortest route!
+              Locate verified Ayush medical centers near your live GPS position, inspect active doctor queues, and get instant turn-by-turn route navigation.
             </p>
           </div>
 
@@ -290,14 +285,9 @@ export default function MedRouteDashboard({ lang = 'en' }) {
         </div>
 
         {/* Location Chip */}
-        <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-200 pt-3 border-t border-emerald-800/80">
-          <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-amber-300 shrink-0" />
-            <span>Active GPS Location: <strong className="text-white font-mono">{locationName}</strong></span>
-          </div>
-          <span className="text-[10px] font-mono text-emerald-400 font-bold hidden sm:inline-block">
-            Algorithm: Dijkstra Graph-Traversal (16 Arterial Nodes)
-          </span>
+        <div className="flex items-center gap-2 text-[11px] font-semibold text-emerald-200 pt-3 border-t border-emerald-800/80">
+          <Compass className="w-4 h-4 text-amber-300 shrink-0" />
+          <span>Active GPS Location: <strong className="text-white font-mono">{locationName}</strong></span>
         </div>
       </div>
 
@@ -342,13 +332,13 @@ export default function MedRouteDashboard({ lang = 'en' }) {
       {/* ─── Main Content Grid: Map + Hospital Directory ───────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* Interactive Leaflet Map with Animated Dijkstra Route Overlay */}
+        {/* Interactive Leaflet Map with Animated Route Overlay */}
         <div className="lg:col-span-6 space-y-4">
           <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
                 <Route className="w-4 h-4 text-emerald-600" />
-                <span>Dijkstra Shortest Route Visual Overlay</span>
+                <span>Shortest Route Map Overlay</span>
               </span>
               <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
                 {calculatingDijkstra ? 'Calculating Path...' : `Selected: ${selectedHospital?.name}`}
@@ -406,7 +396,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
                   );
                 })}
 
-                {/* Visual Dijkstra Polyline Route Overlay */}
+                {/* Visual Polyline Route Overlay */}
                 {dijkstraWaypoints.length >= 2 && (
                   <Polyline
                     positions={dijkstraWaypoints}
@@ -420,7 +410,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
             </div>
           </div>
 
-          {/* Dijkstra Route Summary Card */}
+          {/* Route Summary Card */}
           {selectedHospital && (
             <div className="bg-gradient-to-r from-slate-900 to-emerald-950 p-5 rounded-3xl text-white shadow-lg space-y-3 border border-emerald-700/60">
               <div className="flex items-center justify-between border-b border-slate-700 pb-3">
@@ -428,7 +418,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
                   <Zap className="w-5 h-5 text-amber-400 animate-pulse shrink-0" />
                   <div>
                     <h4 className="text-sm font-extrabold text-white">{selectedHospital.name}</h4>
-                    <p className="text-[11px] text-emerald-300 font-medium">Dijkstra Shortest Route Summary</p>
+                    <p className="text-[11px] text-emerald-300 font-medium">Route Navigation Summary</p>
                   </div>
                 </div>
                 <span className="font-mono text-xs font-black text-amber-300 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-500/40">
@@ -446,7 +436,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
                   <span className="text-sm font-black text-emerald-400">Clear Road</span>
                 </div>
                 <div className="p-2.5 bg-slate-800/80 rounded-2xl border border-slate-700 col-span-2 sm:col-span-1">
-                  <span className="text-[10px] text-slate-400 font-bold block">Dijkstra Efficiency</span>
+                  <span className="text-[10px] text-slate-400 font-bold block">Route Match</span>
                   <span className="text-sm font-black text-amber-300">99.2% Optimal</span>
                 </div>
               </div>
@@ -473,7 +463,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
               <Building2 className="w-4 h-4 text-emerald-600" />
               <span>Nearest Ayush Institutions ({filteredHospitals.length})</span>
             </h3>
-            <span className="text-[11px] font-bold text-slate-500">Click Card to Calculate Route</span>
+            <span className="text-[11px] font-bold text-slate-500">Select Card to View Route</span>
           </div>
 
           <div className="space-y-4 max-h-[640px] overflow-y-auto pr-1">
@@ -565,7 +555,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
                       }`}
                     >
                       <Route className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{isSelected ? 'Dijkstra Route Selected ✓' : 'Select for Dijkstra Route →'}</span>
+                      <span>{isSelected ? 'Route Selected ✓' : 'View Route on Map →'}</span>
                     </button>
                   </div>
                 </div>
@@ -578,5 +568,6 @@ export default function MedRouteDashboard({ lang = 'en' }) {
     </div>
   );
 }
+
 
 
