@@ -256,44 +256,173 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
   return (
     <div className="max-w-7xl mx-auto p-1 sm:p-2 space-y-4">
 
-      {/* Document Overlay Preview Modal */}
+      {/* ─── Real Visual Medical Document / PDF / Image Viewer Modal ─────── */}
       {previewDocModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-xl border border-slate-100">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-emerald-600" />
-                <span>{previewDocModal.title}</span>
-              </h3>
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-4xl w-full h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+            
+            {/* Modal Top Bar */}
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                    <span>{previewDocModal.title}</span>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                      {previewDocModal.type === 'image' ? '🖼️ Image Scan' : previewDocModal.type === 'triage_report' ? '🎙️ AI Voice Report' : '📄 Official PDF Document'}
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Issued by: {previewDocModal.issuer} • Date: {previewDocModal.date} • ABDM Verified HIP ID: HIP-DEL-8812
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => alert(`Downloading official document: ${previewDocModal.title}`)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print / Download</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDocModal(null)}
+                  className="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-xl cursor-pointer transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Document Content Viewport */}
+            <div className="flex-1 bg-slate-200 p-4 sm:p-6 overflow-y-auto flex items-center justify-center">
+              
+              {/* PDF Document Viewer Layout */}
+              {previewDocModal.type === 'pdf' && (
+                <div className="bg-white max-w-2xl w-full p-8 rounded-xl shadow-lg border border-slate-300 space-y-6 text-slate-900 font-serif text-xs leading-relaxed">
+                  <div className="border-b-2 border-slate-900 pb-4 flex items-center justify-between">
+                    <div>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 block font-sans">MINISTRY OF AYUSH • ABDM HIP REGISTERED</span>
+                      <h2 className="text-lg font-bold text-slate-900 tracking-tight">{previewDocModal.issuer}</h2>
+                      <p className="text-[10px] text-slate-500 font-sans">AIIA Hospital Complex, Sarita Vihar, New Delhi - 110076</p>
+                    </div>
+                    <div className="w-14 h-14 bg-slate-100 border border-slate-300 rounded-lg flex flex-col items-center justify-center text-[9px] font-bold text-slate-600 font-sans text-center p-1">
+                      <span>ABDM</span>
+                      <span>VERIFIED</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 font-sans text-[11px] bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <p><strong>Patient Name:</strong> {activePatient?.name || 'Ramesh Sharma'}</p>
+                    <p><strong>ABHA ID:</strong> {activePatient?.abha_id || 'ABHA-9821-4501'}</p>
+                    <p><strong>Age / Gender:</strong> {activePatient?.age || 42} Yrs / {activePatient?.gender ? activePatient.gender.toUpperCase() : 'MALE'}</p>
+                    <p><strong>Report Date:</strong> {previewDocModal.date}</p>
+                  </div>
+
+                  <div className="space-y-3 font-sans">
+                    <h4 className="font-sans font-bold text-xs text-slate-900 uppercase border-b border-slate-200 pb-1">Radiological Findings & Summary</h4>
+                    <p className="text-slate-800 text-xs font-sans leading-relaxed">{previewDocModal.summary}</p>
+                    {previewDocModal.details && (
+                      <div className="p-3 bg-slate-100 rounded-lg text-[11px] font-sans space-y-1 text-slate-700">
+                        {previewDocModal.details.map((d, i) => (
+                          <p key={i}>• {d}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-6 border-t border-slate-200 flex items-center justify-between font-sans text-[10px]">
+                    <div>
+                      <p className="font-bold text-emerald-800">✓ Digitally Signed via ABDM HIP Security Gate</p>
+                      <p className="text-slate-400">Timestamp: 2026-08-23T10:30:00Z</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-slate-900">Dr. Rajesh Vaidya, BAMS MD</p>
+                      <p className="text-slate-500">Reg No: AYUSH-REG-DEL-2012-4412</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Image / Scan Viewer Layout */}
+              {previewDocModal.type === 'image' && (
+                <div className="max-w-3xl w-full bg-slate-900 p-4 rounded-2xl shadow-xl flex flex-col items-center space-y-3">
+                  <img
+                    src={previewDocModal.imageUrl || "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800&auto=format&fit=crop&q=80"}
+                    alt={previewDocModal.title}
+                    className="max-h-[60vh] w-auto object-contain rounded-xl border border-slate-700 shadow-md"
+                  />
+                  <div className="bg-slate-800 p-3 rounded-xl w-full text-xs text-slate-200 font-sans space-y-1">
+                    <p className="font-bold text-amber-300">Image Scan Details: {previewDocModal.title}</p>
+                    <p className="text-[11px] text-slate-300">{previewDocModal.summary}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Patient AI Voice Triage Report Layout */}
+              {previewDocModal.type === 'triage_report' && (
+                <div className="bg-white max-w-2xl w-full p-8 rounded-xl shadow-lg border border-emerald-300 space-y-5 text-slate-900 font-sans text-xs">
+                  <div className="border-b-2 border-emerald-700 pb-3 flex items-center justify-between">
+                    <div>
+                      <span className="text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded">
+                        OFFICIAL PATIENT SELF-TRIAGE PARCHAA
+                      </span>
+                      <h2 className="text-base font-bold text-slate-900 mt-1">SwasthSaarthi AI Symptom Triage Report</h2>
+                    </div>
+                    <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                      Generated at Intake
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200 space-y-2">
+                    <span className="font-extrabold text-emerald-900 text-xs block">
+                      🎙️ Recorded Voice Audio Transcript:
+                    </span>
+                    <p className="text-slate-800 italic bg-white p-3 rounded-lg border border-emerald-100 text-xs leading-relaxed">
+                      "Mujhe pichle 6 mahine se dono ghutno me subah uthte hi severe dard aur akadahat hoti hai. Stair climb karte waqt katar-katar ki sound aati hai. Sardi me dard badh jaata hai."
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-500 text-[10px] uppercase block">Chief Complaints</span>
+                      <p className="font-bold text-slate-900 mt-0.5">{activePatient?.latest_chief_complaint || 'Joint stiffness & morning pain in both knees'}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <span className="font-bold text-slate-500 text-[10px] uppercase block">Suspected Dosha</span>
+                      <p className="font-bold text-emerald-800 mt-0.5">{activePatient?.prakriti || 'Vata-Pitta Imbalance (Vata Vriddhi)'}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <span className="font-bold text-slate-700 text-xs block">AI Clinical Recommendations for Doctor:</span>
+                    <ul className="list-disc list-inside text-slate-700 text-[11px] space-y-1">
+                      <li>Check Ashtavidha Pariksha for Vata-Vaha Nadi pulse rhythm and Rooksha Sparsha.</li>
+                      <li>Evaluate medial joint line tenderness and crepitus during flexion.</li>
+                      <li>Consider prescribing Yograj Guggulu with lukewarm water anupana and Janu Basti therapy.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Bottom Bar */}
+            <div className="px-5 py-3 bg-slate-100 border-t border-slate-200 flex justify-end shrink-0">
               <button
                 type="button"
                 onClick={() => setPreviewDocModal(null)}
-                className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1 bg-slate-100 rounded-lg cursor-pointer"
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
               >
-                Close ✕
+                Close Document Viewer
               </button>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-3">
-              <div className="flex justify-between font-bold text-slate-900 border-b pb-2">
-                <span>Issuer: {previewDocModal.issuer}</span>
-                <span>Date: {previewDocModal.date}</span>
-              </div>
-              <p className="font-medium">{previewDocModal.summary}</p>
-              <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-[11px] font-semibold text-emerald-900">
-                ✓ ABDM Central Health Records (HIP Verified Signature)
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setPreviewDocModal(null)}
-                className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
-              >
-                Done Reviewing
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -422,65 +551,100 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
               
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
                 <div>
-                  <span className="text-[10px] font-bold text-emerald-800 uppercase block mb-1">Radiology Scan</span>
+                  <span className="text-[10px] font-bold text-emerald-800 uppercase block mb-1">📄 Official PDF Document</span>
                   <h4 className="font-bold text-slate-900 text-xs">Knee Joint X-Ray Report.pdf</h4>
                   <p className="text-[10px] text-slate-500 mt-1">Bilateral Knee AP/Lateral view. Medial joint space narrowing.</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPreviewDocModal({
+                    type: 'pdf',
                     title: 'Radiograph Knee Joint X-Ray Report.pdf',
                     issuer: 'AIIA Department of Radiodiagnosis',
                     date: '2026-08-10',
-                    summary: 'Findings: Grade II Osteoarthritis of bilateral knee joints with subchondral sclerosis and medial joint space reduction.'
+                    summary: 'Findings: Grade II Osteoarthritis of bilateral knee joints with subchondral sclerosis and medial joint space reduction.',
+                    details: [
+                      'Both knee joints show osteophytic lipping along joint margins.',
+                      'Reduction of medial joint space noted in both knees.',
+                      'No evidence of acute bony erosion or fracture.'
+                    ]
                   })}
                   className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
                 >
-                  👁️ View Full Document →
+                  👁️ Open Official PDF →
                 </button>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
                 <div>
-                  <span className="text-[10px] font-bold text-teal-800 uppercase block mb-1">Prescription Parchaa</span>
+                  <span className="text-[10px] font-bold text-amber-800 uppercase block mb-1">🖼️ Scanned Medical Image</span>
+                  <h4 className="font-bold text-slate-900 text-xs">Radiograph X-Ray Scan.jpg</h4>
+                  <p className="text-[10px] text-slate-500 mt-1">High-resolution radiographic scan image submitted by patient.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDocModal({
+                    type: 'image',
+                    title: 'Radiograph Knee Joint X-Ray Image Scan',
+                    issuer: 'Patient Upload / Diagnostic Scan',
+                    date: '2026-08-10',
+                    summary: 'High-resolution digital radiograph scan image showing bilateral knee joint alignment.',
+                    imageUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800&auto=format&fit=crop&q=80'
+                  })}
+                  className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
+                >
+                  👁️ View Scan Image →
+                </button>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
+                <div>
+                  <span className="text-[10px] font-bold text-teal-800 uppercase block mb-1">📜 OPD Prescription PDF</span>
                   <h4 className="font-bold text-slate-900 text-xs">AIIA OPD Prescription.pdf</h4>
                   <p className="text-[10px] text-slate-500 mt-1">Previous 30-day course of Yograj Guggulu & Rasnadi Kwath.</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPreviewDocModal({
+                    type: 'pdf',
                     title: 'AIIA OPD Prescription Parchaa.pdf',
                     issuer: 'Dr. Rajesh Vaidya, BAMS MD',
                     date: '2026-07-15',
-                    summary: 'Rx: Yograj Guggulu 2 tabs BID, Rasnadi Kwath 15ml BID with equal warm water.'
+                    summary: 'Rx: Yograj Guggulu 2 tabs BID after food, Rasnadi Kwath 15ml BID with equal warm water.',
+                    details: [
+                      'Yograj Guggulu — 2 tablets twice daily with warm water',
+                      'Rasnadi Kwath — 15 ml twice daily with equal warm water',
+                      'Janu Basti local panchakarma session advised'
+                    ]
                   })}
                   className="w-full py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
                 >
-                  👁️ View Full Document →
+                  👁️ Open Official PDF →
                 </button>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
                 <div>
-                  <span className="text-[10px] font-bold text-purple-800 uppercase block mb-1">Pathology Lab</span>
-                  <h4 className="font-bold text-slate-900 text-xs">Blood & ESR Test Report.pdf</h4>
-                  <p className="text-[10px] text-slate-500 mt-1">ESR: 28 mm/hr, Hb: 13.8 g/dl, Uric Acid: 5.2 mg/dl.</p>
+                  <span className="text-[10px] font-bold text-purple-800 uppercase block mb-1">🎙️ AI Voice Triage Report</span>
+                  <h4 className="font-bold text-slate-900 text-xs">Patient Self-Intake Triage.pdf</h4>
+                  <p className="text-[10px] text-slate-500 mt-1">Generated report from patient's voice intake triage session.</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPreviewDocModal({
-                    title: 'Blood & ESR Test Report.pdf',
-                    issuer: 'National Diagnostics Lab',
-                    date: '2026-08-05',
-                    summary: 'Hb: 13.8, TLC: 7,400, ESR: 28 mm/hr (Mild elevation), Uric Acid: 5.2 mg/dl (Normal).'
+                    type: 'triage_report',
+                    title: 'Patient Self-Intake Voice Triage Parchaa',
+                    issuer: 'SwasthSaarthi AI Triage System',
+                    date: '2026-08-23',
+                    summary: 'Voice Triage Parchaa generated from patient self-reported symptoms.'
                   })}
                   className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
                 >
-                  👁️ View Full Document →
+                  👁️ View AI Triage Report →
                 </button>
               </div>
 
