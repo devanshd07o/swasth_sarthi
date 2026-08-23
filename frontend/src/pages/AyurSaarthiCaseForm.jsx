@@ -289,22 +289,33 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
         </div>
       )}
 
-      {/* ─── Top Clinical Header ────────────────────────────────────────────── */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      {/* ─── Top Clinical Header & Patient Selector Dropdown ────────────────── */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <img
             src={activePatient?.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80"}
             alt={activePatient?.name || "Patient"}
             className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-xs shrink-0"
           />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-extrabold text-slate-900">{activePatient?.name || "Ramesh Sharma"}</span>
+          <div className="space-y-1 w-full sm:w-auto">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-slate-700 uppercase">Consulting Patient:</span>
+              <select
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                className="px-3 py-1.5 bg-emerald-50 border border-emerald-300 rounded-xl font-extrabold text-xs text-emerald-950 outline-none cursor-pointer"
+              >
+                {patientsList.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.abha_id || p.uhid})
+                  </option>
+                ))}
+              </select>
               <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full">
                 {activePatient?.abha_id || activePatient?.uhid || "ABHA-9821-4501"}
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
+            <p className="text-xs text-slate-500 font-medium">
               {activePatient?.gender ? activePatient.gender.toUpperCase() : 'MALE'} • {activePatient?.age || 42} yrs • Blood: {activePatient?.blood_group || 'B+'} • Mobile: {activePatient?.contact || '+91 98210 45010'}
             </p>
           </div>

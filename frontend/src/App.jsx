@@ -9,6 +9,7 @@ import AyurSaarthiCaseForm from './pages/AyurSaarthiCaseForm';
 import PatientTimeline from './pages/PatientTimeline';
 import PatientDirectory from './pages/PatientDirectory';
 import DoctorDashboard from './pages/DoctorDashboard';
+import DailyOPDRegister from './pages/DailyOPDRegister';
 import MedRouteDashboard from './pages/MedRouteDashboard';
 import PatientPortal from './pages/PatientPortal';
 import SuperAdminPortal from './pages/SuperAdminPortal';
@@ -176,14 +177,12 @@ export default function App() {
                   />
                 )}
                 {activeTab === 'register' && (
-                  <DoctorDashboard
-                    onNewCase={() => setActiveTab('case_form')}
+                  <DailyOPDRegister
                     onSelectPatient={handleOpenCaseSheet}
-                    onOpenTimeline={handleOpenTimeline}
+                    onOpenCaseSheet={handleOpenCaseSheet}
                     currentDoctorId={currentUser?.doctor_id || currentUser?.id || "DOC-AYUR-101"}
                     currentUser={currentUser}
                     lang={lang}
-                    initialFocusRegister={true}
                   />
                 )}
                 {activeTab === 'case_form' && (
