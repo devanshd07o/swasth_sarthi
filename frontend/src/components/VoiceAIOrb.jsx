@@ -127,10 +127,16 @@ export default function VoiceAIOrb({ lang = 'en' }) {
 
   const recognitionRef = useRef(null);
   const silenceTimerRef = useRef(null);
+  const autoListenTimerRef = useRef(null);
   const audioPlayerRef = useRef(null);
   const currentBlobUrlRef = useRef(null);
   const stateRef = useRef('idle');
   const isTtsEnabledRef = useRef(true);
+  const isExpandedRef = useRef(false);
+
+  useEffect(() => {
+    isExpandedRef.current = isExpanded;
+  }, [isExpanded]);
 
   useEffect(() => {
     stateRef.current = aiState;
@@ -155,12 +161,23 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         URL.revokeObjectURL(currentBlobUrlRef.current);
       }
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (autoListenTimerRef.current) clearTimeout(autoListenTimerRef.current);
       if (recognitionRef.current) {
         try { recognitionRef.current.abort(); } catch (_) {}
       }
       window.speechSynthesis?.cancel();
     };
   }, []);
+
+  const onSpeechFinish = useCallback(() => {
+    setAiState('idle');
+    if (autoListenTimerRef.current) clearTimeout(autoListenTimerRef.current);
+    autoListenTimerRef.current = setTimeout(() => {
+      if (isExpandedRef.current && (stateRef.current === 'idle' || stateRef.current === 'speaking')) {
+        startListening();
+      }
+    }, 1000); // 1 Second Delay Auto-Mic ON for Next Turn
+  }, [startListening]);
 
   // ─── Voice Response Player (Strict Single-Source TTS: ElevenLabs OR Browser) ─
   const playVoiceResponse = useCallback(async (textToSpeak) => {
@@ -191,16 +208,16 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         audio.playbackRate = VOICE_PLAYBACK_SPEED;
         
         audio.onended = () => {
-          setAiState('idle');
+          onSpeechFinish();
         };
         audio.onerror = () => {
-          // Only fallback to browser if ElevenLabs playback fails
+          // Fallback to browser if ElevenLabs playback fails
           if (isTtsEnabledRef.current) {
             speakWithBrowser(textToSpeak, currentLang, () => {
-              setAiState('idle');
+              onSpeechFinish();
             });
           } else {
-            setAiState('idle');
+            onSpeechFinish();
           }
         };
 
@@ -210,22 +227,22 @@ export default function VoiceAIOrb({ lang = 'en' }) {
           console.warn('[ElevenLabs Audio Play Exception - using fallback]', e);
           if (isTtsEnabledRef.current) {
             speakWithBrowser(textToSpeak, currentLang, () => {
-              setAiState('idle');
+              onSpeechFinish();
             });
           } else {
-            setAiState('idle');
+            onSpeechFinish();
           }
         }
       }
     } else if (isTtsEnabledRef.current) {
       // Single Browser TTS fallback if ElevenLabs disabled or returned null
       speakWithBrowser(textToSpeak, currentLang, () => {
-        setAiState('idle');
+        onSpeechFinish();
       });
     } else {
-      setAiState('idle');
+      onSpeechFinish();
     }
-  }, [currentLang]);
+  }, [currentLang, onSpeechFinish]);
 
   // ─── Execute Pipeline Request ──────────────────────────────────────────────
   const sendQueryToPipeline = useCallback(async (queryText) => {
@@ -348,6 +365,7 @@ export default function VoiceAIOrb({ lang = 'en' }) {
   }, [currentLang, sendQueryToPipeline]);
 
   const stopAll = useCallback(() => {
+    if (autoListenTimerRef.current) clearTimeout(autoListenTimerRef.current);
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     if (recognitionRef.current) {
       try { 
