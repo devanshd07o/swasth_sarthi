@@ -107,6 +107,35 @@ export default function VoiceAIOrb({ lang = 'en' }) {
   );
 
   const containerRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
+  const autoListenTimerRef = useRef(null);
+  const audioPlayerRef = useRef(null);
+  const currentBlobUrlRef = useRef(null);
+  const stateRef = useRef('idle');
+  const isTtsEnabledRef = useRef(true);
+  const isExpandedRef = useRef(false);
+
+  // ─── Stop All Playback & Mic Helper (Declared Early to prevent ReferenceError) ─
+  const stopAll = useCallback(() => {
+    if (autoListenTimerRef.current) clearTimeout(autoListenTimerRef.current);
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    if (recognitionRef.current) {
+      try { 
+        recognitionRef.current.abort(); 
+        recognitionRef.current.stop();
+      } catch (_) {}
+    }
+    window.speechSynthesis?.cancel();
+    if (audioPlayerRef.current) {
+      try {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current.currentTime = 0;
+        audioPlayerRef.current.src = '';
+      } catch (_) {}
+    }
+    setAiState('idle');
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -119,24 +148,18 @@ export default function VoiceAIOrb({ lang = 'en' }) {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isExpanded]);
+  }, [isExpanded, stopAll]);
 
   useEffect(() => {
     sessionStorage.setItem('ss_session_id', sessionIdRef.current);
   }, []);
 
-  const recognitionRef = useRef(null);
-  const silenceTimerRef = useRef(null);
-  const autoListenTimerRef = useRef(null);
-  const audioPlayerRef = useRef(null);
-  const currentBlobUrlRef = useRef(null);
-  const stateRef = useRef('idle');
-  const isTtsEnabledRef = useRef(true);
-  const isExpandedRef = useRef(false);
-
   useEffect(() => {
     isExpandedRef.current = isExpanded;
-  }, [isExpanded]);
+    if (!isExpanded) {
+      stopAll();
+    }
+  }, [isExpanded, stopAll]);
 
   useEffect(() => {
     stateRef.current = aiState;
@@ -168,16 +191,6 @@ export default function VoiceAIOrb({ lang = 'en' }) {
       window.speechSynthesis?.cancel();
     };
   }, []);
-
-  const onSpeechFinish = useCallback(() => {
-    setAiState('idle');
-    if (autoListenTimerRef.current) clearTimeout(autoListenTimerRef.current);
-    autoListenTimerRef.current = setTimeout(() => {
-      if (isExpandedRef.current && (stateRef.current === 'idle' || stateRef.current === 'speaking')) {
-        startListening();
-      }
-    }, 1000); // 1 Second Delay Auto-Mic ON for Next Turn
-  }, [startListening]);
 
   // ─── Voice Response Player (Strict Single-Source TTS: ElevenLabs OR Browser) ─
   const playVoiceResponse = useCallback(async (textToSpeak) => {
@@ -363,27 +376,6 @@ export default function VoiceAIOrb({ lang = 'en' }) {
       setAiState('idle');
     }
   }, [currentLang, sendQueryToPipeline]);
-
-  const stopAll = useCallback(() => {
-    if (autoListenTimerRef.current) clearTimeout(autoListenTimerRef.current);
-    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (recognitionRef.current) {
-      try { 
-        recognitionRef.current.abort(); 
-        recognitionRef.current.stop();
-      } catch (_) {}
-    }
-    window.speechSynthesis?.cancel();
-    if (audioPlayerRef.current) {
-      try {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current.currentTime = 0;
-        audioPlayerRef.current.src = '';
-      } catch (_) {}
-    }
-    setAiState('idle');
-  }, []);
-
   const handleOrbClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -624,7 +616,6 @@ export default function VoiceAIOrb({ lang = 'en' }) {
           <Send className="w-4 h-4" />
         </button>
       </div>
-
     </div>
   );
 }
