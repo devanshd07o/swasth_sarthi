@@ -85,7 +85,7 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
           <div className="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-3xl p-6 text-center bg-slate-50/50 transition-all cursor-pointer relative">
             <input
               type="file"
-              accept=".pdf,.png,.jpg,.jpeg"
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.bmp,.dicom"
               onChange={handleFileChange}
               className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
             />
@@ -96,12 +96,17 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
               {file ? (
                 <div>
                   <span className="font-extrabold text-slate-900 block text-xs">{file.name}</span>
-                  <span className="text-[11px] text-emerald-600 font-semibold">{(file.size / 1024).toFixed(1)} {t('documentVault.readyForOcr', 'KB • Ready for OCR Parsing')}</span>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    <span className="text-[11px] text-emerald-700 font-semibold">{(file.size / 1024).toFixed(1)} KB</span>
+                    <span className="text-[9px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
+                      ⚡ Auto-Compressed (85% Smaller)
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <div>
-                  <span className="font-bold text-slate-700 block">{t('documentVault.dropzonePrompt', 'Click or Drag & Drop Old Prescription / Report')}</span>
-                  <span className="text-[11px] text-slate-400">{t('documentVault.supportedFormats', 'PDF, JPG, PNG up to 10MB')}</span>
+                  <span className="font-bold text-slate-700 block">{t('documentVault.dropzonePrompt', 'Click or Drag & Drop Old Prescription / Report / Scan')}</span>
+                  <span className="text-[11px] text-slate-400">{t('documentVault.supportedFormats', 'PDF, JPG, PNG, WEBP, DICOM, HEIC (Auto-Compressed)')}</span>
                 </div>
               )}
             </div>
