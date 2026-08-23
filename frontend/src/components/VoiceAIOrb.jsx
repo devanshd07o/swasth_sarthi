@@ -3,6 +3,8 @@ import { Mic, Sparkles, Volume2, VolumeX, Send, HeartPulse, MicOff, Square, Mess
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
+import RobotAvatarAnimation from './RobotAvatarAnimation';
+
 const ELEVENLABS_VOICE_ID = 'cgSgspJ2msm6clMCkdW9'; // Jessica (Young/Teen Female Voice)
 const VOICE_PLAYBACK_SPEED = 1.0; // Standard 1.0x voice narration speed
 
@@ -439,33 +441,19 @@ export default function VoiceAIOrb({ lang = 'en' }) {
 
       <audio ref={audioPlayerRef} className="hidden" />
 
-      <div className="relative flex items-center justify-center w-40 h-40 my-1">
-        <div className={`pointer-events-none absolute w-36 h-36 rounded-full border-2 transition-all ${ringAnimation}`} />
-        <div className="pointer-events-none absolute w-30 h-30 rounded-full border border-teal-400/25 transition-all" />
+      <div className="relative flex flex-col items-center justify-center w-48 h-48 my-1">
+        <div className={`pointer-events-none absolute w-44 h-44 rounded-full border-2 transition-all ${ringAnimation}`} />
+        <div className="pointer-events-none absolute w-36 h-36 rounded-full border border-teal-400/25 transition-all" />
 
-        <button
-          type="button"
-          onClick={handleOrbClick}
-          aria-label="Voice AI Orb"
-          className={`relative z-20 w-24 h-24 aspect-square shrink-0 rounded-full flex flex-col items-center justify-center shadow-2xl cursor-pointer
-            bg-gradient-to-tr ${orbGradient} transition-all duration-300 transform hover:scale-105 active:scale-95`}
-        >
-          {aiState === 'listening' ? (
-            <MicOff className="w-8 h-8 text-white animate-bounce" />
-          ) : aiState === 'thinking' ? (
-            <Sparkles className="w-8 h-8 text-white animate-spin" />
-          ) : aiState === 'speaking' ? (
-            <Square className="w-6 h-6 text-white fill-white" />
-          ) : (
-            <HeartPulse className="w-8 h-8 text-white" />
-          )}
+        <div onClick={handleOrbClick} className="relative z-20 flex flex-col items-center justify-center cursor-pointer group">
+          <RobotAvatarAnimation state={aiState} size="xl" />
 
-          <span className="text-[9px] font-extrabold text-white uppercase tracking-wider mt-1">
-            {aiState === 'listening' ? t('orb.stop', 'Stop') :
-             aiState === 'thinking' ? t('orb.stop', 'Stop') :
-             aiState === 'speaking' ? t('orb.stop', 'Stop') : t('patientPortal.tapToSpeak', 'Tap to Speak')}
+          <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest bg-emerald-100/90 px-3 py-1 rounded-full border border-emerald-300 shadow-sm mt-1 group-hover:scale-105 transition-all">
+            {aiState === 'listening' ? t('orb.stop', 'Stop Listening') :
+             aiState === 'thinking' ? t('orb.thinking', 'AI Processing...') :
+             aiState === 'speaking' ? t('orb.speaking', 'Speaking... Tap to Stop') : t('patientPortal.tapToSpeak', 'Tap to Speak')}
           </span>
-        </button>
+        </div>
       </div>
 
       {activeQuery && (

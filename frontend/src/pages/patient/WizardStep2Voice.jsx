@@ -5,6 +5,7 @@ import {
   ClipboardList, MessageSquare, Stethoscope, X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import RobotAvatarAnimation from '../../components/RobotAvatarAnimation';
 
 /* ── Phase Step Indicator ─────────────────────────────────────────────────── */
 function PhaseBar({ phase }) {
@@ -195,13 +196,13 @@ export default function WizardStep2Voice({
                 <button
                   type="button"
                   onClick={toggleListening}
-                  className={`px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer ${
+                  className={`px-4 py-2 rounded-xl font-semibold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer ${
                     isListening
-                      ? 'bg-rose-600 text-white animate-pulse'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                      ? 'bg-rose-50 border border-rose-200 text-rose-700 animate-pulse'
+                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200'
                   }`}
                 >
-                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-emerald-700" />}
+                  <RobotAvatarAnimation state={isListening ? 'listening' : 'idle'} size="sm" />
                   <span>{isListening ? t('patientPortal.listening', 'Listening… Tap to stop') : t('patientPortal.tapToSpeak', 'Tap to Speak')}</span>
                 </button>
 
