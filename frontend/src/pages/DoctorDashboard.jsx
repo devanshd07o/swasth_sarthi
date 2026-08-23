@@ -14,6 +14,11 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const handleSearch = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    loadDashboardData();
+  };
+
   // Per-Day Historical Recent Patients Search & Filter State
   const [historySearch, setHistorySearch] = useState('');
   const [historyDate, setHistoryDate] = useState('');
@@ -112,11 +117,6 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    loadDashboardData();
   };
 
   const handleCloseToken = async (e, patient) => {
