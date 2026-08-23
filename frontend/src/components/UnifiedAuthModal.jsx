@@ -155,39 +155,14 @@ export default function UnifiedAuthModal({ isOpen, onClose, onLoginSuccess, lang
         )}
 
         {mainTab === 'admin' && (
-          <form onSubmit={handleAdminSubmit} className="space-y-4 pt-1">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">{t('auth.adminIdLabel', 'Hospital Admin ID / Staff Code')}</label>
-              <input
-                type="text"
-                value={adminForm.admin_id}
-                onChange={(e) => setAdminForm({ ...adminForm, admin_id: e.target.value })}
-                placeholder="e.g. ADMIN-AIIA-01 or SUPER-ADMIN-01"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">{t('auth.passwordLabel', 'Password')}</label>
-              <input
-                type="password"
-                value={adminForm.password}
-                onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
-                placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-[#12372A] hover:bg-[#0B2B20] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-emerald-950/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
-            >
-              <Lock className="w-4 h-4 text-amber-300" />
-              <span>{loading ? t('common.loading', 'Authenticating...') : t('auth.btnAdminLogin', 'Admin Portal Login')}</span>
-              <ArrowRight className="w-4 h-4 text-amber-300" />
-            </button>
-          </form>
+          <LoginOTPScreen
+            role="admin"
+            onLoginSuccess={(userData) => {
+              onLoginSuccess(userData);
+              onClose();
+            }}
+            lang={lang}
+          />
         )}
 
       </div>
