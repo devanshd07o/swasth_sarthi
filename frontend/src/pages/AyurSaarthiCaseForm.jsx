@@ -88,6 +88,17 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
     }
   };
 
+  const activePatient = patientsList.find(p => p.id === selectedPatientId) || newPatient;
+
+  const isReadOnly = React.useMemo(() => {
+    try {
+      const closedTokens = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
+      if (closedTokens.includes(selectedPatientId)) return true;
+    } catch (_) {}
+    if (activePatient && activePatient.status === 'completed') return true;
+    return false;
+  }, [selectedPatientId, activePatient]);
+
   const handleAiSmartPrefill = () => {
     const curP = patientsList.find(p => p.id === selectedPatientId || p.abha_id === selectedPatientId) || newPatient;
     setCaseForm({
@@ -234,8 +245,6 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
     }
   };
 
-  const activePatient = patientsList.find(p => p.id === selectedPatientId) || newPatient;
-
   const steps = [
     { num: 1, label: t('caseForm.step1', 'Pariksha & Dosha') },
     { num: 2, label: t('caseForm.step2', 'Diagnosis & Findings') },
@@ -334,6 +343,17 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
           </button>
         </div>
       </div>
+
+      {/* Read-Only Historical Case Sheet Notice */}
+      {isReadOnly && (
+        <div className="p-3.5 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs font-bold text-amber-900 flex items-center justify-between gap-2 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>🔒 Read-Only Historical Case View — Active consultation editing & prescription signing is enabled only for Token #1 active patient.</span>
+          </div>
+          <span className="text-[10px] font-extrabold uppercase bg-amber-200 px-2 py-0.5 rounded text-amber-950 shrink-0">Archived Record</span>
+        </div>
+      )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
       {/* ─── PHASE 1: FULL PATIENT INTAKE DOSSIER & REPORT REVIEW SCREEN ────── */}

@@ -197,7 +197,7 @@ export default function App() {
                 )}
                 {activeTab === 'patients' && (
                   <PatientDirectory
-                    onSelectPatient={handleOpenCaseSheet}
+                    onSelectPatient={handleOpenTimeline}
                     onNewCase={() => setActiveTab('case_form')}
                     currentUser={currentUser}
                     lang={lang}
