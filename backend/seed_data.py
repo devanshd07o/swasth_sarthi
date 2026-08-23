@@ -383,7 +383,7 @@ def seed_database(force=False):
         ai_dosha_analysis={"Vata": "Normal", "Pitta": "Severe (+58%)", "Kapha": "Normal"}
     )
 
-    # Case 4: Kailash Chandra (EMERGENCY RED-FLAG CASE)
+    # Case 4: Kailash Chandra (Routine OPD Case)
     c4 = models.PatientCase(
         patient_id=p5.id,
         doctor_id=doc1.id,
@@ -391,28 +391,28 @@ def seed_database(force=False):
         doctor_qualification=doc1.qualification,
         hospital_name=doc1.hospital_name,
         status="active",
-        token_number="EMERG-001",
-        is_red_flag=True,
-        red_flag_reason="CRITICAL: Patient reported sudden crushing chest pain radiating to left jaw with profuse cold sweating (Suspected Acute Coronary Syndrome).",
+        token_number="OPD-104",
+        is_red_flag=False,
+        red_flag_reason=None,
         intake_data={
-            "transcript": "Mere chhati me bahut tej dard ho raha hai aur saans lene me takleef ho rahi hai, pasina aa raha hai",
-            "chief_complaint": "Severe acute retrosternal chest pain with diaphoresis & dyspnea",
-            "duration": "45 minutes",
-            "severity": "Critical Emergency",
-            "red_flag_triggered": True
+            "transcript": "Dono ghutno me 6 mahine se severe dard aur akadahat rehti hai subah uthte waqt",
+            "chief_complaint": "Janu Sandhi Shoola with morning joint stiffness",
+            "duration": "6 months",
+            "severity": "Moderate",
+            "red_flag_triggered": False
         },
-        chief_complaints="Crushing chest pain radiating to left shoulder and jaw, severe breathlessness, cold clammy skin",
-        vitals={"bp": "165/105 mmHg", "pulse": "112 bpm", "temp": "97.8 F", "spo2": "91%", "rr": "26/min"},
-        clinical_findings="Patient in acute distress. Diaphoretic. S3 gallop audible. Immediate ICU/Emergency ECG triage required.",
-        diagnosis_ayurvedic="Hridshoola (Acute Cardiac Ischemia / Angina Pectoris)",
-        diagnosis_modern="Acute Coronary Syndrome / STEMI Suspect",
+        chief_complaints="Janu Sandhigata Vata (Osteoarthritis both knees), crepitus and morning joint stiffness",
+        vitals={"bp": "130/84 mmHg", "pulse": "76 bpm", "temp": "98.4 F", "spo2": "98%", "rr": "18/min"},
+        clinical_findings="Bilateral knee crepitus present, restricted flexion beyond 110 degrees, medial joint tenderness.",
+        diagnosis_ayurvedic="Janu Sandhigata Vata (Bilateral Knee Osteoarthritis)",
+        diagnosis_modern="Bilateral Primary Osteoarthritis Knee (Grade II)",
         medicines=[
-            {"name": "Prabhakar Vati", "category": "Vati", "dosage": "1 tab sublingual with honey (emergency supportive)", "duration": "Immediate", "anupana": "Honey"},
-            {"name": "Arjuna Ksheerapaka", "category": "Kwath", "dosage": "30 ml emergency decoction", "duration": "Immediate", "anupana": "Warm"}
+            {"name": "Yograj Guggulu", "category": "Vati", "dosage": "2 tabs BID after meals", "duration": "30 days", "anupana": "Lukewarm water"},
+            {"name": "Rasnadi Kwath", "category": "Kwath", "dosage": "15 ml BID with equal water", "duration": "30 days", "anupana": "Warm water"}
         ],
-        anupana="शहद (Honey)",
-        pathya_apathya="Immediate complete bed rest, zero physical exertion, high-flow oxygen support.",
-        follow_up_date="Immediate ICU Admission",
+        anupana="कोसस जल (Lukewarm Water)",
+        pathya_apathya="Avoid cold food, curd at night. Gentle knee exercises and Janu Basti therapy recommended.",
+        follow_up_date="15 days",
         private_notes="EMERGENCY TRIAGE: Priority 1 case. Immediate 12-lead ECG dispatched, cardiologist and ICU team alerted via MedRoute.",
         prescription_signed=False,
         ai_case_summary_en="CRITICAL EMERGENCY: 61M presenting with acute crushing chest pain (Hridshoola). Bypassed standard queue to top of Doctor console.",

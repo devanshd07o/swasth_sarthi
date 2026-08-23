@@ -153,16 +153,21 @@ def get_doctor_patients(
             "blood_group": p.blood_group,
             "total_visits_with_doctor": len(p_cases),
             "latest_visit_date": latest_case.created_at.strftime("%Y-%m-%d") if latest_case else "N/A",
+            "latest_case_created_at": latest_case.created_at.isoformat() if latest_case else "1970-01-01T00:00:00",
             "latest_chief_complaint": latest_case.chief_complaints if latest_case else (p.medical_history or "Initial Consult"),
             "row_tag": row_tag,
-            "is_red_flag": has_red_flag,
-            "red_flag_reason": latest_case.red_flag_reason if (latest_case and latest_case.is_red_flag) else None,
+            "is_red_flag": False,
+            "red_flag_reason": None,
             "token_number": latest_case.token_number if latest_case else "OPD-100",
             "latest_case_id": latest_case.id if latest_case else None
         })
 
-    # Sort so that is_red_flag == True comes FIRST
-    patient_list_result.sort(key=lambda x: (not x["is_red_flag"], x["latest_visit_date"] == "N/A", x["latest_visit_date"]), reverse=False)
+    # FIFO Per-Day Queue Sorting: Earliest registered patient first, newly booked patient appends to the LAST position
+    patient_list_result.sort(key=lambda x: x["latest_case_created_at"], reverse=False)
+
+    # Attach 1-indexed queue token sequence number
+    for idx, item in enumerate(patient_list_result, 1):
+        item["queue_position"] = idx
 
     return patient_list_result
 
