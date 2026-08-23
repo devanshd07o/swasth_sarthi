@@ -26,45 +26,53 @@ export default function RobotAvatarAnimation({
     });
   }, []);
 
-  // Frame animation loop based on AI state
+  // Controlled natural frame animation loop
   useEffect(() => {
     let intervalId = null;
+    let blinkTimeout = null;
 
     if (state === 'listening') {
-      // Rapid frame cycling when listening to user
       intervalId = setInterval(() => {
         setCurrentFrameIndex((prev) => (prev + 1) % ROBOT_FRAMES.length);
-      }, 100);
-    } else if (state === 'speaking') {
-      // Talking mouth/eye animation loop
-      intervalId = setInterval(() => {
-        setCurrentFrameIndex((prev) => (prev + 1) % ROBOT_FRAMES.length);
-      }, 130);
-    } else if (state === 'thinking') {
-      // Thinking pulse frame loop
-      intervalId = setInterval(() => {
-        setCurrentFrameIndex((prev) => (prev % 3) + 1); // Cycle frames 1-3
       }, 180);
+    } else if (state === 'speaking') {
+      intervalId = setInterval(() => {
+        setCurrentFrameIndex((prev) => (prev + 1) % ROBOT_FRAMES.length);
+      }, 150);
+    } else if (state === 'thinking') {
+      intervalId = setInterval(() => {
+        setCurrentFrameIndex((prev) => (prev % 3) + 1);
+      }, 220);
     } else {
-      // Idle mode: periodic blink every 3 seconds
-      const blinkTimeout = setTimeout(() => {
-        let blinkStep = 0;
-        const blinkInterval = setInterval(() => {
-          blinkStep++;
-          if (blinkStep >= ROBOT_FRAMES.length) {
-            clearInterval(blinkInterval);
-            setCurrentFrameIndex(0);
-          } else {
-            setCurrentFrameIndex(blinkStep);
-          }
-        }, 80);
-      }, 3000);
+      // IDLE MODE: Default to frame 0 (eyes open). Single quick natural blink every 4.5 seconds
+      setCurrentFrameIndex(0);
 
-      return () => clearTimeout(blinkTimeout);
+      const scheduleBlink = () => {
+        blinkTimeout = setTimeout(() => {
+          let step = 0;
+          const blinkTimer = setInterval(() => {
+            step++;
+            if (step < ROBOT_FRAMES.length) {
+              setCurrentFrameIndex(step);
+            } else {
+              clearInterval(blinkTimer);
+              setCurrentFrameIndex(0); // Return to default eyes-open
+              scheduleBlink(); // Schedule next blink
+            }
+          }, 45); // Quick 45ms per frame = 270ms natural eye blink
+        }, 4500); // Blink every 4.5 seconds
+      };
+
+      scheduleBlink();
+
+      return () => {
+        if (blinkTimeout) clearTimeout(blinkTimeout);
+      };
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
+      if (blinkTimeout) clearTimeout(blinkTimeout);
     };
   }, [state]);
 

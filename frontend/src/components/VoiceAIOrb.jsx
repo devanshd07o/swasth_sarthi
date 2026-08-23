@@ -162,14 +162,21 @@ export default function VoiceAIOrb({ lang = 'en' }) {
     };
   }, []);
 
-  // ─── Play Audio Handler ──────────────────────────────────
+  // ─── Voice Response Player (Strict Single-Source TTS: ElevenLabs OR Browser) ─
   const playVoiceResponse = useCallback(async (textToSpeak) => {
-    if (!textToSpeak || !isTtsEnabledRef.current) {
-      setAiState('idle');
-      return;
+    if (!textToSpeak || !textToSpeak.trim()) return;
+
+    // Immediately stop any currently playing speech or audio
+    window.speechSynthesis?.cancel();
+    if (audioPlayerRef.current) {
+      try {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current.currentTime = 0;
+      } catch (_) {}
     }
     setAiState('speaking');
 
+    // Attempt ElevenLabs audio first
     const audioUrl = await fetchElevenLabsAudio(textToSpeak, currentLang);
 
     if (audioUrl && isTtsEnabledRef.current) {
@@ -185,17 +192,12 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         
         audio.onended = () => {
           setAiState('idle');
-          if (isTtsEnabledRef.current) {
-            setTimeout(() => {
-              startListening();
-            }, 350);
-          }
         };
         audio.onerror = () => {
+          // Only fallback to browser if ElevenLabs playback fails
           if (isTtsEnabledRef.current) {
             speakWithBrowser(textToSpeak, currentLang, () => {
               setAiState('idle');
-              setTimeout(() => startListening(), 350);
             });
           } else {
             setAiState('idle');
@@ -203,14 +205,12 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         };
 
         try {
-          audio.playbackRate = VOICE_PLAYBACK_SPEED;
           await audio.play();
         } catch (e) {
-          console.warn('[Audio Play Error - using browser speech]', e);
+          console.warn('[ElevenLabs Audio Play Exception - using fallback]', e);
           if (isTtsEnabledRef.current) {
             speakWithBrowser(textToSpeak, currentLang, () => {
               setAiState('idle');
-              setTimeout(() => startListening(), 350);
             });
           } else {
             setAiState('idle');
@@ -218,6 +218,7 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         }
       }
     } else if (isTtsEnabledRef.current) {
+      // Single Browser TTS fallback if ElevenLabs disabled or returned null
       speakWithBrowser(textToSpeak, currentLang, () => {
         setAiState('idle');
         setTimeout(() => startListening(), 350);
@@ -398,15 +399,13 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         <button
           type="button"
           onClick={() => setIsExpanded(true)}
-          title={t('orb.speakLabel', 'AyurSaarthi Voice AI — Tap to Speak')}
-          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[#12372A] via-emerald-800 to-teal-700 text-white shadow-xl hover:shadow-emerald-900/30 hover:scale-110 active:scale-95 transition-all duration-300 border border-emerald-400/40 flex items-center justify-center cursor-pointer group relative"
+          title={t('orb.speakLabel', 'AyurSaarthi Voice AI — Tap to Open')}
+          className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-emerald-950 via-slate-900 to-teal-950 shadow-2xl hover:shadow-emerald-900/40 hover:scale-110 active:scale-95 transition-all duration-300 border border-emerald-500/50 flex items-center justify-center cursor-pointer group relative p-1"
         >
-          <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center animate-pulse">
-            <HeartPulse className="w-4 h-4 text-emerald-300 group-hover:scale-110 transition-transform" />
-          </div>
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+          <RobotAvatarAnimation state={aiState} size="md" />
+          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border border-white"></span>
           </span>
         </button>
       </div>
