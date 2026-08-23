@@ -17,7 +17,17 @@ import HeaderPortalModal from './components/HeaderPortalModal';
 
 export default function App() {
   const { i18n } = useTranslation();
-  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Hydrate logged in user & active tab from localStorage for session persistence across refreshes
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ss_current_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (_) {
+      return null;
+    }
+  });
+
   const [lang, setLang] = useState(() => localStorage.getItem('swasth_lang') || 'en');
   
   // Modals state
@@ -31,9 +41,31 @@ export default function App() {
   };
 
   // App Navigation & Sidebar State
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return localStorage.getItem('ss_active_tab') || 'triage';
+    } catch (_) {
+      return 'triage';
+    }
+  });
+
   const [selectedPatientId, setSelectedPatientId] = useState('ABHA-9821-4501');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+
+  // Sync session state to localStorage
+  React.useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('ss_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('ss_current_user');
+    }
+  }, [currentUser]);
+
+  React.useEffect(() => {
+    if (activeTab) {
+      localStorage.setItem('ss_active_tab', activeTab);
+    }
+  }, [activeTab]);
 
   const handleLoginSuccess = (userData) => {
     setCurrentUser(userData);
@@ -52,6 +84,8 @@ export default function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    localStorage.removeItem('ss_current_user');
+    localStorage.removeItem('ss_active_tab');
   };
 
   const handleOpenTimeline = (patientId) => {
@@ -59,8 +93,25 @@ export default function App() {
     setActiveTab('timeline');
   };
 
+  // Logo click: Navigate to role dashboard if logged in; reload page if logged out
+  const handleNavigateHome = () => {
+    if (currentUser) {
+      if (currentUser.role === 'patient') {
+        setActiveTab('triage');
+      } else if (currentUser.role === 'super_admin') {
+        setActiveTab('national_analytics');
+      } else if (currentUser.role === 'hospital_admin') {
+        setActiveTab('medroute');
+      } else {
+        setActiveTab('dashboard');
+      }
+    } else {
+      window.location.reload();
+    }
+  };
+
   return (
-    <div key={i18n.language} className={`h-screen max-h-screen overflow-hidden bg-bg text-ink flex flex-col font-body antialiased lang-${i18n.language}`}>
+    <div key={i18n.language} className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 font-sans antialiased text-slate-900 selection:bg-emerald-500 selection:text-white">
       
       {/* Top Header */}
       <Header
@@ -68,7 +119,7 @@ export default function App() {
         onOpenAuth={() => setIsHeaderPortalOpen(true)}
         onLogout={handleLogout}
         onNavigateSettings={() => setActiveTab('settings')}
-        onNavigateHome={() => setCurrentUser(null)}
+        onNavigateHome={handleNavigateHome}
         onToggleMobileSidebar={() => setIsSidebarExpanded(!isSidebarExpanded)}
         onQuickAction={() => {
           if (currentUser?.role === 'patient') {
