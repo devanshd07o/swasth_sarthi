@@ -214,11 +214,17 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {patients.map((p, idx) => {
               const queueNum = p.queue_position || (idx + 1);
+              const isFirstInLine = idx === 0;
+
               return (
                 <div
                   key={p.patient_id}
                   onClick={() => onSelectPatient(p.patient_id)}
-                  className="p-4 rounded-2xl border bg-white border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs group"
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs group ${
+                    isFirstInLine
+                      ? 'bg-emerald-50/50 border-emerald-400 hover:border-emerald-600 shadow-sm ring-2 ring-emerald-500/20'
+                      : 'bg-white border-slate-200 hover:border-slate-300 opacity-90'
+                  }`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
@@ -226,9 +232,16 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
                         <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#12372A] text-amber-300 border border-emerald-800">
                           Token #{queueNum}
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-700 text-white border border-emerald-800">
-                          ACTIVE PATIENT
-                        </span>
+                        {isFirstInLine ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-600 text-white border border-emerald-700 animate-pulse flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping" />
+                            CURRENTLY CONSULTING
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            WAITING IN QUEUE
+                          </span>
+                        )}
                         <span className="text-[10px] font-mono font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                           {p.prakriti || 'Vata-Pitta'}
                         </span>
@@ -256,14 +269,24 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleCloseToken(e, p)}
-                      className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-900 hover:text-white font-extrabold text-[11px] rounded-xl border border-emerald-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Complete Consult (Close Token)</span>
-                    </button>
+                    {isFirstInLine ? (
+                      <button
+                        type="button"
+                        onClick={(e) => handleCloseToken(e, p)}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Complete Consult (Close Token #{queueNum})</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-1.5 bg-slate-100 text-slate-400 font-bold text-[10px] rounded-xl border border-slate-200 flex items-center justify-center gap-1 cursor-not-allowed opacity-75"
+                      >
+                        <span>⏳ Waiting in Queue (Token #{idx} active)</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );
