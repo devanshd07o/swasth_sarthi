@@ -17,6 +17,8 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
   const [patientsList, setPatientsList] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState(initialPatientId || '');
   const [isNewPatient, setIsNewPatient] = useState(false);
+  const [isExamining, setIsExamining] = useState(false);
+  const [previewDocModal, setPreviewDocModal] = useState(null);
   const [step, setStep] = useState(1);
 
   const speakText = (text) => {
@@ -244,166 +246,313 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
 
   return (
     <div className="max-w-7xl mx-auto p-1 sm:p-2 space-y-4">
-      
-      {/* ─── Top Clinical Header ────────────────────────────────────────────── */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center justify-center gap-4">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-slate-900 mt-1.5">
-            {t('caseForm.title', 'Digital Patient Consultation')}
-          </h2>
-        </div>
 
-        {/* Wizard Step Progress Bar */}
-        <div className="flex items-center justify-center w-full max-w-3xl">
-          {steps.map((s, idx) => (
-            <React.Fragment key={s.num}>
-              <div className="flex flex-col items-center gap-2 relative">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all z-10 ${
-                  step === s.num
-                    ? 'bg-emerald-600 text-white'
-                    : step > s.num
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-white border-2 border-slate-200 text-slate-400'
-                }`}>
-                  {step > s.num ? <CheckCircle2 className="w-5 h-5 text-white" /> : s.num}
-                </div>
-                <span className={`text-[10px] uppercase font-semibold absolute top-10 whitespace-nowrap ${
-                  step === s.num ? 'text-emerald-700' : step > s.num ? 'text-emerald-600' : 'text-slate-400'
-                }`}>
-                  {s.label}
-                </span>
-              </div>
-              {idx < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 -translate-y-3 ${
-                  step > s.num ? 'bg-emerald-600' : 'bg-slate-200'
-                }`}></div>
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── Patient Selector Strip & Timeline Navigation Bar ──────────────── */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <User className="w-5 h-5 text-emerald-600 shrink-0" />
-          <div className="w-full">
-            <span className="text-[10px] font-semibold text-slate-500 uppercase block">{t('caseForm.consultingPatient', 'Active Consulting Patient')}</span>
-            <div className="flex items-center gap-2">
-              {!isNewPatient ? (
-                <select
-                  value={selectedPatientId}
-                  onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="bg-emerald-50 border border-emerald-300 font-extrabold text-emerald-950 rounded-xl p-2.5 text-xs w-full sm:w-80 outline-none focus:border-emerald-500"
-                >
-                  {patientsList.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.abha_id || p.uhid})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="flex gap-2">
-                  <input type="text" placeholder={t('caseForm.patientName')} value={newPatient.name} onChange={e => setNewPatient({...newPatient, name: e.target.value})} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 w-40"/>
-                  <input type="number" placeholder={t('caseForm.age')} value={newPatient.age} onChange={e => setNewPatient({...newPatient, age: e.target.value})} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 w-20"/>
-                </div>
-              )}
+      {/* Document Overlay Preview Modal */}
+      {previewDocModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-emerald-600" />
+                <span>{previewDocModal.title}</span>
+              </h3>
               <button
                 type="button"
-                onClick={() => setIsNewPatient(!isNewPatient)}
-                className="px-3 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl text-[10px] uppercase cursor-pointer"
+                onClick={() => setPreviewDocModal(null)}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1 bg-slate-100 rounded-lg cursor-pointer"
               >
-                {isNewPatient ? t('common.cancel') : t('caseForm.newPatient', 'New Patient')}
+                Close ✕
+              </button>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-3">
+              <div className="flex justify-between font-bold text-slate-900 border-b pb-2">
+                <span>Issuer: {previewDocModal.issuer}</span>
+                <span>Date: {previewDocModal.date}</span>
+              </div>
+              <p className="font-medium">{previewDocModal.summary}</p>
+              <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-[11px] font-semibold text-emerald-900">
+                ✓ ABDM Central Health Records (HIP Verified Signature)
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewDocModal(null)}
+                className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+              >
+                Done Reviewing
               </button>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Bidirectional Timeline Navigation CTA */}
-        <button
-          type="button"
-          onClick={() => {
-            if (onSelectPatientTimeline) onSelectPatientTimeline(selectedPatientId);
-          }}
-          className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0 transition-all"
-        >
-          <FileText className="w-4 h-4 text-amber-300" />
-          <span>📜 View Patient's Full Health History Timeline →</span>
-        </button>
+      {/* ─── Top Clinical Header ────────────────────────────────────────────── */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <img
+            src={activePatient?.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80"}
+            alt={activePatient?.name || "Patient"}
+            className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-xs shrink-0"
+          />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-extrabold text-slate-900">{activePatient?.name || "Ramesh Sharma"}</span>
+              <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full">
+                {activePatient?.abha_id || activePatient?.uhid || "ABHA-9821-4501"}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              {activePatient?.gender ? activePatient.gender.toUpperCase() : 'MALE'} • {activePatient?.age || 42} yrs • Blood: {activePatient?.blood_group || 'B+'} • Mobile: {activePatient?.contact || '+91 98210 45010'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              if (onSelectPatientTimeline) onSelectPatientTimeline(selectedPatientId);
+            }}
+            className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-extrabold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-all"
+          >
+            <FileText className="w-4 h-4 text-emerald-700" />
+            <span>📜 View Patient's Full Longitudinal History (Timeline) →</span>
+          </button>
+        </div>
       </div>
 
-      {/* ─── Step 1 Patient Intake Dossier & AI Smart Prefill Card ─────────── */}
-      {step === 1 && (
-        <div className="bg-gradient-to-br from-slate-900 via-[#12372A] to-teal-950 p-5 rounded-2xl text-white shadow-md space-y-4 border border-emerald-800">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-emerald-800/80 pb-3">
-            <div>
-              <div className="flex items-center gap-2">
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {/* ─── PHASE 1: FULL PATIENT INTAKE DOSSIER & REPORT REVIEW SCREEN ────── */}
+      {/* ────────────────────────────────────────────────────────────────────── */}
+      {!isExamining ? (
+        <div className="space-y-4 animate-fade-in">
+          
+          {/* Card 1: Submitted Voice Triage & Self Intake Summary */}
+          <div className="bg-gradient-to-br from-slate-900 via-[#12372A] to-teal-950 p-6 rounded-2xl text-white shadow-md space-y-4 border border-emerald-800">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-emerald-800/80 pb-3">
+              <div>
                 <span className="text-[10px] font-extrabold uppercase bg-amber-400 text-slate-950 px-2 py-0.5 rounded">
-                  Patient Intake Dossier
+                  Patient Submitted Intake Data
                 </span>
-                <span className="text-[11px] text-emerald-200 font-semibold">
-                  ABDM Synced Intake & Uploads
-                </span>
+                <h3 className="text-lg font-bold text-white mt-1">
+                  Self-Reported Symptom Triage & Current Condition for {activePatient?.name || 'Patient'}
+                </h3>
               </div>
-              <h3 className="text-base font-bold text-white mt-1">
-                Submitted Voice Triage & Attached Medical Records for {activePatient?.name || 'Patient'}
-              </h3>
+
+              <button
+                type="button"
+                onClick={() => speakText(activePatient?.latest_chief_complaint || 'Joint stiffness and morning pain in both knees persisting for 6 months.')}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-emerald-300 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Volume2 className="w-4 h-4" />
+                <span>Listen Audio Triage</span>
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleAiSmartPrefill}
-              className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
-            >
-              <Sparkles className="w-4 h-4 fill-slate-950" />
-              <span>✨ AI Smart Prefill Case Sheet</span>
-            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
+                <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider block">
+                  🎙️ Full Voice Transcript Recorded by Patient:
+                </span>
+                <p className="text-slate-100 text-xs italic leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
+                  "Mujhe pichle 6 mahine se dono ghutno me subah uthte hi severe dard aur akadahat hoti hai. Stair climb karte waqt katar-katar ki sound aati hai. Sardi me dard badh jaata hai."
+                </p>
+                <div className="pt-2 text-emerald-200 text-[11px]">
+                  <strong className="text-white">Duration & Severity:</strong> 6 Months • Moderate to Severe (Vata Prakopa)
+                </div>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
+                <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider block">
+                  📋 Suspected Dosha & Triage Summary:
+                </span>
+                <div className="space-y-1.5 text-slate-200 text-[11px]">
+                  <p><strong className="text-white">Primary Complaint:</strong> {activePatient?.latest_chief_complaint || 'Bilateral Knee Joint Stiffness & Crepitus'}</p>
+                  <p><strong className="text-white">Aggravating Factors:</strong> Cold weather, sour food, climbing stairs</p>
+                  <p><strong className="text-white">Prakriti Imbalance:</strong> {activePatient?.prakriti || 'Vata-Pitta Imbalance'}</p>
+                  <p><strong className="text-white">Recommended Therapy:</strong> Janu Basti & Vata-hara Guggulu Kalpa</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            {/* Left: Patient Voice Triage Report */}
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider flex items-center gap-1">
-                  🎙️ AI Voice Triage Report
-                </span>
+          {/* Card 2: Attached Medical Reports & Scanned Images */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-emerald-600" />
+                <span>Attached Medical Reports & Documents Sent by Patient (3)</span>
+              </h3>
+              <span className="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                ABDM Sync Verified
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
+                <div>
+                  <span className="text-[10px] font-bold text-emerald-800 uppercase block mb-1">Radiology Scan</span>
+                  <h4 className="font-bold text-slate-900 text-xs">Knee Joint X-Ray Report.pdf</h4>
+                  <p className="text-[10px] text-slate-500 mt-1">Bilateral Knee AP/Lateral view. Medial joint space narrowing.</p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => speakText(activePatient?.latest_chief_complaint || 'Patient intake report loaded')}
-                  className="p-1 text-emerald-300 hover:text-white transition-colors"
-                  title="Listen to audio synthesis"
+                  onClick={() => setPreviewDocModal({
+                    title: 'Radiograph Knee Joint X-Ray Report.pdf',
+                    issuer: 'AIIA Department of Radiodiagnosis',
+                    date: '2026-08-10',
+                    summary: 'Findings: Grade II Osteoarthritis of bilateral knee joints with subchondral sclerosis and medial joint space reduction.'
+                  })}
+                  className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
                 >
-                  <Volume2 className="w-4 h-4" />
+                  👁️ View Full Document →
                 </button>
               </div>
 
-              <div className="space-y-1 text-slate-200 text-[11px]">
-                <p><strong className="text-white">Chief Complaint:</strong> {activePatient?.latest_chief_complaint || 'Joint stiffness and burning sensation'}</p>
-                <p><strong className="text-white">Patient History:</strong> {activePatient?.medical_history || 'Symptoms persisting for 6 months.'}</p>
-                <p><strong className="text-white">Suspected Dosha:</strong> {activePatient?.prakriti || 'Vata-Pitta Imbalance'}</p>
-              </div>
-            </div>
-
-            {/* Right: Attached Scanned Reports & Documents */}
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
-              <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider block mb-1">
-                📑 Attached Scanned Reports & Prescriptions (3)
-              </span>
-
-              <div className="space-y-2">
-                <div className="p-2 bg-emerald-950/60 rounded-lg border border-emerald-700/50 flex items-center justify-between text-[11px]">
-                  <span>📄 Radiograph Knee Joint X-Ray Report.pdf</span>
-                  <span className="text-[10px] font-bold bg-emerald-800 text-white px-2 py-0.5 rounded">Verified Scan</span>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
+                <div>
+                  <span className="text-[10px] font-bold text-teal-800 uppercase block mb-1">Prescription Parchaa</span>
+                  <h4 className="font-bold text-slate-900 text-xs">AIIA OPD Prescription.pdf</h4>
+                  <p className="text-[10px] text-slate-500 mt-1">Previous 30-day course of Yograj Guggulu & Rasnadi Kwath.</p>
                 </div>
-                <div className="p-2 bg-emerald-950/60 rounded-lg border border-emerald-700/50 flex items-center justify-between text-[11px]">
-                  <span>📜 AIIA OPD Prescription Parchaa.pdf</span>
-                  <span className="text-[10px] font-bold bg-teal-800 text-white px-2 py-0.5 rounded">Signed Copy</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDocModal({
+                    title: 'AIIA OPD Prescription Parchaa.pdf',
+                    issuer: 'Dr. Rajesh Vaidya, BAMS MD',
+                    date: '2026-07-15',
+                    summary: 'Rx: Yograj Guggulu 2 tabs BID, Rasnadi Kwath 15ml BID with equal warm water.'
+                  })}
+                  className="w-full py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
+                >
+                  👁️ View Full Document →
+                </button>
               </div>
+
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
+                <div>
+                  <span className="text-[10px] font-bold text-purple-800 uppercase block mb-1">Pathology Lab</span>
+                  <h4 className="font-bold text-slate-900 text-xs">Blood & ESR Test Report.pdf</h4>
+                  <p className="text-[10px] text-slate-500 mt-1">ESR: 28 mm/hr, Hb: 13.8 g/dl, Uric Acid: 5.2 mg/dl.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDocModal({
+                    title: 'Blood & ESR Test Report.pdf',
+                    issuer: 'National Diagnostics Lab',
+                    date: '2026-08-05',
+                    summary: 'Hb: 13.8, TLC: 7,400, ESR: 28 mm/hr (Mild elevation), Uric Acid: 5.2 mg/dl (Normal).'
+                  })}
+                  className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
+                >
+                  👁️ View Full Document →
+                </button>
+              </div>
+
             </div>
           </div>
+
+          {/* Card 3: AI Assistant Smart Auto-Fill & Proceed CTA */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200">
+                <Sparkles className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-900">AI Clinical Examination Assistant Ready</h4>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  AI will auto-fill Ashtavidha Pariksha, Vitals, Formulations & Diet from the patient's dossier upon proceeding.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleAiSmartPrefill}
+                className="px-4 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              >
+                <Sparkles className="w-4 h-4 fill-slate-950" />
+                <span>✨ AI Smart Auto-Fill</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleAiSmartPrefill();
+                  setIsExamining(true);
+                }}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-all whitespace-nowrap"
+              >
+                <span>Proceed to Ashtavidha Examination (Steps 1 to 5)</span>
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
         </div>
-      )}
+      ) : (
+
+        /* ────────────────────────────────────────────────────────────────────── */
+        /* ─── PHASE 2: 5-STEP ASHTAVIDHA EXAMINATION WIZARD ─────────────────── */
+        /* ────────────────────────────────────────────────────────────────────── */
+        <div className="space-y-4 animate-fade-in">
+          
+          {/* Top Bar for Phase 2: Back to Review + Step Progress Bar */}
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <button
+                type="button"
+                onClick={() => setIsExamining(false)}
+                className="text-xs font-extrabold text-emerald-800 hover:text-emerald-950 flex items-center gap-1 cursor-pointer bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>← Back to Patient Intake Review Screen</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAiSmartPrefill}
+                className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-extrabold text-xs rounded-xl shadow-2xs flex items-center gap-1 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+                <span>✨ AI Auto-Fill Form</span>
+              </button>
+            </div>
+
+            {/* 5-Step Wizard Progress Bar */}
+            <div className="flex items-center justify-center w-full max-w-3xl mx-auto pt-1">
+              {steps.map((s, idx) => (
+                <React.Fragment key={s.num}>
+                  <div className="flex flex-col items-center gap-2 relative">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all z-10 ${
+                      step === s.num
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : step > s.num
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-white border-2 border-slate-200 text-slate-400'
+                    }`}>
+                      {step > s.num ? <CheckCircle2 className="w-5 h-5 text-white" /> : s.num}
+                    </div>
+                    <span className={`text-[10px] uppercase font-semibold absolute top-10 whitespace-nowrap ${
+                      step === s.num ? 'text-emerald-700 font-extrabold' : step > s.num ? 'text-emerald-600' : 'text-slate-400'
+                    }`}>
+                      {s.label}
+                    </span>
+                  </div>
+                  {idx < steps.length - 1 && (
+                    <div className={`flex-1 h-0.5 mx-2 -translate-y-3 ${
+                      step > s.num ? 'bg-emerald-600' : 'bg-slate-200'
+                    }`}></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
 
       {/* ────────────────────────────────────────────────────────────────────── */}
       {/* ─── STEP 1: ASHTAVIDHA PARIKSHA, PRAKRITI & DOSHA ──────────────────── */}
@@ -841,6 +990,8 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
           </div>
         </div>
       )}
+      </div>
+      )}
 
       <PrescriptionPrintModal
         caseData={savedCaseForPrint}
@@ -849,6 +1000,7 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
         onClose={() => {
           setSavedCaseForPrint(null);
           setStep(1);
+          setIsExamining(false);
         }}
       />
 
