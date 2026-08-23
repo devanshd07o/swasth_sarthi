@@ -59,8 +59,13 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
         summary: `Scanned ${docType} from ${sourceHospital || 'Clinical Center'}. Structured for ABDM Vault.`
       };
       const saved = await uploadOcrDocument(patientId || 'ABHA-9821-4501', payload);
-      // Merge fileUrl back into saved object for live client preview
       const fullDoc = { ...saved, file_url: fileUrl || saved.file_url, is_image: isImage, is_pdf: isPdf };
+      try {
+        const existing = JSON.parse(localStorage.getItem('ss_user_uploaded_docs') || '[]');
+        const updated = [fullDoc, ...existing];
+        localStorage.setItem('ss_user_uploaded_docs', JSON.stringify(updated));
+      } catch (_) {}
+
       if (onDocumentUploaded) onDocumentUploaded(fullDoc);
       onClose();
     } catch (err) {

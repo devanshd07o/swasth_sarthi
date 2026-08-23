@@ -20,6 +20,15 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
   const [isExamining, setIsExamining] = useState(false);
   const [previewDocModal, setPreviewDocModal] = useState(null);
   const [step, setStep] = useState(1);
+  const [userUploadedDocs, setUserUploadedDocs] = useState([]);
+
+  useEffect(() => {
+    try {
+      const savedDocs = JSON.parse(localStorage.getItem('ss_user_uploaded_docs') || '[]');
+      const patientDocs = savedDocs.filter(d => !d.patient_id || d.patient_id === selectedPatientId || selectedPatientId === 'pat_1' || selectedPatientId === 'pat_2');
+      setUserUploadedDocs(patientDocs);
+    } catch (_) {}
+  }, [selectedPatientId]);
 
   const speakText = (text) => {
     if ('speechSynthesis' in window && text) {
@@ -431,7 +440,7 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
       <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4 w-full md:w-auto">
           <img
-            src={activePatient?.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80"}
+            src={activePatient?.avatar_url || "/avatars/rajesh_kumar.jpeg"}
             alt={activePatient?.name || "Patient"}
             className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-xs shrink-0"
           />
@@ -593,7 +602,7 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
                     issuer: 'Patient Upload / Diagnostic Scan',
                     date: '2026-08-10',
                     summary: 'High-resolution digital radiograph scan image showing bilateral knee joint alignment.',
-                    imageUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800&auto=format&fit=crop&q=80'
+                    imageUrl: '/sample_scans/knee_xray_scan.svg'
                   })}
                   className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
                 >
@@ -647,6 +656,38 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
                   👁️ View AI Triage Report →
                 </button>
               </div>
+
+              {/* Dynamic User Uploaded Documents */}
+              {userUploadedDocs.map((ud, uIdx) => (
+                <div key={uIdx} className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-300 space-y-2 flex flex-col justify-between hover:border-emerald-500 transition-colors shadow-2xs">
+                  <div>
+                    <span className="text-[10px] font-extrabold text-emerald-900 uppercase block mb-1">
+                      {ud.is_image ? '🖼️ Patient Uploaded Image' : '📄 Patient Uploaded PDF'}
+                    </span>
+                    <h4 className="font-bold text-slate-900 text-xs truncate">{ud.file_name}</h4>
+                    <p className="text-[10px] text-slate-600 mt-1 line-clamp-2">{ud.summary || ud.extracted_data?.summary || 'User uploaded document'}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDocModal({
+                      type: ud.is_image ? 'image' : 'pdf',
+                      title: ud.file_name,
+                      issuer: ud.source_doctor_or_hospital || 'Patient Self Upload',
+                      date: ud.date || new Date().toISOString().split('T')[0],
+                      summary: ud.summary || 'Patient submitted medical document record.',
+                      imageUrl: ud.file_url || '/sample_scans/knee_xray_scan.svg',
+                      details: [
+                        `File Type: ${ud.file_type || 'Prescription'}`,
+                        `Source Center: ${ud.source_doctor_or_hospital || 'Clinical Upload'}`,
+                        `OCR Status: ABDM Structured & Verified`
+                      ]
+                    })}
+                    className="w-full py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
+                  >
+                    👁️ View Uploaded {ud.is_image ? 'Image' : 'PDF'} →
+                  </button>
+                </div>
+              ))}
 
             </div>
           </div>
