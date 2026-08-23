@@ -148,7 +148,7 @@ def send_auth_otp(payload: dict, db: Session = Depends(get_db)):
                 "role": "patient",
             }
 
-    elif role == "doctor":
+    elif role in ("doctor", "vaidya"):
         doctor = db.query(models.User).filter(
             models.User.role == "doctor",
             (models.User.registration_no == identifier) | (models.User.doctor_id == identifier) | (models.User.id == identifier)
@@ -159,14 +159,42 @@ def send_auth_otp(payload: dict, db: Session = Depends(get_db)):
                 "id": doctor.id,
                 "doctor_id": doctor.id,
                 "name": doctor.name,
+                "registration_no": doctor.registration_no,
                 "qualification": doctor.qualification,
                 "hospital_name": doctor.hospital_name,
                 "role": "doctor",
             }
 
+    elif role in ("admin", "hospital_admin", "super_admin", "ministry_admin"):
+        admin_user = db.query(models.User).filter(
+            (models.User.role == "super_admin") | (models.User.role == "hospital_admin"),
+            (models.User.email == identifier) | (models.User.doctor_id == identifier) | (models.User.id == identifier)
+        ).first()
+
+        if admin_user:
+            user_data = {
+                "id": admin_user.id,
+                "employee_id": admin_user.doctor_id or "AYUSH-EMP-9001",
+                "name": admin_user.name,
+                "email": admin_user.email,
+                "hospital_name": admin_user.hospital_name or "Ministry of Ayush Command Center",
+                "role": "hospital_admin"
+            }
+
     # ── Fallback demo / email credentials ───────────────────────────────────
     if not user_data:
-        if _is_email(identifier):
+        if role in ("admin", "hospital_admin", "super_admin", "ministry_admin") or "EMP" in identifier.upper() or "ADMIN" in identifier.upper():
+            user_data = {
+                "id": "AYUSH-EMP-9001",
+                "employee_id": identifier if "EMP" in identifier.upper() else "AYUSH-EMP-9001",
+                "name": "Shri Rakesh Varma",
+                "designation": "Senior Director, Ministry of Ayush SIH Division",
+                "email": identifier if _is_email(identifier) else "rakesh.varma@ayush.gov.in",
+                "contact": "+91 9811002233",
+                "hospital_name": "Ministry of Ayush Head Office, New Delhi",
+                "role": "hospital_admin"
+            }
+        elif _is_email(identifier):
             name_part = identifier.split("@")[0].replace(".", " ").replace("_", " ").title()
             chosen_gender = random.choice(["male", "female"])
             avatar = random.choice(FEMALE_AVATARS) if chosen_gender == "female" else random.choice(MALE_AVATARS)
@@ -195,10 +223,11 @@ def send_auth_otp(payload: dict, db: Session = Depends(get_db)):
                 "blood_group": "B+",
                 "role": "patient",
             }
-        elif role == "doctor" and identifier in ("DOC-AYUR-101", "9876543210"):
+        elif role == "doctor" and (identifier in ("DOC-AYUR-101", "9876543210") or "AYUSH-REG" in identifier.upper()):
             user_data = {
                 "id": "DOC-AYUR-101",
                 "doctor_id": "DOC-AYUR-101",
+                "registration_no": identifier if "AYUSH-REG" in identifier.upper() else "AYUSH-REG-DEL-2012-4412",
                 "name": "Dr. Rajesh Vaidya",
                 "qualification": "BAMS, MD (Kayachikitsa)",
                 "hospital_name": "All India Institute of Ayurveda (AIIA), New Delhi",

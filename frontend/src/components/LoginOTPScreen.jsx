@@ -242,7 +242,7 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
               className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <User className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Ramesh Sharma (ABHA-9821)</span>
+              <span>Ramesh Sharma (ABHA-9821-4501)</span>
             </button>
             <button
               type="button"
@@ -250,7 +250,7 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
               className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <User className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Priya Deshmukh (ABHA-3344)</span>
+              <span>Priya Deshmukh (ABHA-3344-1102)</span>
             </button>
             <button
               type="button"
@@ -258,7 +258,54 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
               className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <User className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Sunita Sharma (ABHA-3412)</span>
+              <span>Sunita Sharma (ABHA-3412-8902)</span>
+            </button>
+          </div>
+        ) : role === 'admin' ? (
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                const adminData = {
+                  id: 'AYUSH-EMP-9001',
+                  employee_id: 'AYUSH-EMP-9001',
+                  name: 'Shri Rakesh Varma',
+                  designation: 'Senior Director, Ministry of Ayush SIH Division',
+                  email: 'rakesh.varma@ayush.gov.in',
+                  hospital_name: 'Ministry of Ayush Head Office, New Delhi',
+                  role: 'hospital_admin',
+                  token: `jwt_admin_${Date.now()}`
+                };
+                localStorage.setItem('swasth_jwt_token', adminData.token);
+                localStorage.setItem('swasth_user', JSON.stringify(adminData));
+                onLoginSuccess(adminData);
+              }}
+              className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Shri Rakesh Varma (EMP-9001)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const adminData = {
+                  id: 'AYUSH-EMP-9002',
+                  employee_id: 'AYUSH-EMP-9002',
+                  name: 'Dr. Sangeeta Rao',
+                  designation: 'ABDM Integration Officer, MoA Govt of India',
+                  email: 'sangeeta.rao@ayush.gov.in',
+                  hospital_name: 'All India Institute of Ayurveda Command Center',
+                  role: 'hospital_admin',
+                  token: `jwt_admin_${Date.now()}`
+                };
+                localStorage.setItem('swasth_jwt_token', adminData.token);
+                localStorage.setItem('swasth_user', JSON.stringify(adminData));
+                onLoginSuccess(adminData);
+              }}
+              className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Dr. Sangeeta Rao (EMP-9002)</span>
             </button>
           </div>
         ) : (
@@ -269,7 +316,7 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
               className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Dr. Rajesh Vaidya (AIIA)</span>
+              <span>Dr. Rajesh Vaidya (AYUSH-REG-DEL-2012-4412)</span>
             </button>
             <button
               type="button"
@@ -277,7 +324,7 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
               className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Dr. Ananya Shastri (NIA)</span>
+              <span>Dr. Ananya Shastri (AYUSH-REG-RAJ-2015-1108)</span>
             </button>
             <button
               type="button"
@@ -285,7 +332,7 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
               className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Dr. Vikramaditya Dev (BHU)</span>
+              <span>Dr. Vikramaditya Dev (AYUSH-REG-UP-2010-8820)</span>
             </button>
           </div>
         )}
@@ -303,7 +350,7 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
       {step === 'input' && (
         <form onSubmit={handleSendOtp} className="space-y-3">
 
-          {/* Mode toggle: Mobile/ABHA vs Email */}
+          {/* Mode toggle: Mobile/Govt ID vs Email */}
           <div className="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button
               type="button"
@@ -315,7 +362,7 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
               }`}
             >
               <Phone className="w-3.5 h-3.5" />
-              <span>{t('auth.modeTabMobile', 'Mobile / ABHA')}</span>
+              <span>{role === 'admin' ? 'Govt Employee ID / Mobile' : role === 'doctor' ? 'State Ayush Reg No / Mobile' : 'Central ABHA ID / Mobile'}</span>
             </button>
             <button
               type="button"
@@ -327,17 +374,19 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
               }`}
             >
               <Mail className="w-3.5 h-3.5" />
-              <span>{t('auth.modeTabEmail', 'Email OTP')}</span>
+              <span>Gmail / Official Email OTP</span>
             </button>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
               {inputMode === 'email'
-                ? t('auth.enterEmail', 'Enter Registered Email Address')
+                ? t('auth.enterEmail', 'Enter Official Gmail Email Address')
+                : role === 'admin'
+                ? 'Enter Ministry Govt Employee ID / Officer ID'
                 : role === 'doctor'
-                ? t('auth.enterDoctorIdOrMobile', 'Enter Doctor ID or Registered Mobile Number')
-                : t('auth.enterAbhaOrMobile', 'Enter 14-Digit ABHA ID or 10-Digit Mobile Number')}
+                ? 'Enter State Ayush Council Registration Number'
+                : t('auth.enterAbhaOrMobile', 'Enter 14-Digit ABHA ID / ABHA Address')}
             </label>
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 focus-within:border-emerald-500 focus-within:bg-white transition-all shadow-inner">
               {inputMode === 'email'
@@ -349,9 +398,11 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder={
                   inputMode === 'email'
-                    ? 'e.g. yourname@gmail.com'
+                    ? 'e.g. rakesh.varma@ayush.gov.in or yourname@gmail.com'
+                    : role === 'admin'
+                    ? 'e.g. AYUSH-EMP-9001 or 9811002233'
                     : role === 'doctor'
-                    ? 'e.g. DOC-AYUR-101 or 9876543210'
+                    ? 'e.g. AYUSH-REG-DEL-2012-4412 or 9876543210'
                     : 'e.g. ABHA-9821-4501 or 9821450100'
                 }
                 className="w-full bg-transparent text-xs font-medium text-slate-900 outline-none"
