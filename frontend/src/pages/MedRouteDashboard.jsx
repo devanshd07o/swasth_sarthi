@@ -97,10 +97,10 @@ function generateNearbyHospitals(userLat, userLng) {
   return [
     {
       id: 'AYUSH-LOC-01',
-      name: 'Central Ayush Multi-Specialty Research Hospital',
-      address: 'Sector 4, Near Main Highway Corridor',
-      city: 'Local Region',
-      phone: '+91 11 2987 0000',
+      name: 'AIIA Ayurvedic Research Center & Hospital',
+      address: 'Campus Gate #2 Road, ABES Enclave, Ghaziabad',
+      city: 'Ghaziabad',
+      phone: '+91 120 284 5000',
       lat: userLat + 0.011,
       lng: userLng + 0.014,
       opd_timing: '09:00 AM - 04:00 PM',
@@ -111,10 +111,10 @@ function generateNearbyHospitals(userLat, userLng) {
     },
     {
       id: 'AYUSH-LOC-02',
-      name: 'Govt. Ayush District Hospital & OPD Center',
-      address: 'Civil Lines, OPD Gate #2',
-      city: 'Local Region',
-      phone: '+91 11 2616 5060',
+      name: 'Govt. Ayush District Hospital',
+      address: 'Indirapuram Block C, Near Highway Flyover, Ghaziabad',
+      city: 'Ghaziabad',
+      phone: '+91 120 261 5060',
       lat: userLat - 0.015,
       lng: userLng - 0.012,
       opd_timing: '08:30 AM - 03:00 PM',
@@ -125,9 +125,9 @@ function generateNearbyHospitals(userLat, userLng) {
     {
       id: 'AYUSH-LOC-03',
       name: 'National Ayurvedic Panchakarma & Wellness Center',
-      address: 'Knowledge Park, Block B Enclave',
-      city: 'Local Region',
-      phone: '+91 141 263 5816',
+      address: 'Sector 62, Medical Hub Zone, Noida',
+      city: 'Noida',
+      phone: '+91 120 263 5816',
       lat: userLat + 0.022,
       lng: userLng - 0.018,
       opd_timing: '09:00 AM - 04:00 PM',
@@ -138,9 +138,9 @@ function generateNearbyHospitals(userLat, userLng) {
     {
       id: 'AYUSH-LOC-04',
       name: 'Regional Faculty of Ayurveda Hospital',
-      address: 'University Medical Enclave, Campus Road',
-      city: 'Local Region',
-      phone: '+91 542 236 7568',
+      address: 'Crossings Republik Enclave, Main Arterial Road, Ghaziabad',
+      city: 'Ghaziabad',
+      phone: '+91 120 236 7568',
       lat: userLat - 0.026,
       lng: userLng + 0.028,
       opd_timing: '09:00 AM - 05:00 PM',
@@ -151,9 +151,9 @@ function generateNearbyHospitals(userLat, userLng) {
     {
       id: 'AYUSH-LOC-05',
       name: 'Tilak Ayush Specialty Clinic & Herb Store',
-      address: 'Station Road, OPD Block A',
-      city: 'Local Region',
-      phone: '+91 22 2612 1100',
+      address: 'Vasundhara Sector 14, Main OPD Complex, Ghaziabad',
+      city: 'Ghaziabad',
+      phone: '+91 120 261 1100',
       lat: userLat + 0.032,
       lng: userLng + 0.025,
       opd_timing: '09:00 AM - 04:30 PM',
@@ -166,14 +166,15 @@ function generateNearbyHospitals(userLat, userLng) {
 
 export default function MedRouteDashboard({ lang = 'en' }) {
   const { t } = useTranslation();
-  const [userPos, setUserPos] = useState({ lat: 28.6139, lng: 77.2090 });
-  const [locationName, setLocationName] = useState('New Delhi (Live GPS Center)');
+  // ABES Engineering College, Ghaziabad default coordinates (28.6341, 77.4475)
+  const [userPos, setUserPos] = useState({ lat: 28.6341, lng: 77.4475 });
+  const [locationName, setLocationName] = useState('ABES Engineering College, Ghaziabad');
   const [detectingGps, setDetectingGps] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [hospitalsData, setHospitalsData] = useState(() =>
-    generateNearbyHospitals(28.6139, 77.2090)
+    generateNearbyHospitals(28.6341, 77.4475)
   );
 
   const [selectedHospital, setSelectedHospital] = useState(null);
@@ -211,7 +212,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
       (err) => {
         console.warn('GPS position error:', err);
         setDetectingGps(false);
-        alert('Could not fetch live GPS position. Using New Delhi region.');
+        alert('Could not fetch live GPS position. Using ABES Engineering College, Ghaziabad region.');
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -252,7 +253,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
   });
 
   return (
-    <div className="max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 font-body text-xs text-slate-800 animate-fade-in">
+    <div className="max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 font-body text-xs text-slate-800 animate-fade-in pb-16">
 
       {/* ─── Top Banner ──────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl space-y-4 border border-emerald-700/60">
@@ -330,7 +331,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
       </div>
 
       {/* ─── Main Content Grid: Map + Hospital Directory ───────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
         {/* Interactive Leaflet Map with Animated Route Overlay */}
         <div className="lg:col-span-6 space-y-4">
@@ -345,10 +346,10 @@ export default function MedRouteDashboard({ lang = 'en' }) {
               </span>
             </div>
 
-            <div className="h-[480px] rounded-2xl overflow-hidden border border-slate-200 relative shadow-inner">
+            <div className="h-[460px] rounded-2xl overflow-hidden border border-slate-200 relative shadow-inner">
               <MapContainer
                 center={[userPos.lat, userPos.lng]}
-                zoom={11}
+                zoom={12}
                 style={{ height: '100%', width: '100%' }}
               >
                 <TileLayer
@@ -363,7 +364,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
                 <Marker position={[userPos.lat, userPos.lng]} icon={userLocationIcon}>
                   <Popup>
                     <div className="text-xs font-bold text-slate-900 p-1">
-                      📍 Your Current Location
+                      📍 ABES Engineering College, Ghaziabad
                     </div>
                   </Popup>
                 </Marker>
@@ -466,7 +467,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
             <span className="text-[11px] font-bold text-slate-500">Select Card to View Route</span>
           </div>
 
-          <div className="space-y-4 max-h-[640px] overflow-y-auto pr-1">
+          <div className="space-y-4 max-h-[660px] overflow-y-auto pr-2 pb-16">
             {filteredHospitals.map((h) => {
               const isSelected = selectedHospital?.id === h.id;
               return (
