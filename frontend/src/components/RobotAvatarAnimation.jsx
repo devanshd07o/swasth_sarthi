@@ -56,20 +56,33 @@ export default function RobotAvatarAnimation({
         setCurrentFrameIndex(thinkSequence[idx]);
       }, 200);
     } else {
-      // 🌿 100% ALIVE IDLE MODE:
-      // Continuous organic eye-shimmer, micro-dips, and periodic full eye blinks.
-      // Never sits frozen; eyes gently move, shimmer, and blink in a fluid biological rhythm.
-      const aliveIdlePattern = [
-        0, 0, 0, 1, 0, 0, 0, 0, 2, 1, 0, 0,
-        0, 1, 2, 4, 5, 4, 2, 1, 0, 0, 0, 0,
-        0, 0, 1, 2, 1, 0, 0, 0, 3, 2, 1, 0
-      ];
-      let stepIndex = 0;
+      // 🌿 IDLE MODE:
+      // 1. Character rests naturally on frame 0 (eyes wide open).
+      // 2. Fixed duration (interval) between blinks: Every 3.5 seconds.
+      // 3. Crisp, natural eye-blink speed (40ms per frame step = 280ms total blink).
+      setCurrentFrameIndex(0);
 
-      mainTimer = setInterval(() => {
-        stepIndex = (stepIndex + 1) % aliveIdlePattern.length;
-        setCurrentFrameIndex(aliveIdlePattern[stepIndex]);
-      }, 480); // Slower, super calm & relaxed idle speed (480ms per frame)
+      const triggerCrispBlink = () => {
+        if (isBlinkingRef.current) return;
+        isBlinkingRef.current = true;
+
+        const blinkSequence = [0, 1, 2, 4, 5, 4, 2, 1, 0];
+        let step = 0;
+
+        const timer = setInterval(() => {
+          step++;
+          if (step < blinkSequence.length) {
+            setCurrentFrameIndex(blinkSequence[step]);
+          } else {
+            clearInterval(timer);
+            setCurrentFrameIndex(0); // Lock back on default open eyes
+            isBlinkingRef.current = false;
+          }
+        }, 40); // 40ms per frame = crisp natural eye-blink
+      };
+
+      // Fixed 3.5 second interval between blinks
+      mainTimer = setInterval(triggerCrispBlink, 3500);
     }
 
     return () => {
@@ -87,7 +100,7 @@ export default function RobotAvatarAnimation({
 
   // Glow aura ring based on AI state
   const glowClasses = {
-    idle: 'drop-shadow-[0_0_15px_rgba(16,185,129,0.35)]',
+    idle: 'drop-shadow-[0_0_14px_rgba(16,185,129,0.35)]',
     listening: 'drop-shadow-[0_0_22px_rgba(244,63,94,0.75)] animate-pulse',
     thinking: 'drop-shadow-[0_0_22px_rgba(245,158,11,0.75)]',
     speaking: 'drop-shadow-[0_0_22px_rgba(20,184,166,0.75)] animate-pulse',
@@ -97,7 +110,7 @@ export default function RobotAvatarAnimation({
     <div
       onClick={onClick}
       className={`relative inline-flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 ${sizeClasses} ${className}`}
-      style={{ animation: 'avatarFloat 5s ease-in-out infinite' }}
+      style={{ animation: 'avatarFloat 3.5s ease-in-out infinite' }}
     >
       <style>{`
         @keyframes avatarFloat {
