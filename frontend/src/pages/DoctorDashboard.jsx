@@ -7,7 +7,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getDoctorPatients, getDoctorById, signCase as apiSignCase, completeCaseToken } from '../services/api';
 
-export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en' }) {
+export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTimeline, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en', initialFocusRegister = false }) {
   const { t } = useTranslation();
   const [patients, setPatients] = useState([]);
   const [doctorInfo, setDoctorInfo] = useState(null);
@@ -62,9 +62,10 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [docData, patientList] = await Promise.all([
+      const [docData, activeList, completedList] = await Promise.all([
         getDoctorById(currentDoctorId).catch(() => null),
-        getDoctorPatients(currentDoctorId, searchQuery, 'active').catch(() => [])
+        getDoctorPatients(currentDoctorId, searchQuery, 'active').catch(() => []),
+        getDoctorPatients(currentDoctorId, '', 'completed').catch(() => [])
       ]);
       if (docData) setDoctorInfo(docData);
 
@@ -74,11 +75,38 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
         closedTokenIds = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
       } catch (_) {}
 
-      const activeOnly = (patientList || []).filter(p => 
+      const activeOnly = (activeList || []).filter(p => 
         p.status !== 'completed' && !closedTokenIds.includes(p.patient_id)
       );
 
       setPatients(activeOnly);
+
+      // Merge backend completed cases into completedPatients state
+      if (completedList && completedList.length > 0) {
+        const mappedBackendCompleted = completedList.map(cp => ({
+          patient_id: cp.patient_id,
+          name: cp.name,
+          abha_id: cp.abha_id || cp.uhid || 'ABHA-PATIENT',
+          gender: cp.gender || 'MALE',
+          age: cp.age || 40,
+          diagnosis: cp.latest_chief_complaint || 'OPD Consult Completed',
+          regimen: 'AYUSH e-Prescription Signed & Closed',
+          status: 'Signed & Completed',
+          date: cp.latest_visit_date || new Date().toISOString().split('T')[0],
+          day: new Date(cp.latest_visit_date || Date.now()).toLocaleDateString('en-US', { weekday: 'long' }),
+          token_number: cp.token_number || 'OPD-100'
+        }));
+
+        setCompletedPatients(prev => {
+          const existingIds = new Set(prev.map(item => item.patient_id));
+          const newItems = mappedBackendCompleted.filter(item => !existingIds.has(item.patient_id));
+          const merged = [...newItems, ...prev];
+          try {
+            localStorage.setItem('ss_completed_records', JSON.stringify(merged));
+          } catch (_) {}
+          return merged;
+        });
+      }
     } catch (e) {
       console.error('Failed to load doctor dashboard', e);
     } finally {
