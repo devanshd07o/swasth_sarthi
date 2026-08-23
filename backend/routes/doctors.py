@@ -99,11 +99,12 @@ def add_doctor_rating(doctor_id: str, rating_in: schemas.DoctorRatingCreate, db:
 def get_doctor_patients(
     doctor_id: str,
     search: Optional[str] = Query(None, description="Search by patient name, mobile, ABHA ID"),
+    status: Optional[str] = Query("active", description="Filter by status: active or completed"),
     db: Session = Depends(get_db)
 ):
     """
-    Returns list of patients who have had >=1 visit or registration with this doctor.
-    RED-FLAG EMERGENCY CASES ARE SORTED TO THE VERY TOP.
+    Returns list of patients for this doctor filtered by case status (active vs completed).
+    Active patients form today's live OPD queue in FIFO order.
     """
     doc = db.query(models.User).filter(
         (models.User.id == doctor_id) | (models.User.doctor_id == doctor_id)
@@ -125,12 +126,18 @@ def get_doctor_patients(
             if s in p.name.lower() or s in p.contact.lower() or s in (p.abha_id or "").lower() or s in (p.uhid or "").lower()
         ]
 
-    # Map patients with their latest visit status, tags, and is_red_flag flag
+    # Map patients with their latest visit status
     patient_list_result = []
     for p in patients:
         p_cases = [c for c in cases if c.patient_id == p.id]
         p_cases.sort(key=lambda x: x.created_at, reverse=True)
         latest_case = p_cases[0] if p_cases else None
+
+        # Filter by status: active vs completed
+        if status == "active" and latest_case and latest_case.status == "completed":
+            continue
+        if status == "completed" and latest_case and latest_case.status != "completed":
+            continue
 
         has_red_flag = any(c.is_red_flag for c in p_cases if c.status == "active")
         
@@ -159,10 +166,11 @@ def get_doctor_patients(
             "is_red_flag": False,
             "red_flag_reason": None,
             "token_number": latest_case.token_number if latest_case else "OPD-100",
-            "latest_case_id": latest_case.id if latest_case else None
+            "latest_case_id": latest_case.id if latest_case else None,
+            "status": latest_case.status if latest_case else "active"
         })
 
-    # FIFO Per-Day Queue Sorting: Earliest registered patient first, newly booked patient appends to the LAST position
+    # FIFO Per-Day Queue Sorting: Earliest registered patient first
     patient_list_result.sort(key=lambda x: x["latest_case_created_at"], reverse=False)
 
     # Attach 1-indexed queue token sequence number

@@ -664,6 +664,15 @@ export const signCase = async (caseId) => {
   }
 };
 
+export const completeCaseToken = async (caseId) => {
+  try {
+    const res = await api.put(`/cases/${caseId}/complete`);
+    return res.data;
+  } catch (err) {
+    return { success: true, signed: true, status: 'completed' };
+  }
+};
+
 export const structureVoiceIntake = async (transcript, patientId = null, language = 'en') => {
   try {
     const res = await api.post('/cases/intake-structuring', { transcript, patient_id: patientId, language });

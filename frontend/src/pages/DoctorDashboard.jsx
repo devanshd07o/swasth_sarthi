@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, Sparkles, ShieldCheck, ArrowUpRight, Search, 
-  AlertTriangle, Star, Stethoscope, Filter, CheckCircle2 
+  AlertTriangle, Star, Stethoscope, Filter, CheckCircle2,
+  Calendar, Clock, FileText
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getDoctorPatients, getDoctorById, signCase as apiSignCase } from '../services/api';
+import { getDoctorPatients, getDoctorById, signCase as apiSignCase, completeCaseToken } from '../services/api';
 
 export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en' }) {
   const { t } = useTranslation();
@@ -12,6 +13,47 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
   const [doctorInfo, setDoctorInfo] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Per-Day Historical Recent Patients Search & Filter State
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyDate, setHistoryDate] = useState('');
+  const [historyDay, setHistoryDay] = useState('ALL');
+
+  // Persistent Completed Patients History State
+  const [completedPatients, setCompletedPatients] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ss_completed_records');
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return [
+      {
+        patient_id: 'pat_1',
+        name: 'Ramesh Sharma',
+        abha_id: 'ABHA-9821-4501',
+        gender: 'MALE',
+        age: 52,
+        diagnosis: 'Sandhivata (Osteoarthritis)',
+        regimen: 'Yograj Guggulu 2 tab BID, Rasnadi Kwath 15ml',
+        status: 'Signed & Completed',
+        date: '2026-08-23',
+        day: 'Sunday',
+        token_number: 'OPD-101'
+      },
+      {
+        patient_id: 'pat_2',
+        name: 'Sunita Sharma',
+        abha_id: 'ABHA-3412-8902',
+        gender: 'FEMALE',
+        age: 44,
+        diagnosis: 'Amlapitta & Hrid-Daha',
+        regimen: 'Avipattikar Churna 3g BD, Kamadugha Rasa',
+        status: 'Signed & Completed',
+        date: '2026-08-22',
+        day: 'Saturday',
+        token_number: 'OPD-102'
+      }
+    ];
+  });
 
   useEffect(() => {
     loadDashboardData();
@@ -22,10 +64,21 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
     try {
       const [docData, patientList] = await Promise.all([
         getDoctorById(currentDoctorId).catch(() => null),
-        getDoctorPatients(currentDoctorId, searchQuery).catch(() => [])
+        getDoctorPatients(currentDoctorId, searchQuery, 'active').catch(() => [])
       ]);
       if (docData) setDoctorInfo(docData);
-      setPatients(patientList);
+
+      // Filter out any closed tokens from localStorage
+      let closedTokenIds = [];
+      try {
+        closedTokenIds = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
+      } catch (_) {}
+
+      const activeOnly = (patientList || []).filter(p => 
+        p.status !== 'completed' && !closedTokenIds.includes(p.patient_id)
+      );
+
+      setPatients(activeOnly);
     } catch (e) {
       console.error('Failed to load doctor dashboard', e);
     } finally {
@@ -38,57 +91,63 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
     loadDashboardData();
   };
 
-  const [completedPatients, setCompletedPatients] = useState([
-    {
-      patient_id: 'pat_1',
-      name: 'Ramesh Sharma',
-      abha_id: 'ABHA-9821-4501',
-      diagnosis: 'Sandhivata (Osteoarthritis)',
-      regimen: 'Yograj Guggulu 2 tab BID, Rasnadi Kwath 15ml',
-      status: 'Signed & Completed',
-      date: '2026-08-23'
-    },
-    {
-      patient_id: 'pat_2',
-      name: 'Sunita Sharma',
-      abha_id: 'ABHA-3412-8902',
-      diagnosis: 'Amlapitta & Hrid-Daha',
-      regimen: 'Avipattikar Churna 3g BD, Kamadugha Rasa',
-      status: 'Signed & Completed',
-      date: '2026-08-22'
-    }
-  ]);
-
   const handleCloseToken = async (e, patient) => {
     e.stopPropagation();
     if (window.confirm(`Mark OPD consultation for ${patient.name} as Completed and close token?`)) {
       try {
         if (patient.latest_case_id) {
+          await completeCaseToken(patient.latest_case_id).catch(() => null);
           await apiSignCase(patient.latest_case_id).catch(() => null);
         }
       } catch (_) {}
-      
-      // Move patient to completed list
-      setCompletedPatients(prev => [
-        {
-          patient_id: patient.patient_id,
-          name: patient.name,
-          abha_id: patient.abha_id,
-          diagnosis: patient.latest_chief_complaint || 'OPD Consult Completed',
-          regimen: 'AYUSH Prescription Signed',
-          status: 'Signed & Completed',
-          date: new Date().toISOString().split('T')[0]
-        },
-        ...prev.filter(cp => cp.patient_id !== patient.patient_id)
-      ]);
 
-      // Remove from active queue
+      const todayDate = new Date().toISOString().split('T')[0];
+      const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+
+      const newRecord = {
+        patient_id: patient.patient_id,
+        name: patient.name,
+        abha_id: patient.abha_id || patient.uhid || 'ABHA-PATIENT',
+        gender: patient.gender || 'MALE',
+        age: patient.age || 40,
+        diagnosis: patient.latest_chief_complaint || 'OPD Consult Completed',
+        regimen: 'AYUSH e-Prescription Signed & Closed',
+        status: 'Signed & Completed',
+        date: todayDate,
+        day: todayDay,
+        token_number: `Token #${patient.queue_position || 1}`
+      };
+
+      const updatedRecords = [newRecord, ...completedPatients.filter(cp => cp.patient_id !== patient.patient_id)];
+      setCompletedPatients(updatedRecords);
+
+      try {
+        localStorage.setItem('ss_completed_records', JSON.stringify(updatedRecords));
+        const closedTokens = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
+        if (!closedTokens.includes(patient.patient_id)) {
+          closedTokens.push(patient.patient_id);
+          localStorage.setItem('ss_closed_tokens', JSON.stringify(closedTokens));
+        }
+      } catch (_) {}
+
       setPatients(prev => prev.filter(p => p.patient_id !== patient.patient_id));
     }
   };
 
   const activeDoctor = currentUser || doctorInfo;
   const emergencyCount = patients.filter(p => p.is_red_flag).length;
+
+  const filteredHistory = completedPatients.filter(item => {
+    const matchText = !historySearch || 
+      item.name.toLowerCase().includes(historySearch.toLowerCase()) || 
+      (item.abha_id || '').toLowerCase().includes(historySearch.toLowerCase()) || 
+      (item.diagnosis || '').toLowerCase().includes(historySearch.toLowerCase());
+    
+    const matchDate = !historyDate || item.date === historyDate;
+    const matchDay = historyDay === 'ALL' || (item.day || '').toLowerCase() === historyDay.toLowerCase();
+
+    return matchText && matchDate && matchDay;
+  });
 
   return (
     <div className="max-w-7xl mx-auto p-1 sm:p-2 space-y-4">
@@ -296,86 +355,180 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
 
       </div>
 
-      {/* ─── Bottom Section: Recent Signed Prescriptions & Quick Ayush Formulary ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ─── Dedicated Per-Day Patient History & Completed Register ─────────────── */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
         
-        {/* Recent Signed Case Records */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <Stethoscope className="w-4 h-4 text-emerald-600" />
-              <span>Recent OPD Consultations & Prescriptions</span>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Stethoscope className="w-5 h-5 text-emerald-700" />
+              <span>Daily Patient History & Completed OPD Register</span>
+              <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                {filteredHistory.length} Attended Records
+              </span>
             </h3>
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              HIP Synced
-            </span>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Complete per-day consultation record register searchable by Date, Day, Patient Name & ABHA ID.
+            </p>
           </div>
 
-          <div className="space-y-2.5 text-xs max-h-72 overflow-y-auto pr-1">
-            {completedPatients.map((cp, cIdx) => (
-              <div key={cIdx} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3 shadow-2xs hover:border-emerald-300 transition-colors">
-                <div>
+          <button
+            type="button"
+            onClick={() => {
+              setHistorySearch('');
+              setHistoryDate('');
+              setHistoryDay('ALL');
+            }}
+            className="text-xs font-bold text-slate-600 hover:text-slate-900 underline shrink-0 cursor-pointer"
+          >
+            Reset Filters
+          </button>
+        </div>
+
+        {/* Search & Multi-Filter Control Toolbar */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/70 p-3 rounded-xl border border-slate-200">
+          
+          {/* 1. Name & ABHA Search */}
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={historySearch}
+              onChange={(e) => setHistorySearch(e.target.value)}
+              placeholder="Search Name or ABHA ID..."
+              className="bg-transparent text-xs font-bold text-slate-800 outline-none w-full"
+            />
+          </div>
+
+          {/* 2. Specific Date Picker */}
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+            <Calendar className="w-4 h-4 text-emerald-700 shrink-0" />
+            <input
+              type="date"
+              value={historyDate}
+              onChange={(e) => setHistoryDate(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-800 outline-none w-full cursor-pointer"
+            />
+          </div>
+
+          {/* 3. Day of Week Dropdown Filter */}
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+            <Clock className="w-4 h-4 text-teal-700 shrink-0" />
+            <select
+              value={historyDay}
+              onChange={(e) => setHistoryDay(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-800 outline-none w-full cursor-pointer"
+            >
+              <option value="ALL">All Days of Week</option>
+              <option value="Sunday">Sunday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Friday">Friday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Monday">Monday</option>
+            </select>
+          </div>
+
+        </div>
+
+        {/* Filtered Patient Cards Grid */}
+        {filteredHistory.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-xs font-medium bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            No completed consultation records found matching your search filters.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredHistory.map((item, hIdx) => (
+              <div
+                key={hIdx}
+                className="p-4 bg-white hover:bg-emerald-50/20 rounded-2xl border border-slate-200 shadow-2xs space-y-3 transition-all hover:border-emerald-300"
+              >
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900">{cp.name}</span>
-                    <span className="text-[10px] text-emerald-900 font-extrabold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-                      ✓ Completed & Signed
+                    <span className="font-bold text-base text-slate-900">{item.name}</span>
+                    <span className="text-[10px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-full">
+                      {item.abha_id}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{cp.diagnosis} • {cp.regimen}</p>
+                  <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
+                    📅 {item.day || 'Day'}, {item.date}
+                  </span>
                 </div>
-                <button 
-                  onClick={() => onSelectPatient(cp.patient_id)}
-                  className="px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 font-extrabold text-[11px] rounded-xl border border-slate-200 shadow-xs cursor-pointer shrink-0 transition-colors"
-                >
-                  View EHR & Details →
-                </button>
+
+                <div className="space-y-1.5 text-xs text-slate-700">
+                  <p className="font-semibold text-slate-800">
+                    <span className="text-slate-500 font-medium">Diagnosis: </span>
+                    {item.diagnosis}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-medium line-clamp-1">
+                    <span className="text-slate-400 font-medium">Regimen: </span>
+                    {item.regimen}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-teal-600" />
+                    ✓ ABDM Signed & Archived
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => onSelectPatient(item.patient_id)}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <span>View EHR & Details</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
+        )}
+
+      </div>
+
+      {/* Quick Ayush Formulary & Ashtavidha Tools */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span>Ayush Formulary & Ashtavidha Tools</span>
+          </h3>
+          <button 
+            onClick={onNewCase}
+            className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+          >
+            + Open Case Sheet
+          </button>
         </div>
 
-        {/* Quick Ayush Formulary & Ashtavidha Tools */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Ayush Formulary & Ashtavidha Tools</span>
-            </h3>
-            <button 
-              onClick={onNewCase}
-              className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
-            >
-              + Open Case Sheet
-            </button>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <div className="p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-100">
+            <span className="text-[10px] font-bold text-emerald-800 uppercase block">Guggulu Kalpa</span>
+            <span className="font-bold text-slate-900 block mt-0.5">Yograj Guggulu</span>
+            <p className="text-[10px] text-slate-500">Joint pain, Vata roga, Sandhigata Vata</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-100">
-              <span className="text-[10px] font-bold text-emerald-800 uppercase block">Guggulu Kalpa</span>
-              <span className="font-bold text-slate-900 block mt-0.5">Yograj Guggulu</span>
-              <p className="text-[10px] text-slate-500">Joint pain, Vata roga, Sandhigata Vata</p>
-            </div>
+          <div className="p-2.5 bg-teal-50/50 rounded-xl border border-teal-100">
+            <span className="text-[10px] font-bold text-teal-800 uppercase block">Rasayana Kalpa</span>
+            <span className="font-bold text-slate-900 block mt-0.5">Ashwagandha Churna</span>
+            <p className="text-[10px] text-slate-500">Balya, Ojovardhaka, Anidra</p>
+          </div>
 
-            <div className="p-2.5 bg-teal-50/50 rounded-xl border border-teal-100">
-              <span className="text-[10px] font-bold text-teal-800 uppercase block">Rasayana Kalpa</span>
-              <span className="font-bold text-slate-900 block mt-0.5">Ashwagandha Churna</span>
-              <p className="text-[10px] text-slate-500">Balya, Ojovardhaka, Anidra</p>
-            </div>
+          <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
+            <span className="text-[10px] font-bold text-amber-800 uppercase block">Arishta / Asava</span>
+            <span className="font-bold text-slate-900 block mt-0.5">Dashamoolarishta</span>
+            <p className="text-[10px] text-slate-500">Vata hara, Shoolaprashamana</p>
+          </div>
 
-            <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
-              <span className="text-[10px] font-bold text-amber-800 uppercase block">Arishta / Asava</span>
-              <span className="font-bold text-slate-900 block mt-0.5">Dashamoolarishta</span>
-              <p className="text-[10px] text-slate-500">Vata hara, Shoolaprashamana</p>
-            </div>
-
-            <div className="p-2.5 bg-purple-50/50 rounded-xl border border-purple-100">
-              <span className="text-[10px] font-bold text-purple-800 uppercase block">Pariksha Guide</span>
-              <span className="font-bold text-slate-900 block mt-0.5">Nadi & Jihva Assessment</span>
-              <p className="text-[10px] text-slate-500">Vata/Pitta/Kapha Nadi pulse rhythm</p>
-            </div>
+          <div className="p-2.5 bg-purple-50/50 rounded-xl border border-purple-100">
+            <span className="text-[10px] font-bold text-purple-800 uppercase block">Pariksha Guide</span>
+            <span className="font-bold text-slate-900 block mt-0.5">Nadi & Jihva Assessment</span>
+            <p className="text-[10px] text-slate-500">Vata/Pitta/Kapha Nadi pulse rhythm</p>
           </div>
         </div>
-
       </div>
 
     </div>

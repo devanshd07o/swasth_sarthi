@@ -439,6 +439,21 @@ def sign_and_prescribe(case_id: str, db: Session = Depends(get_db)):
     db.refresh(case_item)
     return case_item
 
+@router.put("/{case_id}/complete", response_model=schemas.PatientCaseResponse)
+def complete_case_token(case_id: str, db: Session = Depends(get_db)):
+    """
+    Closes active OPD token and marks case as completed in backend DB.
+    """
+    case_item = db.query(models.PatientCase).filter(models.PatientCase.id == case_id).first()
+    if not case_item:
+        raise HTTPException(status_code=404, detail="Case record not found")
+    case_item.status = "completed"
+    case_item.prescription_signed = True
+    case_item.prescription_signed_at = datetime.utcnow()
+    db.commit()
+    db.refresh(case_item)
+    return case_item
+
 @router.get("/{case_id}/pdf")
 def download_prescription_pdf(case_id: str, db: Session = Depends(get_db)):
     """
