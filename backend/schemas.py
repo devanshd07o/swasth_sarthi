@@ -158,6 +158,17 @@ class IntakeStructuringRequest(BaseModel):
     patient_id: Optional[str] = None
     language: Optional[str] = "en"
 
+class QAPairInput(BaseModel):
+    question: str
+    answer: str
+    field: Optional[str] = None
+
+class CompleteStructuringRequest(BaseModel):
+    transcript: str
+    qa_pairs: List[QAPairInput] = []
+    patient_id: Optional[str] = None
+    language: Optional[str] = "en"
+
 class RedFlagScanRequest(BaseModel):
     transcript: str
 

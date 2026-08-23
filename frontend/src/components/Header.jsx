@@ -1,98 +1,76 @@
 import React from 'react';
-import { Globe, LogOut, Settings, Lock } from 'lucide-react';
+import { LogIn, PlusCircle, Stethoscope } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import BrandLogo from './BrandLogo';
 
 export default function Header({ 
   currentUser, 
   onOpenAuth, 
   onLogout, 
-  onNavigateSettings, 
   onNavigateHome,
-  lang,
-  setLang 
+  onQuickAction
 }) {
+  const { t } = useTranslation();
+  const role = currentUser?.role;
+
   return (
-    <header className="sticky top-0 z-50 bg-[#FBF6EC]/95 backdrop-blur-md border-b border-hairline shadow-paper-sm transition-colors duration-200">
-      <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md transition-all duration-300 border-b border-slate-100 shrink-0">
+      <div className="w-full px-3 sm:px-5 py-0.5 flex items-center justify-between gap-2">
         
-        {/* Brand Header */}
-        <button onClick={onNavigateHome} className="flex items-center gap-3 text-left group cursor-pointer">
-          <BrandLogo size={40} className="group-hover:scale-105 transition-transform" />
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-display font-semibold text-lg md:text-xl tracking-tight text-ink">
-                SwasthSaarthi
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full font-mono text-[10px] font-medium border border-hairline bg-brand/5 text-brand-deep tracking-wider uppercase">
-                Ministry of Ayush • SIH26047
-              </span>
-            </div>
-            <p className="text-xs text-ink-soft font-body font-normal">
-              AyurSaarthi AI Digital Case-Taking Platform
-            </p>
-          </div>
+        {/* Left Aligned Brand Header (Maximized Symbol Height with Minute Padding) */}
+        <button onClick={onNavigateHome} className="flex items-center gap-2 sm:gap-3 text-left group cursor-pointer py-0">
+          <img 
+            src="/emblem_of_india.svg" 
+            alt="Satyamev Jayate Emblem of India" 
+            className="h-12 sm:h-14 md:h-[54px] w-auto object-contain shrink-0 border-r border-slate-200/80 pr-2 sm:pr-3" 
+          />
+          <img 
+            src="/favicon.ico" 
+            alt="SwasthSaarthi Icon" 
+            className="h-10 sm:h-11 md:h-12 w-auto object-contain group-hover:scale-105 transition-all duration-300 shrink-0" 
+          />
+          <img 
+            src="/swasthsaarthi_logo.png" 
+            alt="SwasthSaarthi" 
+            className="h-12 sm:h-14 md:h-[56px] w-auto object-contain group-hover:scale-[1.02] transition-all duration-300"
+          />
         </button>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-3">
-          
-          {/* Global Language Switcher */}
-          <button
-            onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
-            className="px-3.5 py-2 bg-bg-deep hover:bg-hairline-soft text-ink rounded-control border border-hairline font-mono text-xs font-medium flex items-center gap-1.5 transition-all shadow-paper-sm cursor-pointer"
-            title="Toggle Language (English / Hindi)"
-          >
-            <Globe className="w-3.5 h-3.5 text-brand" />
-            <span>{lang === 'en' ? 'EN' : 'HI'}</span>
-          </button>
-
+        {/* Top Right Header Controls - Dynamic Quick Action CTA */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {currentUser ? (
-            <div className="flex items-center gap-2">
+            role === 'patient' ? (
               <button
-                onClick={onNavigateSettings}
-                className="p-2 text-ink-soft hover:text-ink hover:bg-bg-deep rounded-control border border-hairline transition-all shadow-paper-sm cursor-pointer"
-                title="Account Settings"
+                type="button"
+                onClick={onQuickAction}
+                className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-body font-bold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer border border-emerald-600/60 shadow-xs hover:shadow-sm group"
+                title="Book OPD Consultation with Certified Vaidya"
               >
-                <Settings className="w-4 h-4" />
+                <Stethoscope className="w-4 h-4 text-emerald-200 group-hover:scale-110 transition-transform shrink-0" />
+                <span>+ Book OPD Consultation</span>
               </button>
-
-              <div className="flex items-center gap-2.5 pl-3 border-l border-hairline">
-                {currentUser?.avatar_url ? (
-                  <img
-                    src={currentUser.avatar_url}
-                    alt={currentUser.name}
-                    className="w-9 h-9 rounded-control object-cover border border-hairline shadow-paper-sm shrink-0"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-control bg-brand text-[#FBF6EC] font-display font-bold text-xs flex items-center justify-center shadow-paper-sm shrink-0">
-                    {currentUser?.name?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                )}
-                <div className="hidden sm:block text-left">
-                  <h4 className="text-xs font-semibold text-ink leading-tight">{currentUser.name}</h4>
-                  <span className="font-mono text-[10px] text-brand-deep font-medium uppercase tracking-wide block">
-                    {currentUser.role.replace('_', ' ')}
-                  </span>
-                </div>
-                <button
-                  onClick={onLogout}
-                  className="p-2 text-ink-faint hover:text-maroon hover:bg-maroon-tint rounded-control transition-all cursor-pointer"
-                  title="Sign Out"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            ) : role === 'doctor' ? (
+              <button
+                type="button"
+                onClick={onQuickAction}
+                className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-body font-bold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer border border-emerald-600/60 shadow-xs hover:shadow-sm group"
+                title="Open New Ashtavidha OPD Case Sheet"
+              >
+                <PlusCircle className="w-4 h-4 text-emerald-200 group-hover:scale-110 transition-transform shrink-0" />
+                <span>+ New Case Sheet</span>
+              </button>
+            ) : null
           ) : (
             <button
-              onClick={onOpenAuth}
-              className="px-5 py-2.5 bg-brand hover:bg-brand-deep text-[#FBF6EC] font-body font-semibold text-xs rounded-control flex items-center gap-1.5 shadow-paper-sm transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              type="button"
+              onClick={() => onOpenAuth('all')}
+              className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-display font-semibold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer border border-emerald-700/60 shadow-xs hover:shadow-sm"
+              title={t('header.portalLogin', 'Portal Login')}
             >
-              <Lock className="w-3.5 h-3.5 text-gold-soft" />
-              <span>Login</span>
+              <LogIn className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
+              <span>{t('header.portalLogin', 'Portal Login')}</span>
             </button>
           )}
-
         </div>
 
       </div>

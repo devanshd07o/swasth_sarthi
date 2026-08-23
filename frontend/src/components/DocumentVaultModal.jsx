@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { UploadCloud, FileText, CheckCircle2, Sparkles, X, Calendar, Building2, Eye, Plus, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { uploadOcrDocument, extractOcrDocument } from '../services/api';
 
 export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocumentUploaded, lang = 'en' }) {
+  const { t } = useTranslation();
   const [file, setFile] = useState(null);
   const [docType, setDocType] = useState('Prescription');
   const [sourceHospital, setSourceHospital] = useState('');
@@ -50,7 +52,7 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
       if (onDocumentUploaded) onDocumentUploaded(saved);
       onClose();
     } catch (err) {
-      alert('Failed to save document to OCR Vault');
+      alert(t('documentVault.errorSave', 'Failed to save document to OCR Vault'));
     } finally {
       setSaving(false);
     }
@@ -67,11 +69,11 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
               <UploadCloud className="w-5 h-5 text-emerald-300" />
             </div>
             <div>
-              <h3 className="text-base font-black">ABDM OCR Document Vault</h3>
-              <p className="text-[11px] text-emerald-200">Digitize old paper prescriptions, lab tests & discharge summaries</p>
+              <h3 className="text-base font-black">{t('documentVault.title', 'ABDM OCR Document Vault')}</h3>
+              <p className="text-[11px] text-emerald-200">{t('documentVault.subtitle', 'Digitize old paper prescriptions, lab tests & discharge summaries')}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all">
+          <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -94,12 +96,12 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
               {file ? (
                 <div>
                   <span className="font-extrabold text-slate-900 block text-xs">{file.name}</span>
-                  <span className="text-[11px] text-emerald-600 font-semibold">{(file.size / 1024).toFixed(1)} KB • Ready for OCR Parsing</span>
+                  <span className="text-[11px] text-emerald-600 font-semibold">{(file.size / 1024).toFixed(1)} {t('documentVault.readyForOcr', 'KB • Ready for OCR Parsing')}</span>
                 </div>
               ) : (
                 <div>
-                  <span className="font-bold text-slate-700 block">Click or Drag & Drop Old Prescription / Report</span>
-                  <span className="text-[11px] text-slate-400">PDF, JPG, PNG up to 10MB</span>
+                  <span className="font-bold text-slate-700 block">{t('documentVault.dropzonePrompt', 'Click or Drag & Drop Old Prescription / Report')}</span>
+                  <span className="text-[11px] text-slate-400">{t('documentVault.supportedFormats', 'PDF, JPG, PNG up to 10MB')}</span>
                 </div>
               )}
             </div>
@@ -108,20 +110,20 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
           {extracting && (
             <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 flex items-center gap-2 animate-pulse">
               <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span className="font-bold text-xs">AI OCR is parsing text, past medicines & diagnosis...</span>
+              <span className="font-bold text-xs">{t('documentVault.parsingInProgress', 'AI OCR is parsing text, past medicines & diagnosis...')}</span>
             </div>
           )}
 
           {extractedData && (
             <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 animate-fade-in">
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Extracted Clinical Facts (OCR)</span>
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase block">{t('documentVault.extractedFactsTitle', 'Extracted Clinical Facts (OCR)')}</span>
               <div className="space-y-1 text-slate-700">
                 {extractedData.diagnoses && (
-                  <div><span className="font-semibold text-slate-500">Extracted Diagnoses:</span> <span className="font-bold text-emerald-800">{extractedData.diagnoses.join(', ')}</span></div>
+                  <div><span className="font-semibold text-slate-500">{t('documentVault.extractedDiagnoses', 'Extracted Diagnoses:')}</span> <span className="font-bold text-emerald-800">{extractedData.diagnoses.join(', ')}</span></div>
                 )}
                 {extractedData.medicines && (
                   <div>
-                    <span className="font-semibold text-slate-500">Previous Meds:</span>{' '}
+                    <span className="font-semibold text-slate-500">{t('documentVault.previousMeds', 'Previous Meds:')}</span>{' '}
                     <span className="font-bold text-slate-800">{extractedData.medicines.map(m => m.name || m).join(', ')}</span>
                   </div>
                 )}
@@ -132,21 +134,21 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
           {/* Form Fields */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Document Category</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">{t('documentVault.categoryLabel', 'Document Category')}</label>
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value)}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
               >
-                <option value="Prescription">Prescription (पर्चा)</option>
-                <option value="Lab Report">Lab / Blood Report</option>
-                <option value="X-Ray / Radiology">X-Ray / MRI Scan</option>
-                <option value="Discharge Summary">Discharge Summary</option>
+                <option value="Prescription">{t('documentVault.catPrescription', 'Prescription (पर्चा)')}</option>
+                <option value="Lab Report">{t('documentVault.catLabReport', 'Lab / Blood Report')}</option>
+                <option value="X-Ray / Radiology">{t('documentVault.catRadiology', 'X-Ray / MRI Scan')}</option>
+                <option value="Discharge Summary">{t('documentVault.catDischarge', 'Discharge Summary')}</option>
               </select>
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Document Date</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">{t('documentVault.dateLabel', 'Document Date')}</label>
               <input
                 type="date"
                 value={docDate}
@@ -157,14 +159,14 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
           </div>
 
           <div>
-            <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Source Clinic / Hospital / Doctor</label>
+            <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">{t('documentVault.sourceLabel', 'Source Clinic / Hospital / Doctor')}</label>
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
               <Building2 className="w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={sourceHospital}
                 onChange={(e) => setSourceHospital(e.target.value)}
-                placeholder="e.g. All India Institute of Ayurveda / Local Vaidya Clinic"
+                placeholder={t('documentVault.sourcePlaceholder', 'e.g. All India Institute of Ayurveda / Local Vaidya Clinic')}
                 className="w-full bg-transparent text-xs font-medium text-slate-800 outline-none"
               />
             </div>
@@ -173,16 +175,16 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
           <div className="p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-start gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
             <p className="text-[11px] text-emerald-900 leading-tight">
-              Documents are encrypted and attached to the patient's central ABHA record, instantly available for all future Vaidya consultations.
+              {t('documentVault.securityNote', "Documents are encrypted and attached to the patient's central ABHA record, instantly available for all future Vaidya consultations.")}
             </p>
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl shadow-sm transition-all"
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl shadow-sm transition-all cursor-pointer"
           >
-            {saving ? "Digitizing & Uploading..." : "Save to Central ABDM Vault"}
+            {saving ? t('documentVault.saving', 'Digitizing & Uploading...') : t('documentVault.saveBtn', 'Save to Central ABDM Vault')}
           </button>
         </form>
 

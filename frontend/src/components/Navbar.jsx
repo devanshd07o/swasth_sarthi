@@ -1,7 +1,10 @@
 import React from 'react';
 import { HeartPulse, Stethoscope, UserCheck, LayoutDashboard, Siren, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Navbar({ activeTab, setActiveTab }) {
+  const { t } = useTranslation();
+
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -17,11 +20,11 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 SwasthSaarthi
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Ministry of Ayush (SIH26047)
+                {t('navbar.sihTag', 'Ministry of Ayush (SIH26047)')}
               </span>
             </div>
             <p className="text-[11px] text-slate-500 font-medium">
-              AyurSaarthi AI Digital Case-Taking & MedRoute
+              {t('navbar.subtitle', 'AyurSaarthi AI Digital Case-Taking & MedRoute')}
             </p>
           </div>
         </div>
@@ -37,7 +40,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
             }`}
           >
             <Stethoscope className="w-3.5 h-3.5" />
-            <span>AyurSaarthi Case Sheet</span>
+            <span>{t('sidebar.caseForm', 'AyurSaarthi Case Sheet')}</span>
           </button>
 
           <button
@@ -49,7 +52,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
             }`}
           >
             <UserCheck className="w-3.5 h-3.5" />
-            <span>Patient Records</span>
+            <span>{t('sidebar.patientDirectory', 'Patient Records')}</span>
           </button>
 
           <button
@@ -61,7 +64,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
             }`}
           >
             <Siren className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
-            <span>MedRoute Routing</span>
+            <span>{t('sidebar.medrouteEmergency', 'MedRoute Routing')}</span>
           </button>
 
           <button
@@ -73,14 +76,14 @@ export default function Navbar({ activeTab, setActiveTab }) {
             }`}
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Doctor Dashboard</span>
+            <span>{t('sidebar.vaidyaDashboard', 'Doctor Dashboard')}</span>
           </button>
         </nav>
 
         {/* AI Status Badge */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 font-semibold">
           <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
-          <span>Gemini 1.5 & ElevenLabs Active</span>
+          <span>{t('navbar.aiActiveBadge', 'Gemini 1.5 & ElevenLabs Active')}</span>
         </div>
 
       </div>

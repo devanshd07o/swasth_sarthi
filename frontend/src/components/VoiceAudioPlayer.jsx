@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Volume2, VolumeX, Play, Square } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getVoiceNarration } from '../services/api';
 
 export default function VoiceAudioPlayer({ text, language = 'en' }) {
+  const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [speechSynth, setSpeechSynth] = useState(null);
@@ -19,7 +21,6 @@ export default function VoiceAudioPlayer({ text, language = 'en' }) {
     setLoading(true);
 
     try {
-      // Try ElevenLabs audio API first
       const audioBuffer = await getVoiceNarration(text, language);
       if (audioBuffer && audioBuffer.byteLength > 0) {
         const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
@@ -36,7 +37,6 @@ export default function VoiceAudioPlayer({ text, language = 'en' }) {
       console.warn('[ElevenLabs API fallback to SpeechSynthesis]:', e);
     }
 
-    // Web SpeechSynthesis Fallback
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
@@ -68,16 +68,16 @@ export default function VoiceAudioPlayer({ text, language = 'en' }) {
       }`}
     >
       {loading ? (
-        <span className="animate-spin text-amber-400">⏳ Loading Voice...</span>
+        <span className="animate-spin text-amber-400">⏳ {t('common.loading', 'Loading Voice...')}</span>
       ) : isPlaying ? (
         <>
           <Square className="w-3.5 h-3.5 text-white" />
-          <span>Stop AI Voice Narration</span>
+          <span>{t('audio.stopVoice', 'Stop AI Voice Narration')}</span>
         </>
       ) : (
         <>
           <Volume2 className="w-3.5 h-3.5 text-amber-400" />
-          <span>Listen AI Voice ({language === 'hi' ? 'Hindi' : 'English'})</span>
+          <span>{t('audio.listenVoice', 'Listen AI Voice')}</span>
         </>
       )}
     </button>

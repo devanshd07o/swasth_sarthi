@@ -20,42 +20,59 @@ from services.session_memory import get_session_context, add_turn_and_update_sum
 
 # ─── Key Pool ────────────────────────────────────────────────────────────────
 _KEY_POOL = [
-    settings.GROQ_API_KEY_PRIMARY,
-    settings.GROQ_API_KEY_SECONDARY,
-    settings.GROQ_API_KEY_FALLBACK,
+    k for k in [
+        settings.GROQ_API_KEY_PRIMARY,
+        settings.GROQ_API_KEY_SECONDARY,
+        settings.GROQ_API_KEY_FALLBACK,
+    ] if k and k.strip()
+]
+
+_MODEL_POOL = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "groq/compound",
 ]
 
 def _client(idx: int = 0) -> Groq:
-    key = _KEY_POOL[idx % len(_KEY_POOL)]
-    if not key:
+    if not _KEY_POOL:
         raise ValueError("No Groq API key configured.")
+    key = _KEY_POOL[idx % len(_KEY_POOL)]
     return Groq(api_key=key)
 
 def _extract_json(text: str) -> str:
     """Extract clean JSON object from raw response."""
     import re
+    if not text:
+        return ""
     text = text.replace("```json", "").replace("```", "").strip()
+    text = text.replace("\u2011", "-").replace("\u2013", "-").replace("\u2014", "-")
+    text = text.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'")
     match = re.search(r"\{[\s\S]*\}", text)
     return match.group(0).strip() if match else text.strip()
 
-def _chat(messages: list, model: str = "openai/gpt-oss-120b", key_idx: int = 0, max_tokens: int = 600) -> str:
-    """Sync Groq call with key rotation on rate limits."""
-    for attempt in range(3):
-        try:
-            resp = _client(key_idx + attempt).chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0.25,
-                max_tokens=max_tokens,
-            )
-            return _extract_json(resp.choices[0].message.content)
-        except Exception as e:
-            msg = str(e).lower()
-            if "rate" in msg or "429" in msg:
-                print(f"[Groq] Rate-limit (attempt {attempt+1}), rotating key.")
-                continue
-            print(f"[Groq Error] {model}: {e}")
-            break
+def _chat(messages: list, model: str = "openai/gpt-oss-120b", key_idx: int = 0, max_tokens: int = 1500) -> str:
+    """Sync Groq call with multi-key rotation and multi-model fallback."""
+    models_to_try = [model] + [m for m in _MODEL_POOL if m != model]
+    
+    for m in models_to_try:
+        for attempt in range(len(_KEY_POOL) or 1):
+            try:
+                client = _client(key_idx + attempt)
+                resp = client.chat.completions.create(
+                    model=m,
+                    messages=messages,
+                    temperature=0.25,
+                    max_tokens=max_tokens,
+                )
+                content = resp.choices[0].message.content
+                if content and content.strip():
+                    return _extract_json(content)
+            except Exception as e:
+                msg = str(e).lower()
+                print(f"[Groq Chat Warning] model={m}, key_idx={key_idx+attempt}: {e}")
+                if "rate" in msg or "429" in msg:
+                    continue
+                break  # Try next model if model error
     return ""
 
 def transcribe_audio_groq(audio_bytes: bytes, filename: str = "audio.webm", language: str = None) -> str:

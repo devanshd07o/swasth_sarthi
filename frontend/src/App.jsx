@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import UnifiedAuthModal from './components/UnifiedAuthModal';
@@ -12,22 +13,33 @@ import MedRouteDashboard from './pages/MedRouteDashboard';
 import PatientPortal from './pages/PatientPortal';
 import SuperAdminPortal from './pages/SuperAdminPortal';
 import VoiceAIOrb from './components/VoiceAIOrb';
+import HeaderPortalModal from './components/HeaderPortalModal';
 
 export default function App() {
+  const { i18n } = useTranslation();
   const [currentUser, setCurrentUser] = useState(null);
-  const [lang, setLang] = useState('en'); // 'en' or 'hi'
+  const [lang, setLang] = useState(() => localStorage.getItem('swasth_lang') || 'en');
   
-  // Unified Auth Modal Popup
+  // Modals state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authRole, setAuthRole] = useState('patient');
+  const [isHeaderPortalOpen, setIsHeaderPortalOpen] = useState(false);
+
+  const handleOpenAuth = (role = 'patient') => {
+    setAuthRole(role);
+    setIsAuthOpen(true);
+  };
 
   // App Navigation & Sidebar State
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedPatientId, setSelectedPatientId] = useState('ABHA-9821-4501');
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   const handleLoginSuccess = (userData) => {
     setCurrentUser(userData);
     if (userData.role === 'patient') {
+      const pId = userData.abha_id || userData.id || 'ABHA-9821-4501';
+      setSelectedPatientId(pId);
       setActiveTab('triage');
     } else if (userData.role === 'super_admin') {
       setActiveTab('national_analytics');
@@ -48,15 +60,23 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div key={i18n.language} className={`h-screen max-h-screen overflow-hidden bg-bg text-ink flex flex-col font-body antialiased lang-${i18n.language}`}>
       
       {/* Top Header */}
       <Header
         currentUser={currentUser}
-        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAuth={() => setIsHeaderPortalOpen(true)}
         onLogout={handleLogout}
         onNavigateSettings={() => setActiveTab('settings')}
         onNavigateHome={() => setCurrentUser(null)}
+        onToggleMobileSidebar={() => setIsSidebarExpanded(!isSidebarExpanded)}
+        onQuickAction={() => {
+          if (currentUser?.role === 'patient') {
+            setActiveTab('triage');
+          } else if (currentUser?.role === 'doctor') {
+            setActiveTab('case_form');
+          }
+        }}
         lang={lang}
         setLang={setLang}
       />
@@ -64,15 +84,15 @@ export default function App() {
       {/* Main Content Layout */}
       {!currentUser ? (
         // 1. PUBLIC FULL-SCREEN LANDING PAGE (NO SIDEBAR)
-        <main className="flex-1 w-full max-w-7xl mx-auto">
+        <main className="flex-1 w-full overflow-y-auto min-h-0">
           <PublicLanding
-            onOpenAuth={() => setIsAuthOpen(true)}
+            onOpenAuth={handleOpenAuth}
             lang={lang}
           />
         </main>
       ) : (
         // 2. AUTHENTICATED PORTALS (WITH COLLAPSIBLE SIDEBAR)
-        <div className="flex-1 flex w-full">
+        <div className="flex-1 flex w-full min-w-0 overflow-hidden min-h-0 bg-gradient-to-b from-white via-[#EBF3EF] via-65% to-[#C1DCD0]">
           <Sidebar
             currentUser={currentUser}
             activeTab={activeTab}
@@ -80,9 +100,12 @@ export default function App() {
             isExpanded={isSidebarExpanded}
             setIsExpanded={setIsSidebarExpanded}
             onOpenAuth={() => setIsAuthOpen(true)}
+            onLogout={handleLogout}
+            lang={lang}
+            setLang={setLang}
           />
 
-          <main className="flex-1 p-4 md:p-6 overflow-y-auto">
+          <main className="flex-1 p-2 sm:p-3 md:p-4 overflow-y-auto min-w-0">
             {/* DOCTOR ROLE TABS */}
             {currentUser.role === 'doctor' && (
               <>
@@ -90,30 +113,37 @@ export default function App() {
                   <DoctorDashboard
                     onNewCase={() => setActiveTab('case_form')}
                     onSelectPatient={handleOpenTimeline}
-                    currentDoctorId={currentUser?.doctor_id || "DOC-AYUR-101"}
+                    currentDoctorId={currentUser?.doctor_id || currentUser?.id || "DOC-AYUR-101"}
+                    currentUser={currentUser}
+                    lang={lang}
                   />
                 )}
                 {activeTab === 'case_form' && (
                   <AyurSaarthiCaseForm
                     onCaseSaved={() => setActiveTab('dashboard')}
                     onSelectPatientTimeline={handleOpenTimeline}
-                    currentDoctorId={currentUser?.doctor_id || "DOC-AYUR-101"}
+                    currentDoctorId={currentUser?.doctor_id || currentUser?.id || "DOC-AYUR-101"}
+                    currentUser={currentUser}
+                    lang={lang}
                   />
                 )}
                 {activeTab === 'patients' && (
                   <PatientDirectory
                     onSelectPatient={handleOpenTimeline}
                     onNewCase={() => setActiveTab('case_form')}
+                    currentUser={currentUser}
+                    lang={lang}
                   />
                 )}
                 {activeTab === 'timeline' && (
                   <PatientTimeline
                     patientId={selectedPatientId}
                     onBack={() => setActiveTab('dashboard')}
-                    currentDoctorId={currentUser?.doctor_id || "DOC-AYUR-101"}
+                    currentUser={currentUser}
+                    lang={lang}
                   />
                 )}
-                {activeTab === 'medroute' && <MedRouteDashboard />}
+                {activeTab === 'medroute' && <MedRouteDashboard lang={lang} />}
               </>
             )}
 
@@ -131,16 +161,18 @@ export default function App() {
                     patientId={selectedPatientId || 'ABHA-9821-4501'}
                     onBack={() => setActiveTab('triage')}
                     currentDoctorId={null}
+                    lang={lang}
                   />
                 )}
+                {activeTab === 'medroute' && <MedRouteDashboard lang={lang} />}
               </>
             )}
 
             {/* HOSPITAL ADMIN ROLE TABS */}
             {currentUser.role === 'hospital_admin' && (
               <>
-                {activeTab === 'medroute' && <MedRouteDashboard />}
-                {activeTab === 'inventory' && <MedRouteDashboard />}
+                {activeTab === 'medroute' && <MedRouteDashboard lang={lang} />}
+                {activeTab === 'inventory' && <MedRouteDashboard lang={lang} />}
               </>
             )}
 
@@ -148,7 +180,7 @@ export default function App() {
             {currentUser.role === 'super_admin' && (
               <>
                 {(activeTab === 'national_analytics' || activeTab === 'hospital_registry') && (
-                  <SuperAdminPortal />
+                  <SuperAdminPortal lang={lang} />
                 )}
               </>
             )}
@@ -158,6 +190,7 @@ export default function App() {
               <UserSettings
                 currentUser={currentUser}
                 onUpdateUser={(updated) => setCurrentUser(updated)}
+                lang={lang}
               />
             )}
           </main>
@@ -175,6 +208,15 @@ export default function App() {
       <UnifiedAuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+        lang={lang}
+        initialRole={authRole}
+      />
+
+      {/* Independent Header Portal Modal */}
+      <HeaderPortalModal
+        isOpen={isHeaderPortalOpen}
+        onClose={() => setIsHeaderPortalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
         lang={lang}
       />

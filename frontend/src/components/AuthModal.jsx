@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Stethoscope, Building2, ShieldCheck, ArrowRight, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialRole = 'doctor' }) {
+  const { t } = useTranslation();
   const [role, setRole] = useState(initialRole);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,10 +27,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialRole
   };
 
   const roleOptions = [
-    { id: 'patient', title: 'Patient / Citizen', desc: 'Self symptom triage, Digital Health Pass & personal history', icon: User, color: 'border-emerald-200 bg-emerald-50/50 text-emerald-800' },
-    { id: 'doctor', title: 'Ayurvedic Doctor / Staff', desc: 'AyurSaarthi OPD digital case sheet & AI assistant', icon: Stethoscope, color: 'border-teal-200 bg-teal-50/50 text-teal-800' },
-    { id: 'hospital_admin', title: 'Hospital Resource Admin', desc: 'MedRoute ICU, bed inventory & ambulance dispatch', icon: Building2, color: 'border-cyan-200 bg-cyan-50/50 text-cyan-800' },
-    { id: 'super_admin', title: 'Ministry Super Admin', desc: 'National AYUSH analytics & hospital command center', icon: ShieldCheck, color: 'border-purple-200 bg-purple-50/50 text-purple-800' },
+    { id: 'patient', title: t('authModal.rolePatientTitle', 'Patient / Citizen'), desc: t('authModal.rolePatientDesc', 'Self symptom triage, Digital Health Pass & personal history'), icon: User, color: 'border-emerald-200 bg-emerald-50/50 text-emerald-800' },
+    { id: 'doctor', title: t('authModal.roleDoctorTitle', 'Ayurvedic Doctor / Staff'), desc: t('authModal.roleDoctorDesc', 'AyurSaarthi OPD digital case sheet & AI assistant'), icon: Stethoscope, color: 'border-teal-200 bg-teal-50/50 text-teal-800' },
+    { id: 'hospital_admin', title: t('authModal.roleHospitalAdminTitle', 'Hospital Resource Admin'), desc: t('authModal.roleHospitalAdminDesc', 'MedRoute ICU, bed inventory & ambulance dispatch'), icon: Building2, color: 'border-cyan-200 bg-cyan-50/50 text-cyan-800' },
+    { id: 'super_admin', title: t('authModal.roleSuperAdminTitle', 'Ministry Super Admin'), desc: t('authModal.roleSuperAdminDesc', 'National AYUSH analytics & hospital command center'), icon: ShieldCheck, color: 'border-purple-200 bg-purple-50/50 text-purple-800' },
   ];
 
   return (
@@ -39,13 +41,13 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialRole
         <div className="flex items-start justify-between">
           <div>
             <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              SwasthSaarthi Authentication Door
+              {t('authModal.tag', 'SwasthSaarthi Authentication Door')}
             </span>
             <h2 className="text-xl font-black text-slate-900 mt-1">
-              Select Your Role & Sign In
+              {t('authModal.title', 'Select Your Role & Sign In')}
             </h2>
             <p className="text-xs text-slate-500 font-medium">
-              Choose your role to access your dedicated workspace portal.
+              {t('authModal.subtitle', 'Choose your role to access your dedicated workspace portal.')}
             </p>
           </div>
           <button
@@ -58,7 +60,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialRole
 
         {/* Role Selector Grid */}
         <div className="space-y-2">
-          <label className="block text-xs font-bold text-slate-700">Choose Role Access Portal:</label>
+          <label className="block text-xs font-bold text-slate-700">{t('authModal.chooseRoleLabel', 'Choose Role Access Portal:')}</label>
           <div className="grid grid-cols-1 gap-2">
             {roleOptions.map((opt) => {
               const Icon = opt.icon;
@@ -88,18 +90,18 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialRole
         {/* Login Form */}
         <form onSubmit={handleFormSubmit} className="space-y-3 pt-2">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('authModal.fullNameLabel', 'Full Name')}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Dr. Rajesh Sharma"
+              placeholder={t('authModal.fullNamePh', 'e.g. Dr. Rajesh Sharma')}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500 shadow-xs"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">{t('authModal.emailLabel', 'Email Address')}</label>
             <input
               type="email"
               value={email}
@@ -113,7 +115,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialRole
             type="submit"
             className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all"
           >
-            <span>Enter {roleOptions.find(r => r.id === role)?.title} Portal</span>
+            <span>{t('authModal.btnEnter', 'Enter Portal')}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>

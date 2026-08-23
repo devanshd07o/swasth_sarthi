@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Star, ShieldCheck, Clock, MapPin, Award, Calendar, CheckCircle2, User, X, MessageSquare, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getDoctorRatings, addDoctorRating } from '../services/api';
 
 export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookConsultation, lang = 'en' }) {
+  const { t } = useTranslation();
   const [ratings, setRatings] = useState([]);
   const [loadingRatings, setLoadingRatings] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -61,7 +63,7 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
         <div className="p-6 bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
+            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -99,15 +101,15 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase block">Experience</span>
-              <span className="text-base font-black text-slate-800">{doctor.experience_years || 12}+ Years</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">{t('doctorModal.experience', 'Experience')}</span>
+              <span className="text-base font-black text-slate-800">{doctor.experience_years || 12}+ {t('doctorModal.years', 'Years')}</span>
             </div>
             <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase block">OPD Availability</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">{t('doctorModal.availability', 'OPD Availability')}</span>
               <span className="text-xs font-bold text-emerald-700 block mt-0.5">{doctor.availability || "Mon - Sat • 9AM - 2PM"}</span>
             </div>
             <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-center">
-              <span className="text-[10px] font-bold text-emerald-800 uppercase block">Gov-Fixed Fee</span>
+              <span className="text-[10px] font-bold text-emerald-800 uppercase block">{t('doctorModal.govFee', 'Gov-Fixed Fee')}</span>
               <span className="text-base font-black text-emerald-800">₹{doctor.consultation_fee || 100}</span>
             </div>
           </div>
@@ -115,7 +117,7 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
           {/* Specializations & Ashtanga Ayurveda Focus */}
           <div className="space-y-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Ashtanga Ayurveda Specializations
+              {t('doctorModal.specializations', 'Ashtanga Ayurveda Specializations')}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {(doctor.specializations || ["Kayachikitsa", "Panchakarma"]).map((spec, i) => (
@@ -137,18 +139,18 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
               <div>
                 <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Verified Anonymous Patient Reviews</span>
+                  <span>{t('doctorModal.reviewsTitle', 'Verified Anonymous Patient Reviews')}</span>
                 </h4>
                 <p className="text-[11px] text-slate-500">
-                  Cryptographically verified consultations via central ABHA IDs. Patient names remain strictly anonymous.
+                  {t('doctorModal.reviewsSub', 'Cryptographically verified consultations via central ABHA IDs. Patient names remain strictly anonymous.')}
                 </p>
               </div>
 
               <button
                 onClick={() => setShowReviewForm(!showReviewForm)}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 rounded-xl transition-all"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 rounded-xl transition-all cursor-pointer"
               >
-                {showReviewForm ? "Cancel" : "+ Write Review"}
+                {showReviewForm ? t('common.cancel', 'Cancel') : t('doctorModal.btnWriteReview', '+ Write Review')}
               </button>
             </div>
 
@@ -157,7 +159,7 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
               <form onSubmit={handlePostReview} className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200 space-y-3 animate-fade-in">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 block mb-1">Condition Treated</label>
+                    <label className="text-[10px] font-bold text-slate-500 block mb-1">{t('doctorModal.conditionTreated', 'Condition Treated')}</label>
                     <input
                       type="text"
                       value={conditionTreated}
@@ -167,7 +169,7 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-500 block mb-1">Rating Score</label>
+                    <label className="text-[10px] font-bold text-slate-500 block mb-1">{t('doctorModal.ratingScore', 'Rating Score')}</label>
                     <select
                       value={newScore}
                       onChange={(e) => setNewScore(Number(e.target.value))}
@@ -182,12 +184,12 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 block mb-1">Your Honest Feedback</label>
+                  <label className="text-[10px] font-bold text-slate-500 block mb-1">{t('doctorModal.feedbackLabel', 'Your Honest Feedback')}</label>
                   <textarea
                     rows={2}
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Describe your treatment experience, relief timeline, and Vaidya guidance..."
+                    placeholder={t('doctorModal.feedbackPlaceholder', 'Describe your treatment experience...')}
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs"
                   />
                 </div>
@@ -195,19 +197,19 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
                 <button
                   type="submit"
                   disabled={submittingReview}
-                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs"
+                  className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
                 >
-                  {submittingReview ? "Submitting..." : "Submit Anonymous Verified Review"}
+                  {submittingReview ? t('common.loading', 'Submitting...') : t('doctorModal.btnSubmitReview', 'Submit Anonymous Verified Review')}
                 </button>
               </form>
             )}
 
             {/* Ratings List */}
             {loadingRatings ? (
-              <div className="p-4 text-center text-slate-400">Loading reviews...</div>
+              <div className="p-4 text-center text-slate-400">{t('common.loading', 'Loading reviews...')}</div>
             ) : ratings.length === 0 ? (
               <div className="p-4 bg-slate-50 rounded-2xl text-center text-slate-500">
-                No reviews yet. Be the first to consult and leave feedback!
+                {t('doctorModal.noReviewsYet', 'No reviews yet. Be the first to consult and leave feedback!')}
               </div>
             ) : (
               <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
@@ -238,8 +240,8 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
         {/* Modal Footer CTA */}
         <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between">
           <div>
-            <span className="text-[10px] text-slate-500 uppercase font-bold block">Nominal Consultation Fee</span>
-            <span className="text-sm font-extrabold text-slate-900">₹{doctor.consultation_fee || 100} <span className="text-[11px] text-slate-400 font-normal">(Gov-Fixed Anti-Spam)</span></span>
+            <span className="text-[10px] text-slate-500 uppercase font-bold block">{t('doctorModal.nominalFee', 'Nominal Consultation Fee')}</span>
+            <span className="text-sm font-extrabold text-slate-900">₹{doctor.consultation_fee || 100} <span className="text-[11px] text-slate-400 font-normal">({t('doctorModal.antiSpamNotice', 'Gov-Fixed Anti-Spam')})</span></span>
           </div>
 
           <button
@@ -247,10 +249,10 @@ export default function DoctorProfileModal({ doctor, isOpen, onClose, onBookCons
               onClose();
               if (onBookConsultation) onBookConsultation(doctor);
             }}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all"
+            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all cursor-pointer"
           >
             <Calendar className="w-4 h-4" />
-            <span>Register New Case with {doctor.name.split(' ')[1] || 'Vaidya'}</span>
+            <span>{t('doctorModal.btnRegisterCase', 'Register New Case')}</span>
           </button>
         </div>
 

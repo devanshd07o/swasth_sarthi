@@ -168,3 +168,32 @@ Respond strictly in valid JSON format:
 
 async def classify_symptoms_and_dosha(symptoms: str, age: int = 30) -> dict:
     return await process_smart_ai_query(symptoms)
+
+async def translate_dynamic_content_silent(text: str, target_lang: str = "en") -> str:
+    """
+    Silent internal backend AI translation step for dynamic content 
+    (voice transcripts, AI clinical summaries, doctor free-text notes, red-flag reasons).
+    Translates text invisibly into target language (hi, mr, ta, te, bn, gu, kn, ml, pa, or, sa).
+    """
+    if not text or not text.strip() or target_lang == "en":
+        return text
+
+    LANG_MAP = {
+        "hi": "Hindi", "mr": "Marathi", "ta": "Tamil", "te": "Telugu",
+        "bn": "Bengali", "gu": "Gujarati", "kn": "Kannada", "ml": "Malayalam",
+        "pa": "Punjabi", "or": "Odia", "sa": "Sanskrit"
+    }
+
+    lang_name = LANG_MAP.get(target_lang, "Hindi")
+
+    try:
+        from services.groq_pipeline import _chat
+        prompt = f"Translate the following medical/clinical text into natural, accurate {lang_name}. Output ONLY the translated text without commentary:\n\n{text}"
+        result = _chat([{"role": "user", "content": prompt}], model="openai/gpt-oss-120b")
+        if result and len(result.strip()) > 0:
+            return result.strip()
+    except Exception as e:
+        print(f"[Silent AI Translation Error]: {e}")
+
+    return text
+

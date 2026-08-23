@@ -115,7 +115,7 @@ def seed_database(force=False):
         name="Ramesh Sharma",
         age=52,
         gender="male",
-        contact="+91 9876543210",
+        contact="+91 9821450100",
         blood_group="B+",
         address="Sector 14, Dwarka, New Delhi",
         medical_history="Hypertension for 5 years, Mild Joint Pain",
@@ -129,61 +129,54 @@ def seed_database(force=False):
                 "symptom": "Right knee stiffness in morning for 20 minutes",
                 "severity": "Moderate",
                 "notes": "Relief after warm sesame oil massage."
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "date": "2026-08-14 21:00",
-                "symptom": "Mild swelling after climbing 3 flights of stairs",
-                "severity": "Mild",
-                "notes": "Applied Rasnasaptak kwath warm compress."
             }
         ]
     )
     
     p2 = models.Patient(
-        abha_id="ABHA-1102-3344",
-        uhid="ABHA-1102-3344",
-        name="Sunita Devi",
-        age=44,
+        abha_id="ABHA-3412-8902",
+        uhid="ABHA-3412-8902",
+        name="Sunita Sharma",
+        age=36,
         gender="female",
-        contact="+91 9812345678",
+        contact="+91 9876543210",
         blood_group="O+",
         address="Rajinder Nagar, New Delhi",
-        medical_history="Hyperacidity, Indigestion, Chronic Insomnia",
+        medical_history="Hyperacidity, Indigestion, GERD",
         avatar_url="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
         consent_given=True,
         consent_timestamp=datetime.utcnow() - timedelta(days=60),
         symptom_diary=[
             {
                 "id": str(uuid.uuid4()),
-                "date": "2026-08-21 22:15",
-                "symptom": "Retrosternal heartburn after having spicy dinner",
-                "severity": "Moderate",
+                "date": "2026-08-22 22:15",
+                "symptom": "Retrosternal heartburn after spicy dinner",
+                "severity": "Severe",
                 "notes": "Drank 1 glass cold milk, acidity subsided."
             }
         ]
     )
 
     p3 = models.Patient(
-        abha_id="ABHA-5544-7788",
-        uhid="ABHA-5544-7788",
-        name="Amitabh Verma",
-        age=38,
-        gender="male",
-        contact="+91 9955443322",
+        abha_id="ABHA-3344-1102",
+        uhid="ABHA-3344-1102",
+        name="Priya Deshmukh",
+        age=29,
+        gender="female",
+        contact="+91 9123456789",
         blood_group="A+",
-        address="Sector 62, Noida, Uttar Pradesh",
-        medical_history="Type 2 Diabetes, Chronic Fatigue, High Stress",
-        avatar_url="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+        address="Bandra, Mumbai, Maharashtra",
+        medical_history="Skin itching, Eczematous patches, Insomnia",
+        avatar_url="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
         consent_given=True,
         consent_timestamp=datetime.utcnow() - timedelta(days=30),
         symptom_diary=[
             {
                 "id": str(uuid.uuid4()),
-                "date": "2026-08-19 18:00",
-                "symptom": "Mid-afternoon lethargy and dry mouth",
-                "severity": "Mild",
-                "notes": "Took Triphala decoction with warm water."
+                "date": "2026-08-21 16:30",
+                "symptom": "Mild erythema on inner elbows after sun exposure",
+                "severity": "Moderate",
+                "notes": "Applied Shatadhauta Ghrita locally."
             }
         ]
     )

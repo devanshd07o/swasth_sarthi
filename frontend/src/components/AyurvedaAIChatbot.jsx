@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { Sparkles, Send, Mic, Volume2, Bot, User, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import SpeechMicButton from './SpeechMicButton';
 import VoiceAudioPlayer from './VoiceAudioPlayer';
 import axios from 'axios';
 
 export default function AyurvedaAIChatbot({ lang = 'hi' }) {
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language || lang;
+
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
@@ -17,15 +21,12 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Mascot State Machine Indicator (Ready for Anurag's PNG frames)
-  const [avatarState, setAvatarState] = useState('idle'); // 'idle', 'listening', 'thinking', 'speaking'
+  const [avatarState, setAvatarState] = useState('idle');
 
   const handleSendMessage = async (textToSend = input) => {
     const query = textToSend || input;
     if (!query.trim()) return;
 
-    // Add User Message
     const userMsg = {
       sender: 'user',
       text: query,
@@ -38,7 +39,6 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
     setAvatarState('thinking');
 
     try {
-      // Call Live FastAPI Gemini AI Triage API
       const res = await axios.post('http://localhost:8000/api/ai/classify-dosha', {
         symptoms: query,
         age: 30
@@ -86,13 +86,13 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
 
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-extrabold text-sm tracking-tight">AyurSaarthi Voice AI Assistant</h3>
+              <h3 className="font-extrabold text-sm tracking-tight">{t('aiChat.title', 'AyurSaarthi Voice AI Assistant')}</h3>
               <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-400 text-slate-900 uppercase">
                 {avatarState.toUpperCase()}
               </span>
             </div>
             <p className="text-[11px] text-emerald-100 font-medium">
-              {lang === 'hi' ? 'आयुर्वेदिक एवं आपातकालीन नैदानिक सहायक' : 'Ayurvedic Clinical Triage & Guidance System'}
+              {t('aiChat.subtitle', 'Ayurvedic Clinical Triage & Guidance System')}
             </p>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
         <button
           onClick={() => setMessages([messages[0]])}
           className="p-2 text-emerald-100 hover:text-white hover:bg-white/10 rounded-xl transition-all"
-          title="Reset Conversation"
+          title={t('aiChat.reset', 'Reset Conversation')}
         >
           <RefreshCw className="w-4 h-4" />
         </button>
@@ -124,12 +124,12 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
                 ? 'bg-slate-900 text-white rounded-tr-none shadow-xs'
                 : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-none shadow-xs'
             }`}>
-              <p>{m.sender === 'user' ? m.text : (lang === 'hi' ? m.text_hi : m.text_en)}</p>
+              <p>{m.sender === 'user' ? m.text : (currentLang === 'hi' ? m.text_hi : m.text_en)}</p>
 
               {/* ElevenLabs Audio Player for Bot Response */}
               {m.sender === 'bot' && (
                 <div className="pt-1.5 flex items-center justify-between border-t border-slate-100">
-                  <VoiceAudioPlayer text={lang === 'hi' ? m.text_hi : m.text_en} language={lang} />
+                  <VoiceAudioPlayer text={currentLang === 'hi' ? m.text_hi : m.text_en} language={currentLang} />
                   <span className="text-[10px] text-slate-400">{m.timestamp}</span>
                 </div>
               )}
@@ -140,7 +140,7 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
         {loading && (
           <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl text-xs text-slate-600 font-bold max-w-xs animate-pulse">
             <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
-            <span>AyurSaarthi AI is analyzing symptoms...</span>
+            <span>{t('aiChat.analyzing', 'AyurSaarthi AI is analyzing symptoms...')}</span>
           </div>
         )}
       </div>
@@ -148,9 +148,9 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
       {/* Input Action Bar */}
       <div className="p-3 bg-white border-t border-slate-200 space-y-2">
         <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 px-1">
-          <span>{lang === 'hi' ? 'बोलकर या लिखकर प्रश्न पूछें' : 'Voice or Text Clinical Query'}</span>
+          <span>{t('aiChat.inputPromptLabel', 'Voice or Text Clinical Query')}</span>
           <SpeechMicButton
-            label="Speech Input"
+            label={t('aiChat.micLabel', 'Speech Input')}
             onTranscript={(txt) => {
               setInput(txt);
               handleSendMessage(txt);
@@ -164,7 +164,7 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder={lang === 'hi' ? 'उदा. मुझे 3 दिन से पेट में जलन और खट्टी डकारें आ रही हैं...' : 'e.g. I have knee joint pain and morning stiffness for 6 months...'}
+            placeholder={t('aiChat.placeholder', 'e.g. I have knee joint pain and morning stiffness for 6 months...')}
             className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 shadow-xs focus:outline-none focus:border-emerald-500"
           />
 
