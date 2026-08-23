@@ -29,50 +29,33 @@ export default function RobotAvatarAnimation({
   // Controlled natural frame animation loop
   useEffect(() => {
     let intervalId = null;
-    let blinkTimeout = null;
 
     if (state === 'listening') {
       intervalId = setInterval(() => {
         setCurrentFrameIndex((prev) => (prev + 1) % ROBOT_FRAMES.length);
-      }, 180);
+      }, 160);
     } else if (state === 'speaking') {
       intervalId = setInterval(() => {
         setCurrentFrameIndex((prev) => (prev + 1) % ROBOT_FRAMES.length);
-      }, 150);
+      }, 140);
     } else if (state === 'thinking') {
       intervalId = setInterval(() => {
         setCurrentFrameIndex((prev) => (prev % 3) + 1);
-      }, 220);
+      }, 200);
     } else {
-      // IDLE MODE: Default to frame 0 (eyes open). Single quick natural blink every 4.5 seconds
-      setCurrentFrameIndex(0);
+      // IDLE MODE (Alive & Organic): Gentle ping-pong breathing sequence (0 -> 1 -> 2 -> 1 -> 0 -> 5 -> 0)
+      // Slow 350ms per frame so it feels calm, responsive, and continuously alive
+      const idleSequence = [0, 1, 2, 1, 0, 0, 5, 0, 0, 1, 2, 3, 4, 5, 0];
+      let step = 0;
 
-      const scheduleBlink = () => {
-        blinkTimeout = setTimeout(() => {
-          let step = 0;
-          const blinkTimer = setInterval(() => {
-            step++;
-            if (step < ROBOT_FRAMES.length) {
-              setCurrentFrameIndex(step);
-            } else {
-              clearInterval(blinkTimer);
-              setCurrentFrameIndex(0); // Return to default eyes-open
-              scheduleBlink(); // Schedule next blink
-            }
-          }, 45); // Quick 45ms per frame = 270ms natural eye blink
-        }, 4500); // Blink every 4.5 seconds
-      };
-
-      scheduleBlink();
-
-      return () => {
-        if (blinkTimeout) clearTimeout(blinkTimeout);
-      };
+      intervalId = setInterval(() => {
+        step = (step + 1) % idleSequence.length;
+        setCurrentFrameIndex(idleSequence[step]);
+      }, 320);
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
-      if (blinkTimeout) clearTimeout(blinkTimeout);
     };
   }, [state]);
 
