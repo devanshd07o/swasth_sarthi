@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     ELEVENLABS_API_KEY: str = os.getenv("ELEVENLABS_API_KEY", "")
     GROQ_API_KEY_PRIMARY: str = os.getenv("GROQ_API_KEY_PRIMARY", "")
     GROQ_API_KEY_SECONDARY: str = os.getenv("GROQ_API_KEY_SECONDARY", "")
+    GROQ_API_KEY_TERTIARY: str = os.getenv("GROQ_API_KEY_TERTIARY", "")
+    GROQ_API_KEY_QUATERNARY: str = os.getenv("GROQ_API_KEY_QUATERNARY", "")
     GROQ_API_KEY_FALLBACK: str = os.getenv("GROQ_API_KEY_FALLBACK", "")
 
     # SMS OTP (Fast2SMS)

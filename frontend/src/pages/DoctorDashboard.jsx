@@ -368,7 +368,7 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       {isFirstInLine ? (
                         <button
                           type="button"

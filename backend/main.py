@@ -37,6 +37,10 @@ def startup_event():
     print(f"[+] Starting SwasthSaarthi v2.0 Engine...")
     seed_database()
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok", "service": "SwasthSaarthi Backend"}
+
 @app.get("/")
 @app.head("/")
 def root():

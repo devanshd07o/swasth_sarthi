@@ -38,12 +38,14 @@ const THINKING_PHRASES_EN = [
   "Deciphering..."
 ];
 
-// ─── Resilient API Caller (Vite Proxy -> 127.0.0.1:8000 -> localhost:8000) ───
+// ─── Resilient API Caller (Render first → Vite proxy fallback for local dev) ─
+const RENDER_BASE = 'https://swasth-sarthi-sll6.onrender.com';
+
 async function callSmartChatApi(queryText, sessionId, lang) {
   const endpoints = [
+    `${RENDER_BASE}/api/ai/smart-chat`,
     '/api/ai/smart-chat',
     'http://127.0.0.1:8000/api/ai/smart-chat',
-    'http://localhost:8000/api/ai/smart-chat',
   ];
   let lastErr = null;
   for (const url of endpoints) {
@@ -53,7 +55,7 @@ async function callSmartChatApi(queryText, sessionId, lang) {
         user_id: 'patient_session_001',
         session_id: sessionId,
         language: lang,
-      }, { timeout: 15000 });
+      }, { timeout: 30000 });
       return res.data;
     } catch (e) {
       lastErr = e;
@@ -65,9 +67,9 @@ async function callSmartChatApi(queryText, sessionId, lang) {
 // ─── ElevenLabs Audio Fetcher with Multi-URL Fallback ────────────────────────
 async function fetchElevenLabsAudio(text, lang) {
   const endpoints = [
+    `${RENDER_BASE}/api/ai/voice-narration`,
     '/api/ai/voice-narration',
     'http://127.0.0.1:8000/api/ai/voice-narration',
-    'http://localhost:8000/api/ai/voice-narration',
   ];
   for (const url of endpoints) {
     try {
@@ -399,11 +401,14 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         setAiState('listening');
       };
 
+      let finalTranscript = '';
+
       rec.onresult = (event) => {
         let fullTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
           fullTranscript += event.results[i][0].transcript;
         }
+        finalTranscript = fullTranscript;
         setActiveQuery(fullTranscript);
 
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
@@ -412,7 +417,7 @@ export default function VoiceAIOrb({ lang = 'en' }) {
             try { rec.stop(); } catch (_) {}
             sendQueryToPipeline(fullTranscript.trim());
           }
-        }, 1500);
+        }, 2500);
       };
 
       rec.onerror = (event) => {
@@ -426,9 +431,11 @@ export default function VoiceAIOrb({ lang = 'en' }) {
       };
 
       rec.onend = () => {
-        if (stateRef.current === 'listening') {
+        // Only go idle if no transcript was captured AND no pipeline is running
+        if (stateRef.current === 'listening' && !finalTranscript.trim()) {
           setAiState('idle');
         }
+        // If finalTranscript exists, pipeline already fired — don't interrupt it
       };
 
       recognitionRef.current = rec;
@@ -644,17 +651,6 @@ export default function VoiceAIOrb({ lang = 'en' }) {
           )}
         </button>
 
-        {aiState !== 'idle' && (
-          <button
-            type="button"
-            onClick={stopAll}
-            title={t('orb.stopAi', 'Stop AI')}
-            className="p-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white shadow-sm transition-all cursor-pointer flex items-center justify-center shrink-0 animate-fade-in"
-          >
-            <Square className="w-4 h-4 fill-white" />
-          </button>
-        )}
-
         <input
           type="text"
           value={inputText}
@@ -667,22 +663,34 @@ export default function VoiceAIOrb({ lang = 'en' }) {
           }}
           placeholder={t('orb.inputPlaceholder', 'Or type your symptoms here...')}
           disabled={aiState === 'thinking' || aiState === 'speaking'}
-          className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white shadow-xs transition-all disabled:opacity-50 font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif]"
+          className="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white shadow-xs transition-all disabled:opacity-50 font-['Noto_Sans_Devanagari','Plus_Jakarta_Sans',sans-serif]"
         />
 
-        <button
-          type="button"
-          onClick={() => {
-            if (inputText.trim()) {
-              sendQueryToPipeline(inputText);
-              setInputText('');
-            }
-          }}
-          disabled={!inputText.trim() || aiState === 'thinking' || aiState === 'speaking'}
-          className="p-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center shrink-0"
-        >
-          <Send className="w-4 h-4" />
-        </button>
+        {/* Stop button replaces Send when AI is active — no extra width added */}
+        {aiState !== 'idle' ? (
+          <button
+            type="button"
+            onClick={stopAll}
+            title={t('orb.stopAi', 'Stop AI')}
+            className="p-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 active:scale-95 text-white shadow-sm transition-all cursor-pointer flex items-center justify-center shrink-0"
+          >
+            <Square className="w-4 h-4 fill-white" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              if (inputText.trim()) {
+                sendQueryToPipeline(inputText);
+                setInputText('');
+              }
+            }}
+            disabled={!inputText.trim()}
+            className="p-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center shrink-0"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -23,6 +23,8 @@ _KEY_POOL = [
     k for k in [
         settings.GROQ_API_KEY_PRIMARY,
         settings.GROQ_API_KEY_SECONDARY,
+        settings.GROQ_API_KEY_TERTIARY,
+        settings.GROQ_API_KEY_QUATERNARY,
         settings.GROQ_API_KEY_FALLBACK,
     ] if k and k.strip()
 ]

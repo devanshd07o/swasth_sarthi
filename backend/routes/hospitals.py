@@ -16,6 +16,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     return round(R * c, 1)
 
 @router.get("/nearby")
+@router.get("/nearby/")
 def get_nearby_hospitals(
     lat: float = Query(28.6341, description="Patient Latitude"),
     lng: float = Query(77.4475, description="Patient Longitude"),

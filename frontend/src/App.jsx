@@ -270,7 +270,7 @@ export default function App() {
 
       {/* Floating Voice AI Orb Assistant Widget on all authenticated screens */}
       {currentUser && (
-        <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-50">
+        <div className="fixed bottom-24 right-3 sm:bottom-20 sm:right-4 z-50">
           <VoiceAIOrb lang={lang} />
         </div>
       )}

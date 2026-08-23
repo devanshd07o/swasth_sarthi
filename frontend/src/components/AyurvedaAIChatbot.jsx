@@ -40,10 +40,18 @@ export default function AyurvedaAIChatbot({ lang = 'hi' }) {
     setAvatarState('thinking');
 
     try {
-      const res = await axios.post('http://localhost:8000/api/ai/classify-dosha', {
-        symptoms: query,
-        age: 30
-      });
+      const endpoints = [
+        `${import.meta.env.VITE_API_URL || 'https://swasth-sarthi-sll6.onrender.com'}/api/ai/classify-dosha`,
+        '/api/ai/classify-dosha',
+      ];
+      let res = null;
+      for (const url of endpoints) {
+        try {
+          res = await axios.post(url, { symptoms: query, age: 30 }, { timeout: 15000 });
+          if (res?.data) break;
+        } catch (_) {}
+      }
+      if (!res?.data) throw new Error('All endpoints failed');
 
       const data = res.data;
       const botResponse = {

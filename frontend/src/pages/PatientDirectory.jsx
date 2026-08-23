@@ -38,21 +38,21 @@ export default function PatientDirectory({ onSelectPatient, onNewCase }) {
           <p className="text-xs text-slate-500 font-medium">{t('directory.subtitle', 'Search and retrieve records.')}</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+          <div className="relative w-full sm:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('directory.searchPlaceholder', 'Search Name / UHID...')}
-              className="pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500 w-56 shadow-sm"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-emerald-500 shadow-sm"
             />
           </div>
 
           <button
             onClick={onNewCase}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>{t('directory.newConsultation', 'New Consultation')}</span>

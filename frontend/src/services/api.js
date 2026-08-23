@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Priority order: Env VITE_API_URL -> Localhost 8000 -> Production Render
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// Priority order: Env VITE_API_URL -> Production Render -> Localhost 8000
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://swasth-sarthi-sll6.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

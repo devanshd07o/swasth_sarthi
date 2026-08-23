@@ -71,15 +71,17 @@ export default function Sidebar({
       {/* Backdrop overlay for mobile screen click-out */}
       {isExpanded && (
         <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden animate-fade-in"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-[999] md:hidden animate-fade-in"
           onClick={() => setIsExpanded(false)}
         />
       )}
 
-      {/* SMOOTH FLEX IN-PLACE EXPANDING SIDEBAR */}
+      {/* SMOOTH RESPONSIVE SLIDE-OVER / IN-PLACE EXPANDING SIDEBAR */}
       <aside 
-        className={`h-full z-30 bg-white border-r border-slate-200/90 shadow-sm transition-all duration-300 ease-in-out flex flex-col justify-between overflow-hidden select-none shrink-0 ${
-          isExpanded ? 'w-64 sm:w-72 p-4' : 'w-16 p-2 items-center'
+        className={`h-full bg-white border-r border-slate-200/90 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-hidden select-none shrink-0 ${
+          isExpanded 
+            ? 'fixed inset-y-0 left-0 z-[1000] w-64 sm:w-72 p-3.5 shadow-2xl translate-x-0' 
+            : 'hidden md:flex md:w-16 p-2 items-center z-30 shadow-none'
         }`}
       >
         {/* TOP HEADER / LOGO / TOGGLE AREA */}
@@ -139,10 +141,10 @@ export default function Sidebar({
                     key={item.id}
                     type="button"
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all cursor-pointer my-1 ${
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer my-0.5 ${
                       isActive
-                        ? 'bg-[#12372A] text-white shadow-md ring-2 ring-emerald-300/40 font-bold'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        ? 'bg-[#12372A] text-emerald-300 shadow-md ring-2 ring-emerald-400/40 font-bold scale-105'
+                        : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-900'
                     }`}
                     title={item.label}
                   >
@@ -157,6 +159,9 @@ export default function Sidebar({
                   type="button"
                   onClick={() => {
                     setActiveTab(item.id);
+                    if (window.innerWidth < 768) {
+                      setIsExpanded(false);
+                    }
                   }}
                   className={`w-full p-3 rounded-xl font-body text-xs font-semibold flex items-center gap-3 transition-all cursor-pointer ${
                     isActive
@@ -287,6 +292,17 @@ export default function Sidebar({
                 </button>
               </div>
             )
+          )}
+          {/* ByteBugs Team Footer */}
+          {isFullyExpanded && (
+            <div className="mt-2 px-2 py-2 rounded-xl bg-emerald-50/60 border border-emerald-100 text-center">
+              <p className="font-mono text-[8px] font-extrabold uppercase tracking-widest text-emerald-700">
+                Team ByteBugs
+              </p>
+              <p className="font-mono text-[7px] text-slate-400 tracking-wide mt-0.5 leading-relaxed">
+                Devansh · Kamal · Devita<br />Anurag · Ayush · Anshu
+              </p>
+            </div>
           )}
         </div>
       </aside>

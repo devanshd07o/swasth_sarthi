@@ -2,7 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide Netlify attribution badge */
+[data-netlify-attribution],
+#netlify-badge,
+.netlify-badge { display: none !important; }
+
 @layer base {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Global Invisible Scrollbar Rule */
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    background: transparent;
+    display: none;
+  }
+
+  /* Hide Leaflet map attribution footer text */
+  .leaflet-control-attribution {
+    display: none !important;
+  }
+
+  /* Scope Leaflet map z-index below Modals & Drawers */
+  .leaflet-container {
+    z-index: 10 !important;
+  }
+  .leaflet-pane {
+    z-index: 10 !important;
+  }
+  .leaflet-top, .leaflet-bottom {
+    z-index: 15 !important;
+  }
   :root {
     /* Backgrounds */
     --bg: #F6FAF7;
@@ -175,4 +212,20 @@
     transform: none;
     opacity: 1;
   }
+}
+
+/* ─── Leaflet Map Clean UI Overrides (Hide Zoom Buttons & Attribution Text) ─── */
+.leaflet-control-attribution,
+.leaflet-control-zoom,
+.leaflet-top.leaflet-left .leaflet-control-zoom,
+.leaflet-bottom.leaflet-right .leaflet-control-attribution,
+.leaflet-container .leaflet-control-attribution,
+.leaflet-container .leaflet-control-zoom {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
 }
