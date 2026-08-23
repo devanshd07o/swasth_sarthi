@@ -51,28 +51,46 @@ def _extract_json(text: str) -> str:
     return match.group(0).strip() if match else text.strip()
 
 def _chat(messages: list, model: str = "openai/gpt-oss-120b", key_idx: int = 0, max_tokens: int = 1500) -> str:
-    """Sync Groq call with multi-key rotation and multi-model fallback."""
+    """Sync Groq + Gemini multi-model LLM engine. 100% Dynamic AI Reasoning."""
     models_to_try = [model] + [m for m in _MODEL_POOL if m != model]
     
-    for m in models_to_try:
-        for attempt in range(len(_KEY_POOL) or 1):
-            try:
-                client = _client(key_idx + attempt)
-                resp = client.chat.completions.create(
-                    model=m,
-                    messages=messages,
-                    temperature=0.25,
-                    max_tokens=max_tokens,
-                )
-                content = resp.choices[0].message.content
-                if content and content.strip():
-                    return _extract_json(content)
-            except Exception as e:
-                msg = str(e).lower()
-                print(f"[Groq Chat Warning] model={m}, key_idx={key_idx+attempt}: {e}")
-                if "rate" in msg or "429" in msg:
+    # 1. Try Groq key pool and models
+    if _KEY_POOL:
+        for m in models_to_try:
+            for attempt in range(len(_KEY_POOL)):
+                try:
+                    client = _client(key_idx + attempt)
+                    resp = client.chat.completions.create(
+                        model=m,
+                        messages=messages,
+                        temperature=0.25,
+                        max_tokens=max_tokens,
+                    )
+                    content = resp.choices[0].message.content
+                    if content and content.strip():
+                        return _extract_json(content)
+                except Exception as e:
+                    print(f"[Groq Chat Warning] model={m}, key_idx={key_idx+attempt}: {e}")
                     continue
-                break  # Try next model if model error
+
+    # 2. Dynamic Fallback to Gemini 1.5 Flash LLM
+    try:
+        from services.gemini_service import api_key as gemini_key, genai
+        if gemini_key:
+            g_model = genai.GenerativeModel("gemini-1.5-flash")
+            formatted_prompt = "You are AyurSaarthi AI. Read the chat history and user query, then respond dynamically.\n"
+            for msg in messages:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                formatted_prompt += f"\n[{role.upper()}]: {content}"
+            formatted_prompt += "\nOutput strictly valid JSON with keys: reply_en, reply_hi, dosha_imbalance, urgency."
+            
+            response = g_model.generate_content(formatted_prompt)
+            if response.text:
+                return _extract_json(response.text)
+    except Exception as e:
+        print(f"[Gemini Fallback LLM Warning]: {e}")
+
     return ""
 
 def transcribe_audio_groq(audio_bytes: bytes, filename: str = "audio.webm", language: str = None) -> str:
@@ -112,6 +130,11 @@ def _kb_snippet(query: str) -> str:
 def _classify(query: str, session_summary: str) -> dict:
     q_lower = query.lower()
     
+    # Check for continuation keywords when session context exists
+    continuation_keywords = ["baki", "baaki", "batao", "aur", "iske", "alawa", "aage", "further", "else", "more", "details", "samjha"]
+    if session_summary and any(k in q_lower for k in continuation_keywords):
+        return {"intent": "continuation"}
+
     # Common Hinglish, Hindi, and English symptom terms
     symptom_keywords = [
         "dard", "pain", "pet", "stomach", "sar", "sir", "headache", "ghutna", "knee", "joint",
@@ -131,14 +154,15 @@ def _classify(query: str, session_summary: str) -> dict:
                 "content": (
                     "Classify user query for an Ayurvedic doctor platform into: "
                     "'medical' (if user asks about any symptom, pain, illness, remedy, medicine, body part in Hindi/Hinglish/English), "
-                    "'emergency' (severe chest pain, bleeding, unconsciousness), or "
+                    "'emergency' (severe chest pain, bleeding, unconsciousness), "
+                    "'continuation' (if user asks follow-up like 'what else', 'baki part', 'tell me more' about previous turn), or "
                     "'casual' (ONLY for pure greetings like hello, hi, how are you, who are you). "
-                    "Respond strictly in JSON: {\"intent\":\"casual|medical|emergency\"}"
+                    "Respond strictly in JSON: {\"intent\":\"casual|medical|emergency|continuation\"}"
                 )
             },
             {
                 "role": "user",
-                "content": f"User Query: \"{query}\""
+                "content": f"User Query: \"{query}\"\nSession Context: \"{session_summary[:150]}\""
             }
         ],
         model="openai/gpt-oss-20b",
@@ -148,24 +172,22 @@ def _classify(query: str, session_summary: str) -> dict:
     try:
         return json.loads(raw)
     except Exception:
-        return {"intent": "medical" if any(k in q_lower for k in symptom_keywords) else "casual"}
+        return {"intent": "continuation" if (session_summary and any(k in q_lower for k in continuation_keywords)) else ("medical" if any(k in q_lower for k in symptom_keywords) else "casual")}
 
 # ─── Stage 2 — Clinical Response Generator ───────────────────────────────────
 def _respond(query: str, intent: str, session_summary: str, recent_turns: list, memory: str) -> dict:
     persona_core = (
         "CORE IDENTITY & VOICE PERSONA (CHATGPT / GEMINI VOICE MODE STYLE):\n"
         "- You are 'आयुसारथी' (AyurSaarthi), a highly intelligent, natural, and caring young female Ayurvedic Doctor & Health Companion for the Ministry of Ayush, India.\n"
-        "- CONVERSATIONAL FLUIDITY (LIKE GEMINI / CHATGPT VOICE):\n"
+        "- CONVERSATIONAL FLUIDITY & MULTI-TURN MEMORY:\n"
+        "  * Build seamlessly on the ongoing conversation context. If user asks a follow-up ('and baki part kya...', 'what else'), answer directly based on what was discussed in previous turns.\n"
         "  * Speak in spontaneous, natural, spoken dialogue — never sound scripted, formulaic, or robotic.\n"
-        "  * DO NOT force questions artificially in every turn. Only ask a gentle follow-up if it genuinely adds value to the diagnosis or conversation.\n"
-        "  * If user asks a direct question (e.g. 'Can I drink milk?', 'What is Triphala?'), answer directly and clearly.\n"
-        "  * If user shares a symptom, explain the Ayurvedic perspective simply and give practical, soothing home remedies.\n"
-        "  * Length: 1-3 natural spoken sentences (around 25-45 words). Easy to listen to on voice.\n"
-        "- CONTINUITY: Build seamlessly on the ongoing conversation without repeating already mentioned remedies or greetings.\n"
+        "  * Length: 1-3 natural spoken sentences (around 25-45 words).\n"
         "- HINDI GRAMMAR: Always speak in natural, everyday first-person feminine Hindi ('सकती हूँ', 'बताती हूँ', 'मैं समझती हूँ'). Never use robotic slashes ('सकता/सकती').\n"
         "- NEVER echo the user's question back ('Based on your query...').\n"
-        "- NEVER say 'मैं ठीक हूँ' unless the user explicitly asked how you are ('kaise ho' / 'how are you').\n"
     )
+
+    history_str = "\n".join([f"User: {t.get('user', '')} | AI: {t.get('ai', '')}" for t in recent_turns]) if recent_turns else "None"
 
     if intent == "emergency":
         sys = (
@@ -176,22 +198,40 @@ def _respond(query: str, intent: str, session_summary: str, recent_turns: list, 
         )
         usr = f'Query: "{query}"\nReturn JSON: {{"reply_en":"...","reply_hi":"...","dosha_imbalance":null,"urgency":"Emergency"}}'
 
+    elif intent == "continuation":
+        sys = (
+            f"{persona_core}\n"
+            "CONTINUATION / FOLLOW-UP TURN:\n"
+            "1. User is asking a follow-up or asking for more details about the previous discussion topic.\n"
+            "2. Explain the remaining aspects or next steps clearly and warmly.\n"
+            "3. Output strictly valid JSON."
+        )
+        usr = f"""
+Previous Context: {session_summary or history_str or "Ayurvedic health consultation"}
+User Follow-up Query: "{query}"
+
+Respond strictly in valid JSON:
+{{
+  "reply_en": "Conversational continuation reply in English providing remaining aspects/details",
+  "reply_hi": "पूर्व चर्चा से जुड़ा हुआ स्वाभाविक और ज्ञानवर्धक हिंदी उत्तर",
+  "dosha_imbalance": null,
+  "urgency": "Routine"
+}}
+"""
+
     elif intent == "medical":
         kb = _kb_snippet(query)
-        history_str = "\n".join([f"User: {t.get('user', '')} | AI: {t.get('ai', '')}" for t in recent_turns]) if recent_turns else "None"
-        
         sys = (
             f"{persona_core}\n"
             "AYURVEDIC CLINICAL ADVICE & DIAGNOSIS GUIDELINES:\n"
             "1. EMPATHY & REMEDY: Offer immediate soothing empathy and 1-2 practical Ayurvedic home remedies / Dosha insights.\n"
             "2. MANDATORY SEVERITY & DURATION INQUIRY: If the patient is sharing a new symptom or pain, ALWAYS ask about severity (दर्द कितना तेज़ है? / How intense is the pain?) and duration (कब से हो रहा है? / Since when have you had this?).\n"
-            "3. SPECIALIST ADVICE: If the condition seems chronic or severe, advise consulting an Ayurvedic specialist (e.g. Kayachikitsa / Panchakarma physician).\n"
-            "4. Keep the entire reply to 2-3 short, clear sentences (around 30-45 words). Output strictly valid JSON."
+            "3. Keep the entire reply to 2-3 short, clear sentences (around 30-45 words). Output strictly valid JSON."
         )
         usr = f"""
 Patient Background: {memory[:200] if memory else "None"}
 Ongoing Discussion Context: {session_summary or "New consultation turn"}
-Recent Conversation History (Avoid repeating these):
+Recent Conversation History:
 {history_str}
 
 Ayurveda Clinical Reference:
@@ -208,7 +248,6 @@ Respond strictly in valid JSON format:
 }}
 """
     else:
-        history_str = "\n".join([f"User: {t.get('user', '')} | AI: {t.get('ai', '')}" for t in recent_turns]) if recent_turns else "None"
         sys = (
             f"{persona_core}\n"
             "CASUAL / GENERAL CONVERSATION:\n"
@@ -230,8 +269,17 @@ Return JSON:
 }}
 """
 
+    # Format multi-turn conversation messages for LLM context
+    messages = [{"role": "system", "content": sys}]
+    for turn in (recent_turns or []):
+        if turn.get("user"):
+            messages.append({"role": "user", "content": turn.get("user")})
+        if turn.get("ai"):
+            messages.append({"role": "assistant", "content": turn.get("ai")})
+    messages.append({"role": "user", "content": usr})
+
     raw = _chat(
-        messages=[{"role": "system", "content": sys}, {"role": "user", "content": usr}],
+        messages=messages,
         model="openai/gpt-oss-120b",
         key_idx=1,
         max_tokens=1200,
@@ -244,43 +292,13 @@ Return JSON:
     except Exception:
         pass
 
-    # Dynamic Intelligent Query-Specific Fallback
-    q_lower = query.lower()
-    if any(k in q_lower for k in ["pet", "stomach", "gas", "acidity", "kabz", "digestion", "pachan"]):
-        return {
-            "reply_en": "I understand your digestion concern. Drinking warm water with cumin seeds can help soothe your stomach. Are you experiencing acidity or bloating?",
-            "reply_hi": "मैं आपकी पाचन संबंधी समस्या समझ सकती हूँ। गुनगुने पानी में जीरा उबालकर पीना पेट के लिए लाभकारी है। क्या आपको गैस या एसिडिटी की शिकायत है?",
-            "dosha_imbalance": "Pitta-Vata Imbalance",
-            "urgency": "Routine",
-        }
-    elif any(k in q_lower for k in ["sar", "sir", "headache", "head"]):
-        return {
-            "reply_en": "Headaches often stem from stress or Pitta imbalance. Applying cool Brahmi or coconut oil to your scalp can bring relief. How long have you had this headache?",
-            "reply_hi": "सिरदर्द अक्सर तनाव या पित्त बढ़ने से होता है। नारियल तेल या ब्राह्मी तेल से सिर की हल्की मालिश करने से राहत मिलती है। यह दर्द कब से हो रहा है?",
-            "dosha_imbalance": "Pitta Imbalance",
-            "urgency": "Routine",
-        }
-    elif any(k in q_lower for k in ["ghutna", "joint", "knee", "jod"]):
-        return {
-            "reply_en": "Joint discomfort is closely linked with Vata aggravation. Gently massaging warm sesame oil onto the joints provides great relief. Is the pain constant or during movement?",
-            "reply_hi": "जोड़ों में दर्द वात असंतुलन का मुख्य लक्षण है। तिल के तेल को हल्का गुनगुना करके जोड़ों की मालिश करने से काफी आराम मिलता है। क्या दर्द चलने-फिरने पर बढ़ता है?",
-            "dosha_imbalance": "Vata Imbalance",
-            "urgency": "Routine",
-        }
-    elif intent == "medical":
-        return {
-            "reply_en": "I understand your health query. To guide you accurately, could you tell me a bit more about your symptoms, their duration, and severity?",
-            "reply_hi": "मैं आपकी स्वास्थ्य संबंधी बात समझ रही हूँ। आपको सही मार्गदर्शन देने के लिए, क्या आप मुझे अपने लक्षणों और वे कब से हैं, इसके बारे में थोड़ा और बता सकते हैं?",
-            "dosha_imbalance": "Tridosha Assessment",
-            "urgency": "Routine",
-        }
-    else:
-        return {
-            "reply_en": "Namaste! I am AyurSaarthi, your dedicated Ayurvedic health guide. Feel free to ask me about any symptoms, remedies, or lifestyle habits.",
-            "reply_hi": "नमस्ते! मैं आयुसारथी हूँ, आपकी आयुर्वेदिक स्वास्थ्य साथी। आप मुझसे किसी भी लक्षण, घरेलू उपचार या स्वास्थ्य संबंधी सवाल पूछ सकते हैं।",
-            "dosha_imbalance": None,
-            "urgency": "Routine",
-        }
+    # 100% Dynamic Fallback — Never forces hardcoded medical assumptions
+    return {
+        "reply_en": "I hear you. To guide you best on your query, could you share a few more details?",
+        "reply_hi": "मैं आपकी बात समझ रही हूँ। आपको सही मार्गदर्शन देने के लिए, क्या आप इसके बारे में थोड़ा और विस्तार से बता सकते हैं?",
+        "dosha_imbalance": None,
+        "urgency": "Routine",
+    }
 
 # ─── Stage 3 — Background Memory & Session Updater ───────────────────────────
 def _background_session_update(query: str, reply_en: str, user_id: str, session_id: str):
