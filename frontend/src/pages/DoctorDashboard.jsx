@@ -33,6 +33,11 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    loadDashboardData();
+  };
+
   const [completedPatients, setCompletedPatients] = useState([
     {
       patient_id: 'pat_1',
