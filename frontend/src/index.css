@@ -4,54 +4,129 @@
 
 @layer base {
   :root {
-    --bg-main: #f8fafc;
-    --text-primary: #0f172a;
-    --brand-emerald: #059669;
-    --brand-teal: #0d9488;
+    /* Backgrounds */
+    --bg: #FBF6EC;
+    --bg-deep: #F2E9D6;
+    --bg-ink-panel: #1E2116;
+
+    /* Ink */
+    --ink: #241F17;
+    --ink-soft: #5B5442;
+    --ink-faint: #8A8266;
+
+    /* Brand */
+    --brand: #2F5233;
+    --brand-deep: #1E3924;
+    --brand-tint: #E7EEE3;
+
+    /* Accent */
+    --gold: #B97A34;
+    --gold-soft: #D9A868;
+
+    /* Signal / Emergency */
+    --maroon: #8A2A34;
+    --maroon-tint: #F3E3E1;
+
+    /* Structure */
+    --hairline: #DED0AC;
+    --hairline-soft: #E8DEC2;
+    --shadow-paper: rgba(36, 32, 20, 0.10);
   }
 
   body {
-    background-color: var(--bg-main);
-    color: var(--text-primary);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden;
+    background-image: radial-gradient(circle at 90% 10%, rgba(185, 122, 52, 0.04) 0%, transparent 40%),
+                      radial-gradient(circle at 10% 90%, rgba(47, 82, 51, 0.04) 0%, transparent 40%);
+    background-attachment: fixed;
   }
 }
 
-/* Custom Scrollbars */
+/* Custom Paper Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--bg-deep);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--hairline);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--ink-faint);
 }
 
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+/* Nadi Waveform Animation */
+.nadi-path {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1400;
+  stroke-dashoffset: 1400;
+  animation: draw-nadi 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-.mic-active {
-  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.6);
+@keyframes draw-nadi {
+  to {
+    stroke-dashoffset: 0;
   }
-  70% {
-    box-shadow: 0 0 0 10px rgba(225, 29, 72, 0);
+}
+
+/* Voice Orb Resting Heart Rate Pulse Rings (~72 bpm = ~1.6s) */
+@keyframes resting-pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.2;
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+    transform: scale(1.36);
+    opacity: 0;
+  }
+}
+
+.pulse-ring-1 {
+  animation: resting-pulse 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+.pulse-ring-2 {
+  animation: resting-pulse 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite 0.75s;
+}
+
+/* Stagger Animation for Hero */
+.stagger-fade-in {
+  animation: rise-and-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rise-and-fade {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .nadi-path {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+  .pulse-ring-1, .pulse-ring-2, .stagger-fade-in {
+    animation: none;
+    transform: none;
+    opacity: 1;
   }
 }

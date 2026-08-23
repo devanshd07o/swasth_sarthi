@@ -188,33 +188,33 @@ export default function UnifiedAuthModal({ isOpen, onClose, onLoginSuccess, lang
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
-      <div className="bg-white max-w-xl w-full rounded-3xl border border-slate-200 shadow-2xl overflow-hidden p-6 space-y-5 text-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#FBF6EC] max-w-xl w-full rounded-modal border border-hairline shadow-paper-lg overflow-hidden p-6 space-y-5 text-xs text-ink max-h-[92vh] overflow-y-auto">
         
         {/* Top Header */}
-        <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-start justify-between border-b border-hairline pb-3">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-black text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-[10px] uppercase font-medium text-brand-deep bg-brand-tint px-2.5 py-0.5 rounded-full border border-hairline tracking-wider">
                 SwasthSaarthi Portal Gate
               </span>
               <button
                 type="button"
                 onClick={() => setShowDemoPresets(!showDemoPresets)}
-                className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border transition-all flex items-center gap-1 ${
+                className={`font-mono text-[10px] font-medium px-2.5 py-0.5 rounded-full border transition-all flex items-center gap-1 cursor-pointer ${
                   showDemoPresets
-                    ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
-                    : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                    ? 'bg-gold text-white border-gold shadow-paper-sm'
+                    : 'bg-gold-tint text-gold border-hairline hover:bg-gold/10'
                 }`}
               >
                 <Sparkles className="w-3 h-3" />
                 <span>{showDemoPresets ? 'Hide Jury Presets' : '⚡ Quick Demo Presets (Jury)'}</span>
               </button>
             </div>
-            <h2 className="text-xl font-black text-slate-900 mt-1">
+            <h2 className="font-display font-semibold text-xl text-ink mt-1.5">
               {showDemoPresets ? 'Quick Demo Profiles' : 'Register & Enter Platform'}
             </h2>
-            <p className="text-[11px] text-slate-500 font-medium">
+            <p className="text-xs text-ink-soft font-body">
               {showDemoPresets 
                 ? 'Select any verified mock profile for instant demonstration.' 
                 : 'Enter your real details below to create a fresh record on live Supabase Postgres.'}
@@ -222,51 +222,51 @@ export default function UnifiedAuthModal({ isOpen, onClose, onLoginSuccess, lang
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all"
+            className="p-1.5 text-ink-faint hover:text-ink hover:bg-bg-deep rounded-control transition-all cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* 3 Main Role Tabs */}
-        <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        {/* 3 Main Role Selector Tabs */}
+        <div className="grid grid-cols-3 gap-1.5 bg-bg-deep p-1.5 rounded-control border border-hairline">
           <button
             type="button"
             onClick={() => setMainTab('patient')}
-            className={`py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+            className={`py-2 rounded-control font-body font-semibold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               mainTab === 'patient'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-brand text-[#FBF6EC] shadow-paper-sm'
+                : 'text-ink-soft hover:text-ink'
             }`}
           >
-            <User className="w-4 h-4" />
-            <span>1. Patient (ABHA)</span>
+            <User className="w-3.5 h-3.5" />
+            <span>Patient (ABHA)</span>
           </button>
 
           <button
             type="button"
             onClick={() => setMainTab('doctor')}
-            className={`py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+            className={`py-2 rounded-control font-body font-semibold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               mainTab === 'doctor'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-brand text-[#FBF6EC] shadow-paper-sm'
+                : 'text-ink-soft hover:text-ink'
             }`}
           >
-            <Stethoscope className="w-4 h-4" />
-            <span>2. Vaidya / Doctor</span>
+            <Stethoscope className="w-3.5 h-3.5" />
+            <span>Vaidya / Doctor</span>
           </button>
 
           <button
             type="button"
             onClick={() => setMainTab('admin')}
-            className={`py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+            className={`py-2 rounded-control font-body font-semibold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               mainTab === 'admin'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-brand text-[#FBF6EC] shadow-paper-sm'
+                : 'text-ink-soft hover:text-ink'
             }`}
           >
-            <Building2 className="w-4 h-4" />
-            <span>3. Hospital / Admin</span>
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Hospital / Admin</span>
           </button>
         </div>
 
