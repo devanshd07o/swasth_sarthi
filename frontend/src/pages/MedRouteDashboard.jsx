@@ -346,7 +346,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
               </span>
             </div>
 
-            <div className="h-[460px] rounded-2xl overflow-hidden border border-slate-200 relative shadow-inner">
+            <div className="h-[390px] rounded-2xl overflow-hidden border border-slate-200 relative shadow-inner">
               <MapContainer
                 center={[userPos.lat, userPos.lng]}
                 zoom={12}
@@ -413,12 +413,12 @@ export default function MedRouteDashboard({ lang = 'en' }) {
 
           {/* Route Summary Card */}
           {selectedHospital && (
-            <div className="bg-gradient-to-r from-slate-900 to-emerald-950 p-5 rounded-3xl text-white shadow-lg space-y-3 border border-emerald-700/60">
-              <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div className="bg-gradient-to-r from-slate-900 to-emerald-950 p-5 rounded-3xl text-white shadow-lg space-y-3 border border-emerald-700/60 h-[225px] flex flex-col justify-between">
+              <div className="flex items-center justify-between border-b border-slate-700 pb-2.5">
                 <div className="flex items-center gap-2">
                   <Zap className="w-5 h-5 text-amber-400 animate-pulse shrink-0" />
                   <div>
-                    <h4 className="text-sm font-extrabold text-white">{selectedHospital.name}</h4>
+                    <h4 className="text-sm font-extrabold text-white truncate max-w-[240px] sm:max-w-xs">{selectedHospital.name}</h4>
                     <p className="text-[11px] text-emerald-300 font-medium">Route Navigation Summary</p>
                   </div>
                 </div>
@@ -427,18 +427,18 @@ export default function MedRouteDashboard({ lang = 'en' }) {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
-                <div className="p-2.5 bg-slate-800/80 rounded-2xl border border-slate-700">
+              <div className="grid grid-cols-3 gap-2.5 text-center">
+                <div className="p-2 bg-slate-800/80 rounded-2xl border border-slate-700">
                   <span className="text-[10px] text-slate-400 font-bold block">Est. Driving Time</span>
-                  <span className="text-sm font-black text-white">{selectedHospital.est_minutes} Mins</span>
+                  <span className="text-xs font-black text-white">{selectedHospital.est_minutes} Mins</span>
                 </div>
-                <div className="p-2.5 bg-slate-800/80 rounded-2xl border border-slate-700">
+                <div className="p-2 bg-slate-800/80 rounded-2xl border border-slate-700">
                   <span className="text-[10px] text-slate-400 font-bold block">Traffic Status</span>
-                  <span className="text-sm font-black text-emerald-400">Clear Road</span>
+                  <span className="text-xs font-black text-emerald-400">Clear Road</span>
                 </div>
-                <div className="p-2.5 bg-slate-800/80 rounded-2xl border border-slate-700 col-span-2 sm:col-span-1">
+                <div className="p-2 bg-slate-800/80 rounded-2xl border border-slate-700">
                   <span className="text-[10px] text-slate-400 font-bold block">Route Match</span>
-                  <span className="text-sm font-black text-amber-300">99.2% Optimal</span>
+                  <span className="text-xs font-black text-amber-300">99.2% Optimal</span>
                 </div>
               </div>
 
@@ -447,7 +447,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
                 href={`https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${selectedHospital.lat},${selectedHospital.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-2xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-2xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
               >
                 <Navigation className="w-4 h-4 text-slate-950" />
                 <span>Open Turn-By-Turn GPS Navigation on Google Maps →</span>
@@ -458,8 +458,8 @@ export default function MedRouteDashboard({ lang = 'en' }) {
         </div>
 
         {/* Hospital Directory & Live Doctor Availability List */}
-        <div className="lg:col-span-6 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="lg:col-span-6 space-y-3">
+          <div className="flex items-center justify-between pb-1">
             <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
               <Building2 className="w-4 h-4 text-emerald-600" />
               <span>Nearest Ayush Institutions ({filteredHospitals.length})</span>
@@ -467,7 +467,7 @@ export default function MedRouteDashboard({ lang = 'en' }) {
             <span className="text-[11px] font-bold text-slate-500">Select Card to View Route</span>
           </div>
 
-          <div className="space-y-4 max-h-[660px] overflow-y-auto pr-2 pb-16">
+          <div className="space-y-4 h-[645px] overflow-y-auto pr-2">
             {filteredHospitals.map((h) => {
               const isSelected = selectedHospital?.id === h.id;
               return (
