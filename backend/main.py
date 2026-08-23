@@ -37,6 +37,7 @@ def startup_event():
     seed_database()
 
 @app.get("/")
+@app.head("/")
 def root():
     return {
         "status": "online",
@@ -44,6 +45,11 @@ def root():
         "version": "2.0.0",
         "docs": "/docs"
     }
+
+@app.get("/health")
+@app.head("/health")
+def health_check():
+    return {"status": "healthy", "service": "SwasthSaarthi Backend"}
 
 @app.get("/api/ayurveda/medicines")
 def search_medicines(query: str = ""):
