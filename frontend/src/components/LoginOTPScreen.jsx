@@ -462,71 +462,41 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
             <ArrowRight className="w-4 h-4 text-amber-300" />
           </button>
 
-          {/* New User / Practitioner / Ministry Officer Onboarding Link */}
-          <div className="text-center pt-2 border-t border-slate-100 space-y-2">
+          {/* Direct Link to Official Government Registration Portals */}
+          <div className="text-center pt-2.5 border-t border-slate-100 space-y-2">
             {role === 'doctor' ? (
-              <div className="flex flex-col gap-1.5 items-center">
-                <button
-                  type="button"
-                  onClick={() => { setStep('register_doctor'); setErrorMsg(''); }}
-                  className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <Stethoscope className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>New Vaidya / Practitioner? Register Practice →</span>
-                </button>
-                <a
-                  href="https://ncismindia.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-slate-600 hover:text-emerald-900 font-semibold flex items-center gap-1.5 bg-slate-50 hover:bg-emerald-50 px-3 py-1.5 rounded-xl border border-slate-200 transition-all cursor-pointer shadow-2xs group"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>🏛️ Official NCISM / State Ayush Council Registry (ncismindia.org)</span>
-                  <ExternalLink className="w-3 h-3 text-emerald-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
-              </div>
+              <a
+                href="https://ncismindia.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-950 font-bold text-xs rounded-2xl border border-emerald-200 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                <span>🏛️ Official NCISM / State Ayush Practitioner Registry (ncismindia.org)</span>
+                <ExternalLink className="w-3.5 h-3.5 text-emerald-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
             ) : role === 'admin' ? (
-              <div className="flex flex-col gap-1.5 items-center">
-                <button
-                  type="button"
-                  onClick={() => { setStep('register_admin'); setErrorMsg(''); }}
-                  className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <Building2 className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>New Ministry Admin Officer? Register Staff Employee ID →</span>
-                </button>
-                <a
-                  href="https://ayush.gov.in"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-slate-600 hover:text-emerald-900 font-semibold flex items-center gap-1.5 bg-slate-50 hover:bg-emerald-50 px-3 py-1.5 rounded-xl border border-slate-200 transition-all cursor-pointer shadow-2xs group"
-                >
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                  <span>🏛️ Official Ministry of Ayush Portal (ayush.gov.in)</span>
-                  <ExternalLink className="w-3 h-3 text-emerald-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
-              </div>
+              <a
+                href="https://ayush.gov.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-3 bg-amber-50 hover:bg-amber-100/80 text-amber-950 font-bold text-xs rounded-2xl border border-amber-200 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></span>
+                <span>🏛️ Official Ministry of Ayush Officer Portal (ayush.gov.in)</span>
+                <ExternalLink className="w-3.5 h-3.5 text-amber-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
             ) : (
-              <div className="flex flex-col gap-1.5 items-center">
-                <button
-                  type="button"
-                  onClick={() => { setStep('register_patient'); setErrorMsg(''); }}
-                  className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <User className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>New Citizen / Patient? Register ABHA Pass →</span>
-                </button>
-                <a
-                  href="https://abha.abdm.gov.in/abha/v3/register"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-slate-600 hover:text-emerald-900 font-semibold flex items-center gap-1.5 bg-slate-50 hover:bg-emerald-50 px-3 py-1.5 rounded-xl border border-slate-200 transition-all cursor-pointer shadow-2xs group"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>🏛️ ABDM Official Govt ABHA Registration Portal (abha.abdm.gov.in)</span>
-                  <ExternalLink className="w-3 h-3 text-emerald-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
-              </div>
+              <a
+                href="https://abha.abdm.gov.in/abha/v3/register"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-950 font-bold text-xs rounded-2xl border border-emerald-200 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                <span>🏛️ Create New ABHA Health Pass on Official ABDM Govt Portal</span>
+                <ExternalLink className="w-3.5 h-3.5 text-emerald-700 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
             )}
           </div>
         </form>

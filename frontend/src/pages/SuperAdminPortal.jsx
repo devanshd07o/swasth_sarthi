@@ -135,10 +135,15 @@ export default function SuperAdminPortal() {
       {/* Banner */}
       <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-bold text-violet-700 bg-violet-50 px-3 py-1 rounded-full border border-violet-200 tracking-wider">
-            <ShieldCheck className="w-3 h-3" />
-            {t('admin.bannerPill', 'Ministry of Ayush \u2022 Super Admin Command Center')}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-bold text-violet-700 bg-violet-50 px-3 py-1 rounded-full border border-violet-200 tracking-wider">
+              <ShieldCheck className="w-3 h-3" />
+              {t('admin.bannerPill', 'Ministry of Ayush \u2022 Super Admin Command Center')}
+            </span>
+            <span className="font-mono text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+              OFFICER EMP ID: AYUSH-EMP-9001 (Shri Rakesh Varma)
+            </span>
+          </div>
           <h2 className="text-2xl font-bold text-slate-900 mt-2 flex items-center gap-2">
             <ShieldCheck className="w-6 h-6 text-violet-600" />
             <span>{t('admin.bannerTitle', 'National AYUSH Healthcare Analytics & Registry')}</span>

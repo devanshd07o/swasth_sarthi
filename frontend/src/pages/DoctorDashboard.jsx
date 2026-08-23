@@ -190,8 +190,8 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
           />
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                {activeDoctor?.registration_no || "AYUSH-REG-DEL-2012-4412"}
+              <span className="font-mono text-[10px] uppercase font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                STATE AYUSH REG: {activeDoctor?.registration_no || "AYUSH-REG-DEL-2012-4412"}
               </span>
               <span className="flex items-center gap-1 text-amber-600 text-xs font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                 <Star className="w-3.5 h-3.5 fill-amber-500" />
