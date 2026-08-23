@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, ShieldCheck, KeyRound, ArrowRight, AlertTriangle, RefreshCw, Sparkles, User, Stethoscope, Mail } from 'lucide-react';
+import { Phone, ShieldCheck, KeyRound, ArrowRight, AlertTriangle, RefreshCw, Sparkles, User, Stethoscope, Mail, ExternalLink, Building2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { sendAuthOtp, verifyAuthOtp } from '../services/api';
 
