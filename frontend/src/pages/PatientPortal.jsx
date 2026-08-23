@@ -267,11 +267,15 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
     setLookupError('');
     try {
       const res = await lookupAbhaId(id);
-      if (res && res.found) {
+      if (res && res.patient) {
         setActivePatient(res.patient);
         setIsNewRegistration(false);
         setAbhaInput(res.patient.abha_id);
         setConsentAccepted(true);
+        try {
+          localStorage.setItem('ss_active_patient_id', res.patient.id);
+          localStorage.setItem('ss_active_patient', JSON.stringify(res.patient));
+        } catch (_) {}
         loadPatientHistory(res.patient.id);
       } else {
         setActivePatient(null);
