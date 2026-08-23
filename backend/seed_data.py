@@ -41,7 +41,7 @@ def seed_database(force=False):
         experience_years=14,
         availability="Mon - Sat • 09:00 AM - 02:00 PM",
         consultation_fee=100,
-        avatar_url="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"
+        avatar_url="/avatars/dr_rajesh_vaidya.png"
     )
 
     doc2 = models.User(
@@ -60,7 +60,7 @@ def seed_database(force=False):
         experience_years=9,
         availability="Mon - Fri • 10:00 AM - 04:00 PM",
         consultation_fee=100,
-        avatar_url="https://images.unsplash.com/photo-1594824813589-3221dbb80b7d?w=150&auto=format&fit=crop&q=80"
+        avatar_url="/avatars/dr_ananya_shastri.png"
     )
 
     doc3 = models.User(
@@ -79,7 +79,7 @@ def seed_database(force=False):
         experience_years=16,
         availability="Tue - Sun • 09:30 AM - 01:30 PM",
         consultation_fee=100,
-        avatar_url="https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=150&auto=format&fit=crop&q=80"
+        avatar_url="/avatars/dr_vikramaditya_dev.png"
     )
 
     doc4 = models.User(
@@ -119,7 +119,7 @@ def seed_database(force=False):
         blood_group="B+",
         address="Sector 14, Dwarka, New Delhi",
         medical_history="Hypertension for 5 years, Mild Joint Pain",
-        avatar_url="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+        avatar_url="/avatars/rajesh_kumar.jpeg",
         consent_given=True,
         consent_timestamp=datetime.utcnow() - timedelta(days=90),
         symptom_diary=[
@@ -143,7 +143,7 @@ def seed_database(force=False):
         blood_group="O+",
         address="Rajinder Nagar, New Delhi",
         medical_history="Hyperacidity, Indigestion, GERD",
-        avatar_url="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+        avatar_url="/avatars/sunita_sharma.png",
         consent_given=True,
         consent_timestamp=datetime.utcnow() - timedelta(days=60),
         symptom_diary=[
@@ -167,7 +167,7 @@ def seed_database(force=False):
         blood_group="A+",
         address="Bandra, Mumbai, Maharashtra",
         medical_history="Skin itching, Eczematous patches, Insomnia",
-        avatar_url="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+        avatar_url="/avatars/priya_deshmukh.png",
         consent_given=True,
         consent_timestamp=datetime.utcnow() - timedelta(days=30),
         symptom_diary=[
