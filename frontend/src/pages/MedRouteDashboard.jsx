@@ -255,41 +255,33 @@ export default function MedRouteDashboard({ lang = 'en' }) {
   return (
     <div className="max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 font-body text-xs text-slate-800 animate-fade-in pb-16">
 
-      {/* ─── Top Banner ──────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl space-y-4 border border-emerald-700/60">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-extrabold text-emerald-300 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-500/40 tracking-wider">
-              <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-              AYUSH Healthcare Network • Patient Navigation
-            </span>
-
-            <h1 className="text-2xl sm:text-3xl font-extrabold font-display tracking-tight text-white flex items-center gap-2">
-              <span>Nearest Ayush Hospitals & Doctor Finder</span>
-              <Sparkles className="w-6 h-6 text-amber-400 shrink-0" />
+      {/* ─── Top Banner (Sleek & Compact) ─────────────────────────────────── */}
+      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 px-5 py-4 rounded-2xl text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-3 border border-emerald-700/60">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-extrabold font-display text-white">
+              Nearest Ayush Hospitals & Doctor Finder
             </h1>
-            <p className="text-xs font-semibold text-slate-200">
-              Locate verified Ayush medical centers near your live GPS position, inspect active doctor queues, and get instant turn-by-turn route navigation.
-            </p>
+            <span className="text-[10px] font-mono font-extrabold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-500/40">
+              AYUSH Grid
+            </span>
           </div>
-
-          {/* GPS Location Button */}
-          <button
-            type="button"
-            onClick={handleDetectLocation}
-            disabled={detectingGps}
-            className="py-3.5 px-6 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-2xl shadow-xl flex items-center gap-2 transition-all cursor-pointer shrink-0 border border-amber-300"
-          >
-            <MapPin className={`w-4 h-4 text-slate-950 ${detectingGps ? 'animate-bounce' : ''}`} />
-            <span>{detectingGps ? 'Detecting Location...' : '📍 Detect My Live GPS Location'}</span>
-          </button>
+          <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+            <Compass className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>Active Location: <strong className="text-amber-300 font-mono">{locationName}</strong></span>
+          </div>
         </div>
 
-        {/* Location Chip */}
-        <div className="flex items-center gap-2 text-[11px] font-semibold text-emerald-200 pt-3 border-t border-emerald-800/80">
-          <Compass className="w-4 h-4 text-amber-300 shrink-0" />
-          <span>Active GPS Location: <strong className="text-white font-mono">{locationName}</strong></span>
-        </div>
+        {/* GPS Location Button */}
+        <button
+          type="button"
+          onClick={handleDetectLocation}
+          disabled={detectingGps}
+          className="py-2.5 px-4 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border border-amber-300"
+        >
+          <MapPin className={`w-3.5 h-3.5 text-slate-950 ${detectingGps ? 'animate-bounce' : ''}`} />
+          <span>{detectingGps ? 'Detecting Location...' : '📍 Detect My Live GPS Location'}</span>
+        </button>
       </div>
 
       {/* ─── Search & Specialty Filter Controls ────────────────────────────── */}
