@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
-from routes import patients, cases, ai_assist, auth, emergency, doctors
+from routes import patients, cases, ai_assist, auth, emergency, doctors, hospitals
 from seed_data import seed_database
 from config import settings
 from services.ayurveda_engine import search_ayurvedic_medicines, calculate_prakriti_scores, generate_samprapti_ghataka, get_pathya_apathya_recommendation
@@ -30,6 +30,7 @@ app.include_router(doctors.router)
 app.include_router(ai_assist.router)
 app.include_router(auth.router)
 app.include_router(emergency.router)
+app.include_router(hospitals.router)
 
 @app.on_event("startup")
 def startup_event():

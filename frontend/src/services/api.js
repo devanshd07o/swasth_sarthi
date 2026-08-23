@@ -11,6 +11,16 @@ const api = axios.create({
   timeout: 10000,
 });
 
+export const getNearbyHospitals = async (lat = 28.6341, lng = 77.4475) => {
+  try {
+    const res = await api.get('/hospitals/nearby', { params: { lat, lng } });
+    return res.data;
+  } catch (err) {
+    console.warn('[!] Backend hospital lookup failed, using spatial generator fallback:', err);
+    return null;
+  }
+};
+
 // Auth Services
 export const sendAuthOtp = async (identifier, role = 'patient', channel = 'email') => {
   try {

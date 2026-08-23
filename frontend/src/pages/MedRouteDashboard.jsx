@@ -21,6 +21,7 @@ import {
   Award,
   Users
 } from 'lucide-react';
+import { getNearbyHospitals } from '../services/api';
 
 const greenHospitalIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
@@ -181,16 +182,27 @@ export default function MedRouteDashboard({ lang = 'en' }) {
   const [dijkstraWaypoints, setDijkstraWaypoints] = useState([]);
   const [calculatingDijkstra, setCalculatingDijkstra] = useState(false);
 
-  // Re-generate nearby hospitals when userPos changes
+  // Fetch real nearby hospitals from backend API on userPos change
   useEffect(() => {
-    const nearby = generateNearbyHospitals(userPos.lat, userPos.lng);
-    setHospitalsData(nearby);
-    if (nearby.length > 0) {
-      const topHosp = nearby[0];
-      setSelectedHospital(topHosp);
-      const points = computeDijkstraWaypoints(userPos.lat, userPos.lng, topHosp.lat, topHosp.lng);
-      setDijkstraWaypoints(points);
+    let isMounted = true;
+    async function loadBackendHospitals() {
+      const data = await getNearbyHospitals(userPos.lat, userPos.lng);
+      if (isMounted) {
+        let nearbyList = data?.hospitals;
+        if (!nearbyList || nearbyList.length === 0) {
+          nearbyList = generateNearbyHospitals(userPos.lat, userPos.lng);
+        }
+        setHospitalsData(nearbyList);
+        if (nearbyList.length > 0) {
+          const topHosp = nearbyList[0];
+          setSelectedHospital(topHosp);
+          const points = computeDijkstraWaypoints(userPos.lat, userPos.lng, topHosp.lat, topHosp.lng);
+          setDijkstraWaypoints(points);
+        }
+      }
     }
+    loadBackendHospitals();
+    return () => { isMounted = false; };
   }, [userPos]);
 
   // Handle GPS location detection
