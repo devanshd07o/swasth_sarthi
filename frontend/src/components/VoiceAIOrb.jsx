@@ -400,12 +400,12 @@ export default function VoiceAIOrb({ lang = 'en' }) {
           type="button"
           onClick={() => setIsExpanded(true)}
           title={t('orb.speakLabel', 'AyurSaarthi Voice AI — Tap to Open')}
-          className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-emerald-950 via-slate-900 to-teal-950 shadow-2xl hover:shadow-emerald-900/40 hover:scale-110 active:scale-95 transition-all duration-300 border border-emerald-500/50 flex items-center justify-center cursor-pointer group relative p-1"
+          className="w-14 h-14 sm:w-16 sm:h-16 bg-transparent hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer group relative p-0 border-0 outline-none"
         >
-          <RobotAvatarAnimation state={aiState} size="md" />
-          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+          <RobotAvatarAnimation state={aiState} size="lg" />
+          <span className="absolute top-0 right-0 flex h-3.5 w-3.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border border-white"></span>
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white shadow-xs"></span>
           </span>
         </button>
       </div>
