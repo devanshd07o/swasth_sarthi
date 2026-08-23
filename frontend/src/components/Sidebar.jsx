@@ -44,7 +44,6 @@ export default function Sidebar({
         { id: 'admin_command', label: t('sidebar.adminCommand', 'Ministry Command Portal'), icon: ShieldCheck },
         { id: 'hospital_network', label: t('sidebar.hospitalNetwork', 'Pan-India Hospital Network'), icon: Building2 },
         { id: 'doctor_roster', label: t('sidebar.doctorRoster', 'Vaidya Doctor Roster'), icon: Stethoscope },
-        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'MedRoute Emergency ICU Dispatch'), icon: HeartPulse },
         { id: 'icu_inventory', label: t('sidebar.inventory', 'ICU & Bed Capacity Fleet'), icon: Activity },
         { id: 'audit_logs', label: t('sidebar.auditLogs', 'ABDM Compliance Logs'), icon: FileText },
       ];
@@ -55,7 +54,6 @@ export default function Sidebar({
         { id: 'patients', label: t('sidebar.patientDirectory', 'Patient Directory'), icon: Users },
         { id: 'timeline', label: t('sidebar.longitudinalHistory', 'Patient Timeline'), icon: FileText },
         { id: 'register', label: t('sidebar.dailyRegister', 'Daily OPD Register'), icon: Activity },
-        { id: 'medroute', label: t('sidebar.medrouteEmergency', 'AYUSH Wellness Grid'), icon: HeartPulse },
       ];
     } else {
       return [
