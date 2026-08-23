@@ -32,6 +32,11 @@
       "user": "bye bye",
       "ai": "Goodbye! Take care and feel free to reach out anytime you need Ayurvedic tips. Stay balanced and healthy.",
       "timestamp": 1787511908.572698
+    },
+    {
+      "user": "hello",
+      "ai": "Hello! I'm AyurSaarthi, your Ayurvedic companion. How can I help you feel balanced and healthy today?",
+      "timestamp": 1787512519.2123277
     }
   ]
 }

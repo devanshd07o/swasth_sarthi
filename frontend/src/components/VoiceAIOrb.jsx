@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, Sparkles, Volume2, VolumeX, Send, HeartPulse, MicOff, Square, MessageSquare } from 'lucide-react';
+import { Mic, Sparkles, Volume2, VolumeX, Send, HeartPulse, MicOff, Square, MessageSquare, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
@@ -377,6 +377,25 @@ export default function VoiceAIOrb({ lang = 'en' }) {
     }
   };
 
+  const handleResetSession = useCallback(() => {
+    stopAll();
+    const newSessId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    sessionIdRef.current = newSessId;
+    sessionStorage.setItem('ss_session_id', newSessId);
+    setActiveQuery('');
+    setInputText('');
+    setResponse(null);
+    setErrorMsg('');
+    setAiState('idle');
+  }, [stopAll]);
+
+  const handleOpenWidget = () => {
+    if (activeQuery || response) {
+      handleResetSession();
+    }
+    setIsExpanded(true);
+  };
+
   const orbGradient = {
     idle: 'from-emerald-500 to-teal-600 shadow-emerald-600/30',
     listening: 'from-rose-500 to-pink-600 shadow-rose-500/40 ring-4 ring-rose-300 animate-pulse',
@@ -397,7 +416,7 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         <audio ref={audioPlayerRef} className="hidden" />
         <button
           type="button"
-          onClick={() => setIsExpanded(true)}
+          onClick={handleOpenWidget}
           title={t('orb.speakLabel', 'AyurSaarthi Voice AI — Tap to Open')}
           className="w-14 h-14 sm:w-16 sm:h-16 bg-transparent hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer group relative p-0 border-0 outline-none"
         >
@@ -422,7 +441,16 @@ export default function VoiceAIOrb({ lang = 'en' }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleResetSession}
+            title={t('orb.newSession', 'Start Fresh Session')}
+            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>{t('orb.newSessionLabel', 'New Session')}</span>
+          </button>
           <button
             type="button"
             onClick={() => {
