@@ -92,9 +92,9 @@ function DocumentPreviewModal({ doc, onClose }) {
 
             <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-3">
               {doc.file_url ? (
-                doc.is_image || doc.mime_type?.startsWith('image/') ? (
+                doc.is_image || doc.mime_type?.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|bmp|heic)$/i.test(doc.file_name) ? (
                   <div className="text-center p-2 bg-slate-950 rounded-xl">
-                    <img src={doc.file_url} alt={doc.file_name} className="max-h-[380px] w-auto mx-auto rounded-lg object-contain shadow-md border border-slate-700" />
+                    <img src={doc.file_url} alt={doc.file_name} className="max-h-[400px] w-auto mx-auto rounded-lg object-contain shadow-md border border-slate-700" />
                   </div>
                 ) : (
                   <div className="w-full h-96 rounded-xl overflow-hidden bg-white shadow-md">

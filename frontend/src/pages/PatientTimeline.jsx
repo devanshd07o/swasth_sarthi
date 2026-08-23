@@ -429,9 +429,9 @@ export default function PatientTimeline({ patientId, onBack, currentDoctorId = "
             <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
               <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-3">
                 {selectedDocForOverlay.file_url ? (
-                  selectedDocForOverlay.is_image || selectedDocForOverlay.mime_type?.startsWith('image/') ? (
+                  selectedDocForOverlay.is_image || selectedDocForOverlay.mime_type?.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|bmp|heic)$/i.test(selectedDocForOverlay.file_name) ? (
                     <div className="text-center p-2 bg-slate-950 rounded-xl">
-                      <img src={selectedDocForOverlay.file_url} alt={selectedDocForOverlay.file_name} className="max-h-[380px] w-auto mx-auto rounded-lg object-contain shadow-md border border-slate-700" />
+                      <img src={selectedDocForOverlay.file_url} alt={selectedDocForOverlay.file_name} className="max-h-[400px] w-auto mx-auto rounded-lg object-contain shadow-md border border-slate-700" />
                     </div>
                   ) : (
                     <div className="w-full h-96 rounded-xl overflow-hidden bg-white shadow-md">
