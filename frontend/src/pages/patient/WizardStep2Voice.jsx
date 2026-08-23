@@ -50,11 +50,11 @@ function SendDoctorModal({ doctors, onSend, onClose, sending }) {
         <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-[#12372A] to-emerald-800">
           <div className="flex items-center gap-2">
             <Send className="w-4 h-4 text-amber-300" />
-            <span className="text-white font-bold text-sm">{t('patientPortal.selectDoctor', 'Select Doctor to Send Report')}</span>
+            <span className="text-white font-bold text-sm">{t('patientPortal.selectDoctor', 'Select Doctor (Auto-Sends Report)')}</span>
           </div>
           <button onClick={onClose} className="text-white/70 hover:text-white cursor-pointer"><X className="w-4 h-4" /></button>
         </div>
-        <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
+        <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
           {doctors.length === 0 && (
             <p className="text-xs text-slate-500 text-center py-4">{t('patientPortal.noDoctorsAvailable', 'No doctors available. Search from Step 4.')}</p>
           )}
@@ -62,35 +62,27 @@ function SendDoctorModal({ doctors, onSend, onClose, sending }) {
             <button
               key={doc.id}
               type="button"
-              onClick={() => setSelected(doc)}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                selected?.id === doc.id
-                  ? 'border-emerald-600 bg-emerald-50 shadow-sm'
-                  : 'border-slate-200 hover:border-emerald-300 hover:bg-slate-50'
-              }`}
+              disabled={sending}
+              onClick={() => onSend(doc)}
+              className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 text-left cursor-pointer transition-all hover:border-emerald-500 hover:bg-emerald-50/70 hover:shadow-md group active:scale-[0.99] disabled:opacity-50"
             >
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                <User className="w-4 h-4 text-emerald-700" />
+              <div className="w-9 h-9 rounded-full bg-emerald-100 group-hover:bg-emerald-600 flex items-center justify-center shrink-0 transition-colors">
+                <User className="w-4 h-4 text-emerald-700 group-hover:text-white transition-colors" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-xs font-bold text-slate-900 block truncate">{doc.name}</span>
-                <span className="text-[10px] text-slate-500">{doc.specialization} · {doc.hospital_name || doc.hospital}</span>
+                <span className="text-xs font-bold text-slate-900 group-hover:text-emerald-950 block truncate">{doc.name}</span>
+                <span className="text-[10px] text-slate-500 group-hover:text-emerald-800">{doc.specialization} · {doc.hospital_name || doc.hospital}</span>
               </div>
-              {selected?.id === doc.id && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+              <div className="px-3 py-1 bg-emerald-600 group-hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shrink-0 shadow-xs">
+                {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                <span>{t('patientPortal.sendNow', 'Send Report →')}</span>
+              </div>
             </button>
           ))}
         </div>
-        <div className="px-4 pb-4 flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 text-xs font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+        <div className="px-4 pb-4">
+          <button onClick={onClose} className="w-full py-2.5 text-xs font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
             {t('common.cancel', 'Cancel')}
-          </button>
-          <button
-            onClick={() => selected && onSend(selected)}
-            disabled={!selected || sending}
-            className="flex-1 py-2.5 bg-[#12372A] hover:bg-[#0B2B20] disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all"
-          >
-            {sending ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>{t('patientPortal.sending', 'Sending…')}</span></>
-              : <><Send className="w-3.5 h-3.5" /><span>{t('patientPortal.sendNow', 'Send to Doctor')}</span></>}
           </button>
         </div>
       </div>
