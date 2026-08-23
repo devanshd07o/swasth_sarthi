@@ -38,6 +38,7 @@ def startup_event():
     seed_database()
 
 @app.get("/api/health")
+@app.head("/api/health")
 def health_check():
     return {"status": "ok", "service": "SwasthSaarthi Backend"}
 
