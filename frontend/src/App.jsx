@@ -235,9 +235,10 @@ export default function App() {
                 )}
                 {activeTab === 'timeline' && (
                   <PatientTimeline
-                    patientId={selectedPatientId || 'ABHA-9821-4501'}
+                    patientId={currentUser?.abha_id || currentUser?.id || selectedPatientId || 'ABHA-9821-4501'}
                     onBack={() => setActiveTab('triage')}
                     currentDoctorId={null}
+                    currentUser={currentUser}
                     lang={lang}
                   />
                 )}
