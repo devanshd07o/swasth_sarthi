@@ -14,6 +14,7 @@ export default function PatientTimeline({ patientId, onBack, currentDoctorId = "
   const [loading, setLoading] = useState(true);
   const [activePrescriptionForPrint, setActivePrescriptionForPrint] = useState(null);
   const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
+  const [selectedDocForOverlay, setSelectedDocForOverlay] = useState(null);
 
   useEffect(() => {
     if (patientId) loadTimeline();
@@ -323,6 +324,32 @@ export default function PatientTimeline({ patientId, onBack, currentDoctorId = "
                       </div>
                     )}
 
+                    {/* Attached ABDM Scanned Medical Records & Reports */}
+                    {item.intake_data?.documents && item.intake_data.documents.length > 0 && (
+                      <div className="p-3.5 bg-teal-50/70 border border-teal-200/80 rounded-xl space-y-2 text-xs">
+                        <span className="text-[10px] font-bold text-teal-900 uppercase flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-teal-600" />
+                          <span>Attached Scanned Medical Records ({item.intake_data.documents.length})</span>
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {item.intake_data.documents.map((doc, docIdx) => (
+                            <div
+                              key={docIdx}
+                              onClick={() => setSelectedDocForOverlay(doc)}
+                              className="p-2.5 bg-white rounded-lg border border-teal-200 shadow-2xs hover:border-teal-500 hover:bg-teal-50/50 cursor-pointer space-y-1 transition-all group"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-900 group-hover:text-teal-950 text-[11px] truncate">{doc.file_name}</span>
+                                <span className="text-[9px] font-bold bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded">{doc.file_type}</span>
+                              </div>
+                              <p className="text-[10px] text-slate-500">{doc.source_doctor_or_hospital} • {doc.date}</p>
+                              <span className="text-[10px] font-bold text-teal-700 underline block group-hover:text-teal-900">Click to Open Real Document →</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-wrap items-center gap-4 text-[11px]">
                       <div><span className="font-semibold text-slate-500">{t('timeline.prakriti', 'Prakriti')}:</span> <span className="font-bold text-slate-800">{item.prakriti || "Vata-Kapha"}</span></div>
                       <div><span className="font-semibold text-slate-500">{t('timeline.vikriti', 'Vikriti')}:</span> <span className="font-bold text-slate-800">{item.vikriti || "Vata Vriddhi"}</span></div>
@@ -385,6 +412,47 @@ export default function PatientTimeline({ patientId, onBack, currentDoctorId = "
         onClose={() => setIsVaultModalOpen(false)}
         onDocumentUploaded={() => loadTimeline()}
       />
+
+      {selectedDocForOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-2xl rounded-3xl border border-slate-200 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+            <div className="p-5 bg-gradient-to-r from-[#12372A] to-emerald-800 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-emerald-300" />
+                <div>
+                  <h3 className="text-sm font-extrabold">{selectedDocForOverlay.file_name}</h3>
+                  <p className="text-[11px] text-emerald-200">{selectedDocForOverlay.source_doctor_or_hospital} • {selectedDocForOverlay.date}</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedDocForOverlay(null)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white cursor-pointer">✕</button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+              <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-3">
+                {selectedDocForOverlay.file_url ? (
+                  selectedDocForOverlay.is_image || selectedDocForOverlay.mime_type?.startsWith('image/') ? (
+                    <div className="text-center p-2 bg-slate-950 rounded-xl">
+                      <img src={selectedDocForOverlay.file_url} alt={selectedDocForOverlay.file_name} className="max-h-[380px] w-auto mx-auto rounded-lg object-contain shadow-md border border-slate-700" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-96 rounded-xl overflow-hidden bg-white shadow-md">
+                      <iframe src={selectedDocForOverlay.file_url} title={selectedDocForOverlay.file_name} className="w-full h-full border-0" />
+                    </div>
+                  )
+                ) : (
+                  <div className="p-5 bg-white text-slate-900 rounded-xl shadow-lg border border-slate-200 space-y-3">
+                    <h4 className="font-extrabold text-xs text-slate-900">{selectedDocForOverlay.source_doctor_or_hospital || 'Central Healthcare Clinic'}</h4>
+                    <p className="text-xs text-slate-700 font-medium">{selectedDocForOverlay.summary || 'Attached ABDM clinical record.'}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <button onClick={() => setSelectedDocForOverlay(null)} className="px-4 py-2 text-xs font-semibold text-slate-600 border rounded-xl">Close</button>
+              <button onClick={() => alert(`Downloading ${selectedDocForOverlay.file_name}...`)} className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl">Download Record</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

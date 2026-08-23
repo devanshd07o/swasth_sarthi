@@ -39,17 +39,29 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
     if (!file && !sourceHospital) return;
     setSaving(true);
     try {
+      const fileUrl = file ? URL.createObjectURL(file) : null;
+      const isImage = file ? file.type.startsWith('image/') : false;
+      const isPdf = file ? file.type.includes('pdf') || file.name.endsWith('.pdf') : false;
+
       const payload = {
+        id: `doc_${Date.now()}`,
         patient_id: patientId || 'ABHA-9821-4501',
         file_name: file ? file.name : `${docType}_Scanned_${Date.now()}.pdf`,
         file_type: docType,
+        file_url: fileUrl,
+        mime_type: file ? file.type : 'application/pdf',
+        is_image: isImage,
+        is_pdf: isPdf,
+        file_size_kb: file ? (file.size / 1024).toFixed(1) : '240',
         date: docDate,
         source_doctor_or_hospital: sourceHospital || 'Government Ayurvedic Hospital',
         extracted_data: extractedData || { summary: 'Digitized document record' },
         summary: `Scanned ${docType} from ${sourceHospital || 'Clinical Center'}. Structured for ABDM Vault.`
       };
       const saved = await uploadOcrDocument(patientId || 'ABHA-9821-4501', payload);
-      if (onDocumentUploaded) onDocumentUploaded(saved);
+      // Merge fileUrl back into saved object for live client preview
+      const fullDoc = { ...saved, file_url: fileUrl || saved.file_url, is_image: isImage, is_pdf: isPdf };
+      if (onDocumentUploaded) onDocumentUploaded(fullDoc);
       onClose();
     } catch (err) {
       alert(t('documentVault.errorSave', 'Failed to save document to OCR Vault'));

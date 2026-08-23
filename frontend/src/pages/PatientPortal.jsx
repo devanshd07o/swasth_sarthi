@@ -537,7 +537,8 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
           transcript,
           partial_structure: partialStructure,
           structured: structuredIntake,
-          gap_qa: gapQA
+          gap_qa: gapQA,
+          documents: patientDocs
         },
         status: 'active',
         token_number: isRedFlag ? `EMERG-${Math.floor(100 + Math.random() * 900)}` : `OPD-${Math.floor(100 + Math.random() * 900)}`
@@ -676,7 +677,7 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
         vikriti: structuredIntake?.suspected_dosha || 'Vata Vriddhi',
         is_red_flag: isRedFlag,
         red_flag_reason: redFlagReason || null,
-        intake_data: { transcript, structured: structuredIntake, notes: bookingNotes },
+        intake_data: { transcript, structured: structuredIntake, notes: bookingNotes, documents: patientDocs },
         status: 'active',
         token_number: isRedFlag ? `EMERG-${Math.floor(100 + Math.random() * 900)}` : `OPD-${Math.floor(100 + Math.random() * 900)}`
       };
