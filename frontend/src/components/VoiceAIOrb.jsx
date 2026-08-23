@@ -381,20 +381,16 @@ export default function VoiceAIOrb({ lang = 'en' }) {
         <button
           type="button"
           onClick={() => setIsExpanded(true)}
-          className="flex items-center gap-2 p-2 sm:px-4 sm:py-3 bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white rounded-full shadow-2xl hover:shadow-emerald-500/40 hover:scale-105 active:scale-95 transition-all duration-300 border border-emerald-400/40 group cursor-pointer"
+          title={t('orb.speakLabel', 'AyurSaarthi Voice AI — Tap to Speak')}
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[#12372A] via-emerald-800 to-teal-700 text-white shadow-xl hover:shadow-emerald-900/30 hover:scale-110 active:scale-95 transition-all duration-300 border border-emerald-400/40 flex items-center justify-center cursor-pointer group relative"
         >
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center animate-pulse shrink-0">
-            <HeartPulse className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center animate-pulse">
+            <HeartPulse className="w-4 h-4 text-emerald-300 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="hidden sm:block text-left pr-1">
-            <span className="text-[9px] font-black uppercase tracking-wider block text-emerald-200">
-              {t('orb.brandTag', 'AyurSaarthi Voice AI')}
-            </span>
-            <span className="text-xs font-black text-white flex items-center gap-1">
-              <Mic className="w-3.5 h-3.5 text-amber-300" />
-              <span>{t('orb.speakLabel', 'Tap to Speak')}</span>
-            </span>
-          </div>
+          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+          </span>
         </button>
       </div>
     );
