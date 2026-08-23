@@ -221,7 +221,6 @@ export default function VoiceAIOrb({ lang = 'en' }) {
       // Single Browser TTS fallback if ElevenLabs disabled or returned null
       speakWithBrowser(textToSpeak, currentLang, () => {
         setAiState('idle');
-        setTimeout(() => startListening(), 350);
       });
     } else {
       setAiState('idle');

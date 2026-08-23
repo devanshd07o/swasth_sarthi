@@ -12,6 +12,26 @@
       "user": "hello how are you",
       "ai": "Hello! I'm feeling wonderful, thank you for asking. I'm here to listen and support you with any Ayurvedic advice you need, so please tell me how I can help you today.",
       "timestamp": 1787511061.5662537
+    },
+    {
+      "user": "hello so can you please tell me about ayurveda",
+      "ai": "Ayurveda is the ancient Indian science of life that balances body, mind, and spirit through diet, herbs, and daily habits, helping you stay healthy and harmonious.",
+      "timestamp": 1787511789.5795321
+    },
+    {
+      "user": "hello so can you please tell me about ayurveda",
+      "ai": "Sure! Ayurveda is the ancient Indian science of life that balances body, mind, and spirit through diet, herbs, daily routines, and mindful living. It helps you stay healthy by honoring your unique constitution.",
+      "timestamp": 1787511800.6865437
+    },
+    {
+      "user": "and baki part kya bata sakte ho tum mujhe Iske",
+      "ai": "I understand the morning stiffness can be uncomfortable; it often points to Vata aggravation in the joints, like early osteoarthritis. Gentle warm sesame oil massage and a daily ginger-turmeric tea can help, and could you tell me how intense the stiffness feels and if it's been constant for the past two weeks?",
+      "timestamp": 1787511848.2202122
+    },
+    {
+      "user": "bye bye",
+      "ai": "Goodbye! Take care and feel free to reach out anytime you need Ayurvedic tips. Stay balanced and healthy.",
+      "timestamp": 1787511908.572698
     }
   ]
 }

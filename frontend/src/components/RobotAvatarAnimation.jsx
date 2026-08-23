@@ -31,6 +31,9 @@ export default function RobotAvatarAnimation({
   useEffect(() => {
     let mainTimer = null;
 
+    // Synchronously reset to frame 0 (eyes wide open) on any state transition
+    setCurrentFrameIndex(0);
+
     if (state === 'speaking') {
       // Mouth / Eye movement synced to speech rhythm (frames 0 -> 1 -> 2 -> 3 -> 2 -> 1 -> 0)
       const speechSequence = [0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 3, 1];
@@ -56,8 +59,8 @@ export default function RobotAvatarAnimation({
         setCurrentFrameIndex(thinkSequence[idx]);
       }, 200);
     } else {
-      // 🌿 IDLE BLINK SEQUENCE (Exact User Specification)
-      // Frame 1 repeated 28 times for ~4.5 sec open eyes, then smooth 2 -> 3 -> 4 -> 5 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 blink @ 160ms
+      // 🌿 IDLE BLINK SEQUENCE
+      // Frame 0 (open eyes) held for ~4.5 sec with 6 zeros spacing, then smooth blink @ 160ms
       const idleBlinkSequence = [
         0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1,
         1, 2, 3, 4, 5, 4, 3, 2, 1, 0
@@ -67,7 +70,7 @@ export default function RobotAvatarAnimation({
       mainTimer = setInterval(() => {
         seqIndex = (seqIndex + 1) % idleBlinkSequence.length;
         setCurrentFrameIndex(idleBlinkSequence[seqIndex]);
-      }, 160); // 160ms interval
+      }, 160);
     }
 
     return () => {
