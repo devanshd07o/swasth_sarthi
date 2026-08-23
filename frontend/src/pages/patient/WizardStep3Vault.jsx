@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FileText, Plus, ArrowRight, Eye, Download, Printer, X, Sparkles, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { FileText, Plus, ArrowRight, Eye, Download, Printer, X, Sparkles, ShieldCheck, CheckCircle2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import DocumentVaultModal from '../../components/DocumentVaultModal';
 
 /* ── Document Viewer Overlay Modal ───────────────────────────────────────── */
-function DocumentPreviewModal({ doc, onClose }) {
+function DocumentPreviewModal({ doc, onClose, onDelete }) {
   const { t } = useTranslation();
   if (!doc) return null;
 
@@ -250,6 +250,15 @@ function DocumentPreviewModal({ doc, onClose }) {
           
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              onClick={() => onDelete && onDelete(doc)}
+              className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              <span>Delete Record</span>
+            </button>
+
+            <button
               onClick={() => alert(`Downloading ${doc.file_name}...`)}
               className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
             >
@@ -273,6 +282,15 @@ export default function WizardStep3Vault({
 }) {
   const { t } = useTranslation();
   const [selectedPreviewDoc, setSelectedPreviewDoc] = useState(null);
+
+  const handleDeleteDoc = (targetDoc, targetIdx) => {
+    if (window.confirm(`Are you sure you want to delete "${targetDoc.file_name}" from your vault?`)) {
+      setPatientDocs(prev => prev.filter((d, i) => i !== targetIdx && d.file_name !== targetDoc.file_name));
+      if (selectedPreviewDoc?.file_name === targetDoc.file_name) {
+        setSelectedPreviewDoc(null);
+      }
+    }
+  };
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6 animate-fade-in">
@@ -310,9 +328,9 @@ export default function WizardStep3Vault({
               <div
                 key={idx}
                 onClick={() => setSelectedPreviewDoc(doc)}
-                className="p-4 bg-white hover:bg-emerald-50/70 rounded-xl border border-slate-200 hover:border-emerald-400 shadow-sm space-y-2 text-xs transition-all cursor-pointer group"
+                className="p-4 bg-white hover:bg-emerald-50/70 rounded-xl border border-slate-200 hover:border-emerald-400 shadow-sm space-y-2 text-xs transition-all cursor-pointer group relative"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 pr-6">
                   <span className="font-bold text-slate-900 group-hover:text-emerald-950 flex items-center gap-1.5 truncate">
                     <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span className="truncate">{doc.file_name}</span>
@@ -321,6 +339,20 @@ export default function WizardStep3Vault({
                     {doc.file_type}
                   </span>
                 </div>
+
+                {/* Delete Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteDoc(doc, idx);
+                  }}
+                  title="Delete Record"
+                  className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+
                 <p className="text-[11px] text-slate-500 font-medium">
                   {doc.source_doctor_or_hospital} • {doc.date}
                 </p>
@@ -367,6 +399,7 @@ export default function WizardStep3Vault({
         <DocumentPreviewModal
           doc={selectedPreviewDoc}
           onClose={() => setSelectedPreviewDoc(null)}
+          onDelete={(d) => handleDeleteDoc(d, patientDocs.findIndex(x => x.file_name === d.file_name))}
         />
       )}
     </div>
