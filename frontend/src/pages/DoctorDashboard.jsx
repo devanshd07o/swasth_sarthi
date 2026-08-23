@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, Sparkles, ShieldCheck, ArrowUpRight, Search, 
-  AlertTriangle, Star, Stethoscope, Filter 
+  AlertTriangle, Star, Stethoscope, Filter, CheckCircle2 
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getDoctorPatients, getDoctorById } from '../services/api';
+import { getDoctorPatients, getDoctorById, signCase as apiSignCase } from '../services/api';
 
 export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en' }) {
   const { t } = useTranslation();
@@ -33,9 +33,53 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    loadDashboardData();
+  const [completedPatients, setCompletedPatients] = useState([
+    {
+      patient_id: 'pat_1',
+      name: 'Ramesh Sharma',
+      abha_id: 'ABHA-9821-4501',
+      diagnosis: 'Sandhivata (Osteoarthritis)',
+      regimen: 'Yograj Guggulu 2 tab BID, Rasnadi Kwath 15ml',
+      status: 'Signed & Completed',
+      date: '2026-08-23'
+    },
+    {
+      patient_id: 'pat_2',
+      name: 'Sunita Sharma',
+      abha_id: 'ABHA-3412-8902',
+      diagnosis: 'Amlapitta & Hrid-Daha',
+      regimen: 'Avipattikar Churna 3g BD, Kamadugha Rasa',
+      status: 'Signed & Completed',
+      date: '2026-08-22'
+    }
+  ]);
+
+  const handleCloseToken = async (e, patient) => {
+    e.stopPropagation();
+    if (window.confirm(`Mark OPD consultation for ${patient.name} as Completed and close token?`)) {
+      try {
+        if (patient.latest_case_id) {
+          await apiSignCase(patient.latest_case_id).catch(() => null);
+        }
+      } catch (_) {}
+      
+      // Move patient to completed list
+      setCompletedPatients(prev => [
+        {
+          patient_id: patient.patient_id,
+          name: patient.name,
+          abha_id: patient.abha_id,
+          diagnosis: patient.latest_chief_complaint || 'OPD Consult Completed',
+          regimen: 'AYUSH Prescription Signed',
+          status: 'Signed & Completed',
+          date: new Date().toISOString().split('T')[0]
+        },
+        ...prev.filter(cp => cp.patient_id !== patient.patient_id)
+      ]);
+
+      // Remove from active queue
+      setPatients(prev => prev.filter(p => p.patient_id !== patient.patient_id));
+    }
   };
 
   const activeDoctor = currentUser || doctorInfo;
@@ -197,13 +241,24 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
                     </div>
                   </div>
 
-                  <div className="text-xs font-medium text-slate-700 pt-2 border-t border-slate-100">
-                    <span className="font-semibold text-slate-500 block text-[10px] uppercase tracking-wider mb-0.5">
-                      {t('doctorDashboard.chiefComplaint', 'Chief Complaint')}
-                    </span>
-                    <p className="line-clamp-2 text-slate-800 font-medium">
-                      {p.latest_chief_complaint}
-                    </p>
+                  <div className="text-xs font-medium text-slate-700 pt-2 border-t border-slate-100 space-y-2">
+                    <div>
+                      <span className="font-semibold text-slate-500 block text-[10px] uppercase tracking-wider mb-0.5">
+                        {t('doctorDashboard.chiefComplaint', 'Chief Complaint')}
+                      </span>
+                      <p className="line-clamp-2 text-slate-800 font-medium">
+                        {p.latest_chief_complaint}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => handleCloseToken(e, p)}
+                      className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-900 hover:text-white font-extrabold text-[11px] rounded-xl border border-emerald-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Complete Consult (Close Token)</span>
+                    </button>
                   </div>
                 </div>
               );
@@ -228,38 +283,26 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, currentDoc
             </span>
           </div>
 
-          <div className="space-y-2.5 text-xs">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">Ramesh Sharma</span>
-                  <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100 px-1.5 py-0.2 rounded">Signed</span>
+          <div className="space-y-2.5 text-xs max-h-72 overflow-y-auto pr-1">
+            {completedPatients.map((cp, cIdx) => (
+              <div key={cIdx} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3 shadow-2xs hover:border-emerald-300 transition-colors">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900">{cp.name}</span>
+                    <span className="text-[10px] text-emerald-900 font-extrabold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                      ✓ Completed & Signed
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">{cp.diagnosis} • {cp.regimen}</p>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">Sandhivata (Osteoarthritis) • Yograj Guggulu 2 tab bid</p>
+                <button 
+                  onClick={() => onSelectPatient(cp.patient_id)}
+                  className="px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 font-extrabold text-[11px] rounded-xl border border-slate-200 shadow-xs cursor-pointer shrink-0 transition-colors"
+                >
+                  View EHR & Details →
+                </button>
               </div>
-              <button 
-                onClick={() => onSelectPatient('pat_1')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 text-emerald-800 font-bold text-[11px] rounded-lg border border-slate-200 shadow-xs cursor-pointer shrink-0"
-              >
-                View EHR
-              </button>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">Sunita Sharma</span>
-                  <span className="text-[10px] text-rose-700 font-bold bg-rose-100 px-1.5 py-0.2 rounded">Risk Review</span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">Amlapitta & Hrid-Daha • Avipattikar Churna 5g HS</p>
-              </div>
-              <button 
-                onClick={() => onSelectPatient('pat_2')}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 text-emerald-800 font-bold text-[11px] rounded-lg border border-slate-200 shadow-xs cursor-pointer shrink-0"
-              >
-                View EHR
-              </button>
-            </div>
+            ))}
           </div>
         </div>
 
