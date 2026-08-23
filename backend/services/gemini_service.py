@@ -1,5 +1,7 @@
 import json
 import os
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 import google.generativeai as genai
 from config import settings
 
