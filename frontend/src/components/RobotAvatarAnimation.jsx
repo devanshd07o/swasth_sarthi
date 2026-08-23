@@ -59,7 +59,7 @@ export default function RobotAvatarAnimation({
       // 🌿 IDLE BLINK SEQUENCE (Exact User Specification)
       // Frame 1 repeated 28 times for ~4.5 sec open eyes, then smooth 2 -> 3 -> 4 -> 5 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 blink @ 160ms
       const idleBlinkSequence = [
-        0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1,
+        0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1,
         1, 2, 3, 4, 5, 4, 3, 2, 1, 0
       ];
       let seqIndex = 0;
