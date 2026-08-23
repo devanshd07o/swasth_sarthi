@@ -22,9 +22,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 import logging
+import secrets
+from datetime import datetime, timedelta
+import models
 from config import settings
 from jose import jwt
 import random
+from services.sms_service import send_sms_otp
+from services.email_service import send_email_otp
 
 logger = logging.getLogger(__name__)
 
@@ -144,12 +149,10 @@ def send_auth_otp(payload: dict, db: Session = Depends(get_db)):
             }
 
     elif role == "doctor":
-        doctor = db.query(models.Doctor).filter(
-            (models.Doctor.registration_no == identifier) | (models.Doctor.id == identifier)
+        doctor = db.query(models.User).filter(
+            models.User.role == "doctor",
+            (models.User.registration_no == identifier) | (models.User.doctor_id == identifier) | (models.User.id == identifier)
         ).first()
-
-        if not doctor and _is_mobile(identifier):
-            doctor = db.query(models.Doctor).filter(models.Doctor.contact == identifier).first() if hasattr(models.Doctor, "contact") else None
 
         if doctor:
             user_data = {

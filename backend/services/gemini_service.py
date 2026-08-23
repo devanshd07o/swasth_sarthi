@@ -112,19 +112,6 @@ Respond strictly in valid JSON format (no markdown fences, no extra text):
 
 async def generate_case_summary(case_data: dict) -> dict:
     """
-    Generates structured clinical summary in English and Hindi using Gemini 1.5 Flash.
-    """
-    if not api_key:
-        return {
-            "summary_en": f"Patient presents with {case_data.get('chief_complaints', 'N/A')}. Prakriti: {case_data.get('prakriti', 'Vata-Pitta')}. Prescribed Ayurvedic therapy with regular follow-up.",
-            "summary_hi": f"रोगी {case_data.get('chief_complaints', 'मुख्य शिकायत')} के साथ आया है। प्रकृति: {case_data.get('prakriti', 'वात-पित्त')}। नियमित फॉलो-अप के साथ आयुर्वेदिक चिकित्सा दी गई।",
-            "risk_factors": ["Monitor Agni imbalance", "Ensure dietary compliance"],
-            "missing_fields": ["Past medical history", "Family history"],
-            "followup_recommendation": "Follow up after 7 days."
-        }
-
-async def generate_case_summary(case_data: dict) -> dict:
-    """
     Generates structured clinical summary (English & Hindi) using Groq LLM pipeline.
     """
     try:

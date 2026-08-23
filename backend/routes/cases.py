@@ -1,3 +1,4 @@
+import os
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -132,9 +133,12 @@ async def analyse_transcript_gaps(req: schemas.IntakeStructuringRequest):
     )
     user_prompt = f"Patient transcript: \"{transcript}\""
 
-    import json_repair
     parsed = None
     try:
+        try:
+            import json_repair
+        except ImportError:
+            import json as json_repair
         raw = _chat(
             messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}],
             model="openai/gpt-oss-120b",
@@ -252,9 +256,12 @@ async def complete_full_structuring(req: schemas.CompleteStructuringRequest):
         f"Follow-up answers:\n{qa_context if qa_context else 'No additional information provided.'}"
     )
 
-    import json_repair
     parsed = None
     try:
+        try:
+            import json_repair
+        except ImportError:
+            import json as json_repair
         raw = _chat(
             messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}],
             model="openai/gpt-oss-120b",
