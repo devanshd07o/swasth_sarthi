@@ -125,11 +125,15 @@ def get_pathya_apathya_recommendation(prakriti: str, vikriti: str) -> dict:
         }
 
 def search_ayurvedic_medicines(query: str) -> list:
+    all_meds = load_ayurvedic_medicines() or AYURVEDIC_MEDICINES
     if not query:
-        return AYURVEDIC_MEDICINES[:8]
-    q = query.lower()
+        return all_meds[:12]
+    q = query.strip().lower()
     results = [
-        m for m in AYURVEDIC_MEDICINES
-        if q in m["name"].lower() or q in m["indications"].lower() or q in m["dosha"].lower()
+        m for m in all_meds
+        if q in m["name"].lower() or 
+           q in m.get("category", "").lower() or 
+           q in m.get("indications", "").lower() or 
+           q in m.get("dosha", "").lower()
     ]
-    return results
+    return results[:20]

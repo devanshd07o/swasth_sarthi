@@ -419,15 +419,41 @@ export default function WizardStep2Voice({
                     </span>
                   ))}
 
-                  {/* Live Gap Answered Pills */}
+                  {/* Live AI-Formatted Gap Answered Pills */}
                   {Object.entries(gapAnswers).map(([idx, ans]) => {
                     if (!ans || ans === '—' || ans === 'skipped') return null;
                     const gq = gapQuestions[parseInt(idx, 10)];
-                    const label = gq?.field ? gq.field.replace('_', ' ') : 'Detail';
+                    const rawLabel = gq?.field ? gq.field.replace('_', ' ') : 'Symptom Detail';
+                    
+                    // Clean up colloquial fillers (e.g. "hai yaar", "bhai", "ji")
+                    let cleanText = ans
+                      .replace(/\b(hai|h|yaar|yar|bhai|sir|ji|hn|han|rehta|rehti|ho|gaya|gaye|lag|rhi|raha)\b/gi, '')
+                      .replace(/\s+/g, ' ')
+                      .trim();
+                    if (!cleanText) cleanText = ans;
+                    cleanText = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
+
+                    let icon = "✨";
+                    let badgeBg = "bg-teal-50 text-teal-900 border-teal-200";
+                    if (/pain|dard|stiffness|swelling|redness/i.test(cleanText)) {
+                      icon = "🩺";
+                      badgeBg = "bg-emerald-50 text-emerald-950 border-emerald-300";
+                    } else if (/day|din|month|mahine|week|hafta|since/i.test(cleanText)) {
+                      icon = "🕒";
+                      badgeBg = "bg-blue-50 text-blue-950 border-blue-200";
+                    } else if (/severe|mild|moderate|tez|bht/i.test(cleanText)) {
+                      icon = "⚡";
+                      badgeBg = "bg-amber-50 text-amber-950 border-amber-300";
+                    } else if (/cold|sour|fried|food|khana|sardi/i.test(cleanText)) {
+                      icon = "❄️";
+                      badgeBg = "bg-indigo-50 text-indigo-950 border-indigo-200";
+                    }
+
                     return (
-                      <span key={idx} className="px-2.5 py-1 bg-teal-50 text-teal-900 border border-teal-200 rounded-lg font-medium flex items-center gap-1 animate-fade-in">
-                        <span className="font-bold text-[10px] uppercase text-teal-700">{label}:</span>
-                        <span>{ans.length > 30 ? ans.slice(0, 30) + '…' : ans}</span>
+                      <span key={idx} className={`px-2.5 py-1 ${badgeBg} border rounded-lg font-bold text-xs flex items-center gap-1.5 animate-fade-in shadow-2xs`}>
+                        <span className="text-xs">{icon}</span>
+                        <span className="font-mono text-[9px] uppercase tracking-wide opacity-80">{rawLabel}:</span>
+                        <span className="font-semibold">{cleanText.length > 32 ? cleanText.slice(0, 32) + '…' : cleanText}</span>
                       </span>
                     );
                   })}
@@ -612,166 +638,161 @@ export default function WizardStep2Voice({
               </div>
             )}
 
-            {/* ── AI Health Report Card ── */}
-            <div className="rounded-2xl border border-emerald-100 overflow-hidden shadow-sm">
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#12372A] to-emerald-800">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span className="text-white font-bold text-xs uppercase tracking-wide">
-                    {t('patientPortal.intakeHeader', 'Your AI Health Summary')}
+            {/* ── Official Patient Self-Assessment Clinical Dossier Card ── */}
+            <div className="bg-white border-2 border-emerald-700/30 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 font-body">
+              
+              {/* Header Badge */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-emerald-100 pb-3">
+                <div>
+                  <span className="text-[9px] font-bold font-mono uppercase tracking-widest text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    ABDM HIP COMPLIANT • PATIENT SELF-ASSESSMENT DOSSIER
                   </span>
+                  <h4 className="text-base font-bold text-slate-900 mt-1 flex items-center gap-2">
+                    <Stethoscope className="w-4 h-4 text-emerald-700" />
+                    <span>{t('patientPortal.intakeSummaryTitle', 'Patient Voice & Clinical Triage Dossier')}</span>
+                  </h4>
                 </div>
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  isRedFlag ? 'bg-rose-500 text-white' :
-                  structuredIntake.severity === 'Severe' ? 'bg-orange-500 text-white' :
-                  structuredIntake.severity === 'Mild' ? 'bg-emerald-400 text-white' :
-                  'bg-amber-400 text-[#12372A]'
-                }`}>
-                  {t('patientPortal.severity', 'Severity:')} {structuredIntake.severity || 'Moderate'}
+
+                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Ready for Vaidya Review</span>
                 </span>
               </div>
 
-              <div className="p-4 bg-white space-y-4 text-xs">
-                {/* Point-wise clinical summary cards */}
-                <div className="space-y-2.5">
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
-                    📋 Point-Wise Clinical Summary
-                  </span>
+              {/* ── TOP EXECUTIVE SUMMARY FOR PHYSICIAN ── */}
+              {structuredIntake.clinical_summary && (
+                <div className="p-4 bg-gradient-to-r from-emerald-950 via-[#12372A] to-emerald-900 text-white rounded-xl space-y-2.5 shadow-md border border-emerald-700/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-amber-300 font-extrabold uppercase tracking-wide flex items-center gap-1.5">
+                      <Brain className="w-4 h-4 text-amber-300" /> ⭐ {t('patientPortal.clinicalSummary', 'Executive Summary for Physician')}
+                    </span>
 
-                  {/* Point 1: Chief Complaint */}
-                  {structuredIntake.chief_complaint && (
-                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
-                      <div className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</div>
-                      <div className="flex-1">
-                        <span className="text-[10px] font-bold text-emerald-800 uppercase block">Chief Complaint</span>
-                        <span className="text-slate-900 font-bold text-xs">{structuredIntake.chief_complaint}</span>
-                        {structuredIntake.duration && <span className="text-[11px] text-slate-500 font-medium ml-2">({structuredIntake.duration})</span>}
-                      </div>
-                    </div>
-                  )}
+                    {/* Play AI Audio Summary Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isPlayingAudio) {
+                          stopAllAudio();
+                        } else {
+                          speakText(`${t('patientPortal.clinicalSummary', 'Summary for Physician')}: ${structuredIntake.clinical_summary}`);
+                        }
+                      }}
+                      disabled={isAudioLoading}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-xs ${
+                        isPlayingAudio
+                          ? 'bg-amber-400 text-slate-950 animate-pulse'
+                          : 'bg-white/10 text-amber-200 border border-white/20 hover:bg-white/20'
+                      }`}
+                    >
+                      {isAudioLoading ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : isPlayingAudio ? (
+                        <>
+                          <VolumeX className="w-3 h-3" />
+                          <span>Stop Voice</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-3 h-3 text-amber-300" />
+                          <span>Listen Voice Summary</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-                  {/* Point 2: HPI Narrative */}
-                  {structuredIntake.hpi && (
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5 shadow-2xs">
-                      <div className="w-5 h-5 rounded-full bg-slate-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</div>
-                      <div className="flex-1">
-                        <span className="text-[10px] font-bold text-slate-600 uppercase block">History of Present Illness (HPI)</span>
-                        <p className="text-slate-800 font-medium leading-relaxed">{structuredIntake.hpi}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Point 3: Ayurvedic Dosha */}
-                  {structuredIntake.suspected_dosha && (
-                    <div className="p-3 bg-teal-50/80 border border-teal-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
-                      <div className="w-5 h-5 rounded-full bg-teal-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</div>
-                      <div className="flex-1">
-                        <span className="text-[10px] font-bold text-teal-800 uppercase block">Ayurvedic Dosha Analysis</span>
-                        <span className="text-teal-950 font-bold text-xs">{structuredIntake.suspected_dosha}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Point 4: Aggravating & Relieving Factors */}
-                  {(structuredIntake.aggravating_factors || structuredIntake.relieving_factors) && (
-                    <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
-                      <div className="w-5 h-5 rounded-full bg-amber-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">4</div>
-                      <div className="flex-1 space-y-1">
-                        <span className="text-[10px] font-bold text-amber-800 uppercase block">Triggers & Relief Factors</span>
-                        {structuredIntake.aggravating_factors && <p className="text-slate-800"><strong className="text-amber-900">Aggravating:</strong> {structuredIntake.aggravating_factors}</p>}
-                        {structuredIntake.relieving_factors && <p className="text-slate-800"><strong className="text-emerald-900">Relieving:</strong> {structuredIntake.relieving_factors}</p>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Point 5: Associated Symptoms */}
-                  {structuredIntake.associated_symptoms && structuredIntake.associated_symptoms !== 'None reported' && (
-                    <div className="p-3 bg-indigo-50/80 border border-indigo-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
-                      <div className="w-5 h-5 rounded-full bg-indigo-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">5</div>
-                      <div className="flex-1">
-                        <span className="text-[10px] font-bold text-indigo-800 uppercase block">Associated Symptoms</span>
-                        <span className="text-slate-800 font-medium">{structuredIntake.associated_symptoms}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Point 6: Pathya / Apathya */}
-                  {(structuredIntake.suggested_pathya || structuredIntake.suggested_apathya) && (
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5 shadow-2xs">
-                      <div className="w-5 h-5 rounded-full bg-emerald-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">6</div>
-                      <div className="flex-1 space-y-1">
-                        <span className="text-[10px] font-bold text-slate-700 uppercase block">Diet & Lifestyle Guidelines (Pathya / Apathya)</span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
-                          {structuredIntake.suggested_pathya && (
-                            <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-900 font-medium">
-                              <strong>✅ Pathya (Do):</strong> {structuredIntake.suggested_pathya}
-                            </div>
-                          )}
-                          {structuredIntake.suggested_apathya && (
-                            <div className="p-2 bg-rose-50 border border-rose-100 rounded-lg text-rose-900 font-medium">
-                              <strong>❌ Apathya (Avoid):</strong> {structuredIntake.suggested_apathya}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Point 7: Suggested Investigations */}
-                  {structuredIntake.suggested_investigations && structuredIntake.suggested_investigations !== 'None required at this stage' && (
-                    <div className="p-3 bg-purple-50/80 border border-purple-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
-                      <div className="w-5 h-5 rounded-full bg-purple-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">7</div>
-                      <div className="flex-1">
-                        <span className="text-[10px] font-bold text-purple-800 uppercase block">Suggested Clinical Investigations</span>
-                        <span className="text-slate-800 font-medium">{structuredIntake.suggested_investigations}</span>
-                      </div>
-                    </div>
-                  )}
+                  <p className="text-slate-100 font-medium text-xs leading-relaxed">{structuredIntake.clinical_summary}</p>
                 </div>
+              )}
 
-                {/* AI Assessment Summary Card — with Audio Player */}
-                {structuredIntake.clinical_summary && (
-                  <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl space-y-2 relative overflow-hidden">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wide flex items-center gap-1.5">
-                        <Brain className="w-3.5 h-3.5 text-indigo-600" /> {t('patientPortal.clinicalSummary', 'Summary for Physician')}
-                      </span>
+              {/* ── CLINICAL POINTS BREAKDOWN ── */}
+              <div className="space-y-3 pt-1 text-xs">
 
-                      {/* Play AI Audio Summary Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (isPlayingAudio) {
-                            stopAllAudio();
-                          } else {
-                            speakText(`${t('patientPortal.clinicalSummary', 'Summary for Physician')}: ${structuredIntake.clinical_summary}`);
-                          }
-                        }}
-                        disabled={isAudioLoading}
-                        className={`px-3 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-xs ${
-                          isPlayingAudio
-                            ? 'bg-indigo-600 text-white animate-pulse'
-                            : 'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50'
-                        }`}
-                      >
-                        {isAudioLoading ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : isPlayingAudio ? (
-                          <>
-                            <VolumeX className="w-3 h-3" />
-                            <span>Stop Voice</span>
-                          </>
-                        ) : (
-                          <>
-                            <Volume2 className="w-3 h-3 text-indigo-600" />
-                            <span>Listen to Voice Summary</span>
-                          </>
-                        )}
-                      </button>
+                {/* Point 1: Chief Complaint */}
+                {structuredIntake.chief_complaint && (
+                  <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                    <div className="w-5 h-5 rounded-full bg-emerald-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</div>
+                    <div className="flex-1">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase block">Chief Complaint</span>
+                      <p className="text-slate-900 font-extrabold text-sm">{structuredIntake.chief_complaint}</p>
                     </div>
+                  </div>
+                )}
 
-                    <p className="text-slate-800 font-medium leading-relaxed">{structuredIntake.clinical_summary}</p>
+                {/* Point 2: HPI Narrative */}
+                {structuredIntake.hpi && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                    <div className="w-5 h-5 rounded-full bg-slate-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</div>
+                    <div className="flex-1">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase block">History of Present Illness (HPI)</span>
+                      <p className="text-slate-800 font-medium leading-relaxed">{structuredIntake.hpi}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Point 3: Ayurvedic Dosha */}
+                {structuredIntake.suspected_dosha && (
+                  <div className="p-3 bg-teal-50/80 border border-teal-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                    <div className="w-5 h-5 rounded-full bg-teal-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</div>
+                    <div className="flex-1">
+                      <span className="text-[10px] font-bold text-teal-800 uppercase block">Ayurvedic Dosha Analysis</span>
+                      <span className="text-teal-950 font-bold text-xs">{structuredIntake.suspected_dosha}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Point 4: Aggravating & Relieving Factors */}
+                {(structuredIntake.aggravating_factors || structuredIntake.relieving_factors) && (
+                  <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                    <div className="w-5 h-5 rounded-full bg-amber-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">4</div>
+                    <div className="flex-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-800 uppercase block">Triggers & Relief Factors</span>
+                      {structuredIntake.aggravating_factors && <p className="text-slate-800"><strong className="text-amber-900">Aggravating:</strong> {structuredIntake.aggravating_factors}</p>}
+                      {structuredIntake.relieving_factors && <p className="text-slate-800"><strong className="text-emerald-900">Relieving:</strong> {structuredIntake.relieving_factors}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Point 5: Associated Symptoms */}
+                {structuredIntake.associated_symptoms && structuredIntake.associated_symptoms !== 'None reported' && (
+                  <div className="p-3 bg-indigo-50/80 border border-indigo-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                    <div className="w-5 h-5 rounded-full bg-indigo-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">5</div>
+                    <div className="flex-1">
+                      <span className="text-[10px] font-bold text-indigo-800 uppercase block">Associated Symptoms</span>
+                      <span className="text-slate-800 font-medium">{structuredIntake.associated_symptoms}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Point 6: Pathya / Apathya */}
+                {(structuredIntake.suggested_pathya || structuredIntake.suggested_apathya) && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                    <div className="w-5 h-5 rounded-full bg-emerald-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">6</div>
+                    <div className="flex-1 space-y-1">
+                      <span className="text-[10px] font-bold text-slate-700 uppercase block">Diet & Lifestyle Guidelines (Pathya / Apathya)</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                        {structuredIntake.suggested_pathya && (
+                          <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-900 font-medium">
+                            <strong>✅ Pathya (Do):</strong> {structuredIntake.suggested_pathya}
+                          </div>
+                        )}
+                        {structuredIntake.suggested_apathya && (
+                          <div className="p-2 bg-rose-50 border border-rose-100 rounded-lg text-rose-900 font-medium">
+                            <strong>❌ Apathya (Avoid):</strong> {structuredIntake.suggested_apathya}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Point 7: Suggested Investigations */}
+                {structuredIntake.suggested_investigations && structuredIntake.suggested_investigations !== 'None required at this stage' && (
+                  <div className="p-3 bg-purple-50/80 border border-purple-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                    <div className="w-5 h-5 rounded-full bg-purple-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">7</div>
+                    <div className="flex-1">
+                      <span className="text-[10px] font-bold text-purple-800 uppercase block">Suggested Clinical Investigations</span>
+                      <span className="text-slate-800 font-medium">{structuredIntake.suggested_investigations}</span>
+                    </div>
                   </div>
                 )}
               </div>

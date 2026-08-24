@@ -7,7 +7,111 @@ export default function PrescriptionPrintModal({ caseData, patient, doctor, isOp
   if (!isOpen || !caseData) return null;
 
   const handlePrint = () => {
-    window.print();
+    const printContent = document.getElementById('prescription-print-area');
+    if (!printContent) {
+      window.print();
+      return;
+    }
+
+    // Open dedicated clean print popup window
+    const printWindow = window.open('', '_blank', 'width=900,height=1000');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Ayush Digital Prescription - ${caseData?.patient_name || patient?.name || 'Patient'}</title>
+            <style>
+              body {
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 0;
+                padding: 24px;
+                background: #ffffff;
+                color: #0f172a;
+              }
+              .text-xs { font-size: 12px; }
+              .text-[10px] { font-size: 10px; }
+              .text-[11px] { font-size: 11px; }
+              .text-sm { font-size: 14px; }
+              .text-lg { font-size: 18px; }
+              .text-xl { font-size: 20px; }
+              .font-bold { font-weight: 700; }
+              .font-semibold { font-weight: 600; }
+              .font-black { font-weight: 900; }
+              .font-extrabold { font-weight: 800; }
+              .font-mono { font-family: monospace; }
+              .font-serif { font-family: Georgia, serif; }
+              .italic { font-style: italic; }
+              .uppercase { text-transform: uppercase; }
+              .tracking-wider { letter-spacing: 0.05em; }
+              .tracking-widest { letter-spacing: 0.1em; }
+              .bg-slate-50 { background-color: #f8fafc; }
+              .bg-emerald-50 { background-color: #ecfdf5; }
+              .bg-emerald-700 { background-color: #047857; }
+              .bg-emerald-800 { background-color: #065f46; }
+              .bg-teal-50 { background-color: #f0fdfa; }
+              .text-slate-900 { color: #0f172a; }
+              .text-slate-800 { color: #1e293b; }
+              .text-slate-700 { color: #334155; }
+              .text-slate-600 { color: #475569; }
+              .text-slate-500 { color: #64748b; }
+              .text-slate-400 { color: #94a3b8; }
+              .text-emerald-950 { color: #022c22; }
+              .text-emerald-900 { color: #064e3b; }
+              .text-emerald-800 { color: #065f46; }
+              .text-teal-800 { color: #115e59; }
+              .border { border: 1px solid #e2e8f0; }
+              .border-b-2 { border-bottom: 2px solid #047857; }
+              .border-t-2 { border-top: 2px dashed #cbd5e1; }
+              .border-slate-200 { border-color: #e2e8f0; }
+              .border-emerald-200 { border-color: #a7f3d0; }
+              .border-teal-200 { border-color: #99f6e4; }
+              .rounded-2xl { border-radius: 16px; }
+              .rounded-xl { border-radius: 12px; }
+              .rounded-full { border-radius: 9999px; }
+              .p-4 { padding: 16px; }
+              .p-3\.5 { padding: 14px; }
+              .p-8 { padding: 32px; }
+              .py-1 { padding-top: 4px; padding-bottom: 4px; }
+              .px-3 { padding-left: 12px; padding-right: 12px; }
+              .px-2 { padding-left: 8px; padding-right: 8px; }
+              .mb-1 { margin-bottom: 4px; }
+              .space-y-6 > * + * { margin-top: 24px; }
+              .space-y-4 > * + * { margin-top: 16px; }
+              .space-y-3 > * + * { margin-top: 12px; }
+              .space-y-2 > * + * { margin-top: 8px; }
+              .space-y-1 > * + * { margin-top: 4px; }
+              .space-y-0\.5 > * + * { margin-top: 2px; }
+              .grid { display: grid; }
+              .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+              .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+              .gap-4 { gap: 16px; }
+              .gap-3 { gap: 12px; }
+              .gap-2 { gap: 8px; }
+              .flex { display: flex; }
+              .items-center { align-items: center; }
+              .justify-between { justify-content: space-between; }
+              .text-right { text-align: right; }
+              .w-full { width: 100%; }
+              table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+              th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+              th { background-color: #f8fafc; font-weight: 800; text-transform: uppercase; color: #475569; }
+            </style>
+          </head>
+          <body>
+            ${printContent.innerHTML}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    } else {
+      window.print();
+    }
   };
 
   return (
@@ -186,8 +290,8 @@ export default function PrescriptionPrintModal({ caseData, patient, doctor, isOp
             </div>
 
             <div className="text-center space-y-1">
-              <div className="w-36 h-10 border-b border-dashed border-slate-400 flex items-center justify-center text-[10px] text-emerald-800 font-mono font-bold">
-                [ Dr. Rajesh Vaidya ]
+              <div className="w-48 h-10 border-b border-dashed border-slate-400 flex items-center justify-center text-[10px] text-emerald-800 font-mono font-bold">
+                [ {caseData.doctor_name || doctor?.name || "Dr. Rajesh Vaidya"} ]
               </div>
               <span className="text-[10px] text-slate-500 font-bold block">{t('rxPrint.vaidyaSignatureLabel', 'Consulting Vaidya Signature')}</span>
             </div>

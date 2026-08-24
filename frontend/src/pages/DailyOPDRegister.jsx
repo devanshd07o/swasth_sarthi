@@ -57,42 +57,76 @@ export default function DailyOPDRegister({
   });
 
   useEffect(() => {
-    loadCompletedRegister();
+    loadCompletedRegister(false);
+
+    // 1. Listen for global OPD updates & storage changes (silent update)
+    const handleUpdate = () => {
+      loadCompletedRegister(true);
+    };
+    window.addEventListener('ss_opd_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    // 2. Gentle 8-second silent polling so newly completed consults show up live
+    const interval = setInterval(() => {
+      loadCompletedRegister(true);
+    }, 8000);
+
+    return () => {
+      window.removeEventListener('ss_opd_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+      clearInterval(interval);
+    };
   }, [currentDoctorId]);
 
-  const loadCompletedRegister = async () => {
-    setLoading(true);
+  const loadCompletedRegister = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
-      const backendCompleted = await getDoctorPatients(currentDoctorId, '', 'completed').catch(() => []);
-      if (backendCompleted && backendCompleted.length > 0) {
-        const mapped = backendCompleted.map(cp => ({
-          patient_id: cp.patient_id,
-          name: cp.name,
-          abha_id: cp.abha_id || cp.uhid || 'ABHA-PATIENT',
-          gender: cp.gender || 'MALE',
-          age: cp.age || 40,
-          diagnosis: cp.latest_chief_complaint || 'OPD Consult Completed',
-          regimen: 'AYUSH e-Prescription Signed & Closed',
-          status: 'Signed & Completed',
-          date: cp.latest_visit_date || new Date().toISOString().split('T')[0],
-          day: new Date(cp.latest_visit_date || Date.now()).toLocaleDateString('en-US', { weekday: 'long' }),
-          token_number: cp.token_number || 'OPD-100'
-        }));
+      // 1. Read local storage completed records
+      let localRecords = [];
+      try {
+        const saved = localStorage.getItem('ss_completed_records');
+        if (saved) localRecords = JSON.parse(saved);
+      } catch (_) {}
 
-        setCompletedPatients(prev => {
-          const existingIds = new Set(prev.map(item => item.patient_id));
-          const newItems = mapped.filter(item => !existingIds.has(item.patient_id));
-          const merged = [...newItems, ...prev];
-          try {
-            localStorage.setItem('ss_completed_records', JSON.stringify(merged));
-          } catch (_) {}
-          return merged;
+      // 2. Fetch backend completed records
+      const backendCompleted = await getDoctorPatients(currentDoctorId, '', 'completed').catch(() => []);
+      const mappedBackend = (backendCompleted || []).map(cp => ({
+        patient_id: cp.patient_id,
+        name: cp.name,
+        abha_id: cp.abha_id || cp.uhid || 'ABHA-PATIENT',
+        gender: cp.gender || 'MALE',
+        age: cp.age || 40,
+        diagnosis: cp.latest_chief_complaint || 'OPD Consult Completed',
+        regimen: 'AYUSH e-Prescription Signed & Closed',
+        status: 'Signed & Completed',
+        date: cp.latest_visit_date || new Date().toISOString().split('T')[0],
+        day: new Date(cp.latest_visit_date || Date.now()).toLocaleDateString('en-US', { weekday: 'long' }),
+        token_number: cp.token_number || 'OPD-100'
+      }));
+
+      // 3. Merge local + backend + prev state seamlessly
+      setCompletedPatients(prev => {
+        const itemMap = new Map();
+        localRecords.forEach(r => itemMap.set(r.patient_id || r.abha_id || r.token_number, r));
+        mappedBackend.forEach(r => {
+          const k = r.patient_id || r.abha_id || r.token_number;
+          if (!itemMap.has(k)) itemMap.set(k, r);
         });
-      }
+        prev.forEach(r => {
+          const k = r.patient_id || r.abha_id || r.token_number;
+          if (!itemMap.has(k)) itemMap.set(k, r);
+        });
+
+        const merged = Array.from(itemMap.values());
+        try {
+          localStorage.setItem('ss_completed_records', JSON.stringify(merged));
+        } catch (_) {}
+        return merged;
+      });
     } catch (e) {
       console.error('Failed to load completed register', e);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 

@@ -27,7 +27,7 @@ export default function App() {
   // Hydrate logged in user & active tab from localStorage for session persistence across refreshes
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('ss_current_user');
+      const saved = localStorage.getItem('swasth_user') || localStorage.getItem('ss_current_user');
       return saved ? JSON.parse(saved) : null;
     } catch (_) {
       return null;
@@ -49,21 +49,51 @@ export default function App() {
   // App Navigation & Sidebar State
   const [activeTab, setActiveTab] = useState(() => {
     try {
-      return localStorage.getItem('ss_active_tab') || 'triage';
+      const savedUser = localStorage.getItem('swasth_user') || localStorage.getItem('ss_current_user');
+      const user = savedUser ? JSON.parse(savedUser) : null;
+
+      if (user) {
+        if (user.role === 'doctor') {
+          return 'dashboard';
+        } else if (user.role === 'super_admin' || user.role === 'hospital_admin') {
+          return 'admin_command';
+        } else if (user.role === 'patient') {
+          return 'triage';
+        }
+      }
+      return 'triage';
     } catch (_) {
       return 'triage';
     }
   });
 
-  const [selectedPatientId, setSelectedPatientId] = useState('ABHA-9821-4501');
+  const [selectedPatientId, setSelectedPatientId] = useState(() => {
+    return localStorage.getItem('ss_active_patient_id') || null;
+  });
+  const [activeConsultingPatientId, setActiveConsultingPatientId] = useState(() => {
+    return localStorage.getItem('ss_active_opd_token1') || null;
+  });
+
+  const updateSelectedPatientId = (newId) => {
+    setSelectedPatientId(newId);
+    if (newId) localStorage.setItem('ss_active_patient_id', newId);
+    else localStorage.removeItem('ss_active_patient_id');
+  };
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   // Sync session state to localStorage
   React.useEffect(() => {
     if (currentUser) {
       localStorage.setItem('ss_current_user', JSON.stringify(currentUser));
+      localStorage.setItem('swasth_user', JSON.stringify(currentUser));
+      if (!localStorage.getItem('swasth_jwt_token')) {
+        localStorage.setItem('swasth_jwt_token', currentUser.token || `jwt_${currentUser.role}_2026`);
+      }
     } else {
       localStorage.removeItem('ss_current_user');
+      localStorage.removeItem('swasth_user');
+      localStorage.removeItem('swasth_jwt_token');
+      localStorage.removeItem('ss_active_tab');
     }
   }, [currentUser]);
 
@@ -75,9 +105,15 @@ export default function App() {
 
   const handleLoginSuccess = (userData) => {
     setCurrentUser(userData);
+    localStorage.setItem('swasth_user', JSON.stringify(userData));
+    localStorage.setItem('ss_current_user', JSON.stringify(userData));
+    if (userData.token) {
+      localStorage.setItem('swasth_jwt_token', userData.token);
+    }
+
     if (userData.role === 'patient') {
       const pId = userData.abha_id || userData.id || 'ABHA-9821-4501';
-      setSelectedPatientId(pId);
+      updateSelectedPatientId(pId);
       setActiveTab('triage');
     } else if (userData.role === 'super_admin' || userData.role === 'hospital_admin') {
       setActiveTab('admin_command');
@@ -89,20 +125,27 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('ss_current_user');
+    localStorage.removeItem('swasth_user');
+    localStorage.removeItem('swasth_jwt_token');
     localStorage.removeItem('ss_active_tab');
   };
 
-  const handleOpenCaseSheet = (patientId) => {
+  const handleOpenCaseSheet = (patientId, activeTokenId) => {
     if (patientId === 'directory' || patientId === 'patients') {
       setActiveTab('patients');
       return;
     }
-    setSelectedPatientId(patientId);
+    updateSelectedPatientId(patientId);
+    const tokenToUse = activeTokenId || localStorage.getItem('ss_active_opd_token1') || patientId;
+    if (tokenToUse) {
+      setActiveConsultingPatientId(tokenToUse);
+      localStorage.setItem('ss_active_opd_token1', tokenToUse);
+    }
     setActiveTab('case_form');
   };
 
   const handleOpenTimeline = (patientId) => {
-    setSelectedPatientId(patientId);
+    updateSelectedPatientId(patientId);
     setActiveTab('timeline');
   };
 
@@ -195,6 +238,8 @@ export default function App() {
                 {activeTab === 'case_form' && (
                   <AyurSaarthiCaseForm
                     selectedPatientId={selectedPatientId}
+                    onSelectPatientId={updateSelectedPatientId}
+                    activeConsultingPatientId={activeConsultingPatientId}
                     onCaseSaved={() => setActiveTab('dashboard')}
                     onSelectPatientTimeline={handleOpenTimeline}
                     currentDoctorId={currentUser?.doctor_id || currentUser?.id || "DOC-AYUR-101"}
@@ -204,7 +249,10 @@ export default function App() {
                 )}
                 {activeTab === 'patients' && (
                   <PatientDirectory
+                    selectedPatientId={selectedPatientId}
+                    onSelectPatientId={updateSelectedPatientId}
                     onSelectPatient={handleOpenTimeline}
+                    onOpenCaseSheet={handleOpenCaseSheet}
                     onNewCase={() => setActiveTab('case_form')}
                     currentUser={currentUser}
                     lang={lang}

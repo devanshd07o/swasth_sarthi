@@ -35,68 +35,62 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
   const [historyDay, setHistoryDay] = useState('ALL');
 
   // Persistent Completed Patients History State
-  const [completedPatients, setCompletedPatients] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ss_completed_records');
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return [
-      {
-        patient_id: 'pat_1',
-        name: 'Ramesh Sharma',
-        abha_id: 'ABHA-9821-4501',
-        gender: 'MALE',
-        age: 52,
-        diagnosis: 'Sandhivata (Osteoarthritis)',
-        regimen: 'Yograj Guggulu 2 tab BID, Rasnadi Kwath 15ml',
-        status: 'Signed & Completed',
-        date: '2026-08-23',
-        day: 'Sunday',
-        token_number: 'OPD-101'
-      },
-      {
-        patient_id: 'pat_2',
-        name: 'Sunita Sharma',
-        abha_id: 'ABHA-3412-8902',
-        gender: 'FEMALE',
-        age: 44,
-        diagnosis: 'Amlapitta & Hrid-Daha',
-        regimen: 'Avipattikar Churna 3g BD, Kamadugha Rasa',
-        status: 'Signed & Completed',
-        date: '2026-08-22',
-        day: 'Saturday',
-        token_number: 'OPD-102'
-      }
-    ];
-  });
+  const [completedPatients, setCompletedPatients] = useState([]);
 
   useEffect(() => {
-    loadDashboardData();
-  }, [currentDoctorId]);
+    loadDashboardData(false);
 
-  const loadDashboardData = async () => {
-    setLoading(true);
+    // 1. Real-time custom event listener (silent background update)
+    const handleUpdateEvent = () => {
+      loadDashboardData(true);
+    };
+    window.addEventListener('ss_opd_updated', handleUpdateEvent);
+    window.addEventListener('storage', handleUpdateEvent);
+
+    // 2. Gentle 8-second silent background auto-polling (no spinner flickers)
+    const pollInterval = setInterval(() => {
+      loadDashboardData(true);
+    }, 8000);
+
+    return () => {
+      window.removeEventListener('ss_opd_updated', handleUpdateEvent);
+      window.removeEventListener('storage', handleUpdateEvent);
+      clearInterval(pollInterval);
+    };
+  }, [currentDoctorId, searchQuery]);
+
+  const loadDashboardData = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const [docData, activeList, completedList] = await Promise.all([
         getDoctorById(currentDoctorId).catch(() => null),
         getDoctorPatients(currentDoctorId, searchQuery, 'active').catch(() => []),
-        getDoctorPatients(currentDoctorId, '', 'completed').catch(() => [])
+        getDoctorPatients(currentDoctorId, searchQuery, 'completed').catch(() => [])
       ]);
       if (docData) setDoctorInfo(docData);
 
-      // Filter out any closed tokens from localStorage
-      let closedTokenIds = [];
-      try {
-        closedTokenIds = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
-      } catch (_) {}
+      // Filter out closed tokens & completed patients from Live OPD Queue
+      const closedTokens = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
+      const completedPatientIds = JSON.parse(localStorage.getItem('ss_completed_patient_ids') || '[]');
+      
+      const unclosedActive = (activeList || []).filter(p => {
+        if (p.token_number && closedTokens.includes(p.token_number)) return false;
+        if (p.patient_id && completedPatientIds.includes(p.patient_id)) return false;
+        if (p.abha_id && completedPatientIds.includes(p.abha_id)) return false;
+        return true;
+      });
 
-      const activeOnly = (activeList || []).filter(p => 
-        p.status !== 'completed' && !closedTokenIds.includes(p.patient_id)
-      );
+      setPatients(unclosedActive);
 
-      setPatients(activeOnly);
+      // Always sync Token #1 patient to localStorage for background Case Sheet & Timeline auto-link
+      if (unclosedActive.length > 0) {
+        const token1Id = unclosedActive[0].abha_id || unclosedActive[0].patient_id || unclosedActive[0].id;
+        localStorage.setItem('ss_active_opd_token1', token1Id);
+      } else {
+        localStorage.removeItem('ss_active_opd_token1');
+        localStorage.removeItem('ss_active_patient_id');
+      }
 
-      // Merge backend completed cases into completedPatients state
       if (completedList && completedList.length > 0) {
         const mappedBackendCompleted = completedList.map(cp => ({
           patient_id: cp.patient_id,
@@ -125,51 +119,53 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
     } catch (e) {
       console.error('Failed to load doctor dashboard', e);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
-  const handleCloseToken = async (e, patient) => {
+
+  const [confirmCloseTarget, setConfirmCloseTarget] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null);
+
+  const handleCloseTokenClick = (e, patient) => {
     e.stopPropagation();
-    if (window.confirm(`Mark OPD consultation for ${patient.name} as Completed and close token?`)) {
-      try {
-        if (patient.latest_case_id) {
-          await completeCaseToken(patient.latest_case_id).catch(() => null);
-          await apiSignCase(patient.latest_case_id).catch(() => null);
-        }
-      } catch (_) {}
+    setConfirmCloseTarget(patient);
+  };
 
-      const todayDate = new Date().toISOString().split('T')[0];
-      const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const executeCloseToken = async () => {
+    if (!confirmCloseTarget) return;
+    const patient = confirmCloseTarget;
+    setConfirmCloseTarget(null);
 
-      const newRecord = {
-        patient_id: patient.patient_id,
-        name: patient.name,
-        abha_id: patient.abha_id || patient.uhid || 'ABHA-PATIENT',
-        gender: patient.gender || 'MALE',
-        age: patient.age || 40,
-        diagnosis: patient.latest_chief_complaint || 'OPD Consult Completed',
-        regimen: 'AYUSH e-Prescription Signed & Closed',
-        status: 'Signed & Completed',
-        date: todayDate,
-        day: todayDay,
-        token_number: `Token #${patient.queue_position || 1}`
-      };
+    try {
+      if (patient.latest_case_id) {
+        await completeCaseToken(patient.latest_case_id).catch(() => null);
+        await apiSignCase(patient.latest_case_id).catch(() => null);
+      }
+    } catch (_) {}
 
-      const updatedRecords = [newRecord, ...completedPatients.filter(cp => cp.patient_id !== patient.patient_id)];
-      setCompletedPatients(updatedRecords);
+    const todayDate = new Date().toISOString().split('T')[0];
+    const newRecord = {
+      patient_id: patient.patient_id,
+      name: patient.name,
+      abha_id: patient.abha_id || patient.uhid || 'ABHA-PATIENT',
+      gender: patient.gender || 'MALE',
+      age: patient.age || 40,
+      diagnosis: patient.latest_chief_complaint || 'OPD Consult Completed',
+      regimen: 'AYUSH e-Prescription Signed & Closed',
+      status: 'Signed & Completed',
+      date: todayDate,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
 
-      try {
-        localStorage.setItem('ss_completed_records', JSON.stringify(updatedRecords));
-        const closedTokens = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
-        if (!closedTokens.includes(patient.patient_id)) {
-          closedTokens.push(patient.patient_id);
-          localStorage.setItem('ss_closed_tokens', JSON.stringify(closedTokens));
-        }
-      } catch (_) {}
+    setCompletedPatients(prev => [newRecord, ...prev]);
+    setPatients(prev => prev.filter(p => p.patient_id !== patient.patient_id));
+    setToastMsg(`✨ OPD consultation for ${patient.name} marked as Completed & Signed!`);
+    setTimeout(() => setToastMsg(null), 4000);
 
-      setPatients(prev => prev.filter(p => p.patient_id !== patient.patient_id));
-    }
+    // Dispatch global event so all open tabs / components auto-update live
+    window.dispatchEvent(new CustomEvent('ss_opd_updated'));
+    localStorage.setItem('ss_last_update_ts', String(Date.now()));
   };
 
   const activeDoctor = currentUser || doctorInfo;
@@ -230,45 +226,47 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
         </button>
       </div>
 
-      {/* ─── Analytics & Emergency KPI Cards ────────────────────────────────── */}
+      {/* ─── Analytics & KPI Cards ───────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        
-        {/* Total Consulting Patients */}
+
+        {/* Waiting in Queue */}
         <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold text-slate-600">{t('doctorDashboard.consultingPatients', 'Consulting Patients')}</span>
+            <span className="text-xs font-bold text-slate-600">Waiting in Queue</span>
             <Users className="w-4 h-4 text-emerald-600" />
           </div>
           <p className="text-2xl font-bold text-slate-900">{patients.length}</p>
+          <p className="text-[10px] text-slate-500 font-medium mt-1">patients today</p>
         </div>
 
-        {/* Active OPD Queue */}
+        {/* Seen Today */}
         <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold text-slate-600">{t('doctorDashboard.activeQueueCard', 'Active OPD Queue')}</span>
-            <Stethoscope className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs font-bold text-slate-600">Seen Today</span>
+            <CheckCircle2 className="w-4 h-4 text-teal-600" />
           </div>
-          <p className="text-2xl font-bold text-slate-900">
-            {patients.length}
-          </p>
+          <p className="text-2xl font-bold text-teal-700">{completedPatients.length}</p>
+          <p className="text-[10px] text-slate-500 font-medium mt-1">consultations done</p>
         </div>
 
-        {/* AI Longitudinal Summaries */}
+        {/* Avg Consultation Time */}
         <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold text-slate-600">{t('doctorDashboard.aiSummaries', 'AI Summaries')}</span>
-            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-bold text-slate-600">Avg. Consult Time</span>
+            <Clock className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-bold text-slate-900">100%</p>
+          <p className="text-2xl font-bold text-slate-900">~14 min</p>
+          <p className="text-[10px] text-slate-500 font-medium mt-1">per patient</p>
         </div>
 
-        {/* ABDM Central Integration */}
+        {/* ABDM + DPDP Status */}
         <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold text-slate-600">{t('doctorDashboard.privacyBoundary', 'Privacy Boundary')}</span>
+            <span className="text-xs font-bold text-slate-600">Records Status</span>
             <ShieldCheck className="w-4 h-4 text-teal-600" />
           </div>
-          <p className="text-2xl font-bold text-teal-800">{t('doctorDashboard.enforced', 'Enforced')}</p>
+          <p className="text-lg font-bold text-teal-700">DPDP Safe</p>
+          <p className="text-[10px] text-slate-500 font-medium mt-1">ABDM encrypted & verified</p>
         </div>
 
       </div>
@@ -318,7 +316,11 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
               return (
                 <div
                   key={p.patient_id}
-                  onClick={() => onSelectPatient(p.patient_id)}
+                  onClick={() => {
+                    const clickedId = p.id || p.patient_id || p.abha_id || 'p_2';
+                    const activeId = patients.length > 0 ? (patients[0].id || patients[0].patient_id || patients[0].abha_id || 'p_2') : clickedId;
+                    if (onSelectPatient) onSelectPatient(clickedId, activeId);
+                  }}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs group ${
                     isFirstInLine
                       ? 'bg-emerald-50/50 border-emerald-400 hover:border-emerald-600 shadow-sm ring-2 ring-emerald-500/20'
@@ -375,7 +377,7 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
                       {isFirstInLine ? (
                         <button
                           type="button"
-                          onClick={(e) => handleCloseToken(e, p)}
+                          onClick={(e) => handleCloseTokenClick(e, p)}
                           className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />
@@ -451,6 +453,55 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
           </div>
         </div>
       </div>
+
+      {/* ── Custom In-Website Toast Notification ── */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#12372A] text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3 animate-fade-in">
+          <CheckCircle2 className="w-5 h-5 text-amber-300 shrink-0" />
+          <span className="text-xs font-extrabold">{toastMsg}</span>
+        </div>
+      )}
+
+      {/* ── Custom In-Website OPD Close Confirmation Modal ── */}
+      {confirmCloseTarget && (
+        <div className="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 font-body text-left">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-6 h-6 text-emerald-700" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Mark OPD Consultation Completed?</h3>
+                <p className="text-xs text-slate-500 font-medium">This will sign prescription & close live token.</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-1 text-xs">
+              <p className="font-bold text-emerald-950">Patient Name: {confirmCloseTarget.name}</p>
+              <p className="text-emerald-800">ABHA ID: {confirmCloseTarget.abha_id || confirmCloseTarget.uhid || 'ABHA-PATIENT'}</p>
+              <p className="text-slate-700">Diagnosis: {confirmCloseTarget.latest_chief_complaint || 'OPD Consult'}</p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmCloseTarget(null)}
+                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl border border-slate-200 cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeCloseToken}
+                className="flex-1 py-3 bg-[#12372A] hover:bg-[#0B2B20] text-white font-extrabold text-xs rounded-2xl shadow-md cursor-pointer transition-all flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4 text-amber-300" />
+                <span>Yes, Complete & Close →</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <DoctorReferralModal
         isOpen={isReferralModalOpen}

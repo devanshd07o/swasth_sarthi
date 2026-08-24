@@ -77,9 +77,9 @@ export default function SuperAdminPortal({ initialTab = 'hospitals' }) {
     },
     {
       key: 'emergencyNodes',
-      label: t('admin.statEmergencyNodes', 'Active MedRoute Emergency Fleet'),
+      label: t('admin.statEmergencyNodes', 'Active MedRoute Mobile Fleet'),
       val: '840',
-      desc: t('admin.statEmergencyNodesDesc', 'GPS & ICU Ambulance Dispatch'),
+      desc: t('admin.statEmergencyNodesDesc', 'GPS & Tele-Ayush Mobile Response'),
       icon: Ambulance,
       color: 'text-rose-600',
       bgColor: 'bg-rose-50'
@@ -336,8 +336,8 @@ export default function SuperAdminPortal({ initialTab = 'hospitals' }) {
                   <th className="p-3.5">Hospital ID</th>
                   <th className="p-3.5">Institution Name</th>
                   <th className="p-3.5">Location</th>
-                  <th className="p-3.5 text-center">Ayush Beds</th>
-                  <th className="p-3.5 text-center">ICU Fleet</th>
+                  <th className="p-3.5 text-center">Panchakarma Suites</th>
+                  <th className="p-3.5 text-center">Therapy Suites</th>
                   <th className="p-3.5">ABDM Sync</th>
                   <th className="p-3.5">Status</th>
                 </tr>

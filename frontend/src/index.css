@@ -229,3 +229,31 @@
   width: 0 !important;
   overflow: hidden !important;
 }
+
+
+/* ─── PRINTABLE PRESCRIPTION DEDICATED STYLES ──────────────────────────────── */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  
+  #prescription-print-area,
+  #prescription-print-area * {
+    visibility: visible !important;
+  }
+  
+  #prescription-print-area {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 999999 !important;
+    overflow: visible !important;
+  }
+}

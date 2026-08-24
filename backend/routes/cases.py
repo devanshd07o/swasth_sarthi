@@ -34,16 +34,22 @@ async def structure_voice_intake(req: schemas.IntakeStructuringRequest):
     
     sys_prompt = (
         "You are an expert Ayurvedic clinical scribe for Ministry of Ayush OPD. "
+        "Your mission is to automate the time-consuming manual history-taking questions that a Vaidya usually asks in 15 minutes. "
         "Extract structured clinical intake facts from patient's spoken symptom statement. "
         "IGNORE any meta-comments or user feedback about the app or software. "
         "Output strictly valid JSON object with keys: "
         "chief_complaint (short standardized medical phrase max 10 words), "
-        "hpi (2-3 sentences narrative), "
+        "hpi (2-3 sentences narrative detailing onset, duration, and symptom progression), "
         "duration (standardized duration e.g. 3 days, 6 months), "
         "severity (Mild, Moderate, Severe, Critical), "
-        "suspected_dosha (Vata, Pitta, Kapha, or combination), "
-        "suggested_pathya (1-2 simple dietary dos), "
-        "suggested_apathya (1-2 simple dietary don'ts)."
+        "suspected_dosha (Vata, Pitta, Kapha, or combination with vikriti explanation), "
+        "agni (Vishama Agni, Tikshna Agni, Manda Agni, or Sama Agni inferred from digestion/appetite symptoms), "
+        "koshtha (Krura, Mridu, or Madhyama Koshtha inferred from bowel symptoms), "
+        "aggravating_factors (triggers like cold weather, sour food, morning time, stress), "
+        "relieving_factors (relief from warm compress, rest, warm water, oil massage), "
+        "suggested_pathya (2-3 specific Ayurvedic dietary dos), "
+        "suggested_apathya (2-3 specific Ayurvedic dietary don'ts), "
+        "clinical_summary (A concise 3-line executive summary specifically written for the Vaidya to instantly grasp the patient case in 5 seconds)."
     )
     user_prompt = f"Patient Spoken Transcript: \"{transcript}\""
     
@@ -70,6 +76,8 @@ async def structure_voice_intake(req: schemas.IntakeStructuringRequest):
         parsed["is_red_flag"] = rf["is_red_flag"]
         parsed["red_flag_reason"] = rf["reason"]
         parsed["original_transcript"] = transcript
+        if not parsed.get("clinical_summary"):
+            parsed["clinical_summary"] = f"Patient presents with {parsed.get('chief_complaint')}. Suspected {parsed.get('suspected_dosha')}. Recommended Vaidya evaluation."
         return parsed
 
     structured = {
@@ -78,8 +86,13 @@ async def structure_voice_intake(req: schemas.IntakeStructuringRequest):
         "duration": "Recent onset",
         "severity": "Severe" if rf["is_red_flag"] else "Moderate",
         "suspected_dosha": "Vata-Pitta Imbalance",
+        "agni": "Vishama Agni",
+        "koshtha": "Madhyama Koshtha",
+        "aggravating_factors": "Cold weather, irregular sleep, sour foods",
+        "relieving_factors": "Warm compress, rest, lukewarm water",
         "suggested_pathya": "Warm water, light freshly cooked meals",
         "suggested_apathya": "Cold drinks, fried and heavily spiced food",
+        "clinical_summary": f"Patient reports {transcript[:80]}. Vata-Pitta aggravation suspected. Requires classical Ayurvedic consultation.",
         "is_red_flag": rf["is_red_flag"],
         "red_flag_reason": rf["reason"],
         "original_transcript": transcript

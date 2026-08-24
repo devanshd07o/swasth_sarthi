@@ -12,10 +12,10 @@ import BrandedLoader from '../components/BrandedLoader';
 export default function PatientTimeline({ patientId, onBack, onSelectPatientId, onOpenCaseSheet, currentDoctorId = "DOC-AYUR-101", currentUser = null }) {
   const { t } = useTranslation();
   const isDoctor = (currentUser?.role === 'doctor') || (currentUser?.role === 'hospital_admin') || (Boolean(currentDoctorId) && currentUser?.role !== 'patient');
-  const [activePatientId, setActivePatientId] = useState(patientId || '');
+  const [activePatientId, setActivePatientId] = useState(patientId || null);
   const [allPatients, setAllPatients] = useState([]);
   const [timelineData, setTimelineData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [activePrescriptionForPrint, setActivePrescriptionForPrint] = useState(null);
   const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
   const [selectedDocForOverlay, setSelectedDocForOverlay] = useState(null);
@@ -23,6 +23,9 @@ export default function PatientTimeline({ patientId, onBack, onSelectPatientId, 
   useEffect(() => {
     if (patientId && patientId !== activePatientId) {
       setActivePatientId(patientId);
+    } else if (!patientId) {
+      setActivePatientId(null);
+      setTimelineData(null);
     }
   }, [patientId]);
 
@@ -36,80 +39,64 @@ export default function PatientTimeline({ patientId, onBack, onSelectPatientId, 
 
   useEffect(() => {
     if (activePatientId) {
-      loadTimeline(activePatientId);
+      loadTimeline(activePatientId, false);
+    } else {
+      setTimelineData(null);
+      setLoading(false);
     }
+
+    const handleUpdate = () => {
+      if (activePatientId) loadTimeline(activePatientId, true);
+      loadPatientsList();
+    };
+    window.addEventListener('ss_opd_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('ss_opd_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, [activePatientId, currentDoctorId]);
 
   const loadPatientsList = async () => {
     if (!isDoctor) return;
     try {
-      // Load Doctor's active OPD queue first
       const queue = await getDoctorPatients(currentDoctorId).catch(() => []);
       const all = queue.length > 0 ? queue : await getPatients().catch(() => []);
       const targetList = queue.length > 0 ? queue : all;
       setAllPatients(targetList);
-
-      // Auto-load Token #1 if no specific patientId requested
-      if (!patientId && targetList.length > 0) {
-        const firstActive = targetList[0].patient_id || targetList[0].id || targetList[0].abha_id;
-        setActivePatientId(firstActive);
-      } else if (!activePatientId && targetList.length > 0) {
-        const firstActive = targetList[0].patient_id || targetList[0].id || targetList[0].abha_id;
-        setActivePatientId(firstActive);
-      }
-    } catch (_) {
-      if (!activePatientId) setActivePatientId('ABHA-9821-4501');
-    }
+    } catch (_) {}
   };
 
-  const loadTimeline = async (targetId) => {
-    setLoading(true);
+  const loadTimeline = async (targetId, isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
-      const idToFetch = targetId || activePatientId || 'ABHA-9821-4501';
+      const idToFetch = targetId || activePatientId;
+      if (!idToFetch) { setLoading(false); return; }
       const data = await getPatientTimeline(idToFetch, currentDoctorId);
       setTimelineData(data);
     } catch (e) {
       console.error('Failed to load patient timeline', e);
+      setTimelineData(null);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
   const handlePatientSwitch = (newId) => {
-    setActivePatientId(newId);
-    if (onSelectPatientId) onSelectPatientId(newId);
+    const id = newId || null;
+    setActivePatientId(id);
+    if (id) {
+      loadTimeline(id);
+    } else {
+      setTimelineData(null);
+    }
+    if (onSelectPatientId) onSelectPatientId(id);
   };
 
-  if (loading) {
-    return <BrandedLoader message={t('patientTimeline.loading', 'Loading Patient Records...')} />;
-  }
-
-  if (!timelineData || !timelineData.patient) {
-    return (
-      <div className="max-w-4xl mx-auto p-8 text-center text-slate-500 text-xs font-medium space-y-4">
-        {isDoctor && allPatients.length > 0 && (
-          <div className="bg-white p-4 rounded-2xl border border-emerald-200 shadow-sm flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700">Select Active Patient:</span>
-            <select
-              value={activePatientId}
-              onChange={(e) => handlePatientSwitch(e.target.value)}
-              className="px-4 py-2 bg-emerald-50 border border-emerald-300 rounded-full text-xs font-extrabold text-emerald-950 outline-none cursor-pointer"
-            >
-              {allPatients.map(p => (
-                <option key={p.patient_id || p.id || p.abha_id} value={p.patient_id || p.id || p.abha_id}>
-                  {p.name} ({p.abha_id || p.uhid})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <p>{t('directory.noPatients', 'No patient records found.')}</p>
-        <button onClick={onBack} className="mt-3 text-xs text-emerald-700 font-bold underline cursor-pointer">{t('timeline.backToQueue', 'Go Back')}</button>
-      </div>
-    );
-  }
-
-  const { patient, timeline, overall_summary_3line, symptom_diary, document_vault } = timelineData;
+  // Derived state: true only when we have an active patient AND loaded their data
+  const hasPatientData = Boolean(activePatientId) && Boolean(timelineData?.patient);
+  const { patient, timeline, overall_summary_3line, symptom_diary, document_vault } = timelineData || {};
 
   return (
     <div className="max-w-7xl mx-auto p-1 sm:p-2 space-y-4 animate-fade-in">
@@ -136,16 +123,17 @@ export default function PatientTimeline({ patientId, onBack, onSelectPatientId, 
             <div className="flex items-center gap-2 bg-emerald-50 border-2 border-emerald-300 hover:border-emerald-400 rounded-full px-4 py-2.5 shadow-sm transition-all">
               <User className="w-4 h-4 text-emerald-800 shrink-0" />
               <select
-                value={activePatientId}
-                onChange={(e) => handlePatientSwitch(e.target.value)}
+                value={activePatientId ? (patient?.abha_id || patient?.patient_id || patient?.id || activePatientId) : ''}
+                onChange={(e) => handlePatientSwitch(e.target.value || null)}
                 className="bg-transparent text-xs sm:text-sm font-extrabold text-emerald-950 outline-none cursor-pointer w-full appearance-none pr-4"
               >
+                <option value="" className="text-slate-500 font-bold bg-white">-- Select Patient to View Timeline --</option>
                 {allPatients.map(p => {
-                  const pId = p.patient_id || p.id || p.abha_id;
+                  const val = p.abha_id || p.patient_id || p.id;
                   const tokenLabel = p.queue_position ? ` (Token #${p.queue_position})` : '';
                   return (
-                    <option key={pId} value={pId} className="text-slate-900 font-bold bg-white">
-                      {p.name} ({p.abha_id || p.uhid || 'ABHA'}){tokenLabel}
+                    <option key={p.id || val} value={val} className="text-slate-900 font-bold bg-white">
+                      {p.name} ({p.abha_id || p.uhid || p.id}){tokenLabel}
                     </option>
                   );
                 })}
@@ -158,6 +146,44 @@ export default function PatientTimeline({ patientId, onBack, onSelectPatientId, 
         </div>
       )}
       
+      {/* ─── Inline Loading State ───────────────────────────────────────────── */}
+      {loading && activePatientId && (
+        <div className="flex items-center justify-center py-16">
+          <BrandedLoader message="Loading Patient Timeline..." />
+        </div>
+      )}
+
+      {/* ─── Empty / No Patient Selected State ─────────────────────────────── */}
+      {!loading && !hasPatientData && (
+        <div className="bg-white p-10 sm:p-14 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4 max-w-2xl mx-auto my-6 animate-fade-in">
+          <div className="w-16 h-16 rounded-3xl bg-teal-50 text-teal-700 flex items-center justify-center mx-auto text-2xl shadow-sm border border-teal-200">
+            📜
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-extrabold text-slate-900">
+              {activePatientId ? 'No Timeline Records Found' : 'Select Patient to View Timeline'}
+            </h3>
+            <p className="text-xs text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
+              {activePatientId
+                ? 'No consultation history found for this patient. Their records will appear here after their first visit.'
+                : 'No patient history is currently loaded. Pick a patient from the green dropdown banner above or open the Patient Directory.'}
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onBack}
+              className="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center gap-2"
+            >
+              <span>👤 Open Patient Directory →</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+
+      {hasPatientData && (
+        <>
       {/* ─── Header Navigation Bar ──────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm gap-4">
         <div className="flex items-center gap-3">
@@ -515,6 +541,7 @@ export default function PatientTimeline({ patientId, onBack, onSelectPatientId, 
       <PrescriptionPrintModal
         caseData={activePrescriptionForPrint}
         patient={patient}
+        doctor={activePrescriptionForPrint}
         isOpen={!!activePrescriptionForPrint}
         onClose={() => setActivePrescriptionForPrint(null)}
       />
@@ -565,6 +592,8 @@ export default function PatientTimeline({ patientId, onBack, onSelectPatientId, 
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
 
     </div>

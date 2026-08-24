@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getPatients } from '../services/api';
 import BrandedLoader from '../components/BrandedLoader';
 
-export default function PatientDirectory({ onSelectPatient, onNewCase }) {
+export default function PatientDirectory({ selectedPatientId, onSelectPatient, onOpenCaseSheet, onNewCase }) {
   const { t } = useTranslation();
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState('');
@@ -70,8 +70,12 @@ export default function PatientDirectory({ onSelectPatient, onNewCase }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {patients.map((p) => (
             <div
-              key={p.id}
-              className="p-5 bg-white hover:bg-emerald-50 border border-slate-100 hover:border-emerald-300 rounded-2xl transition-all space-y-3 shadow-sm group"
+              key={p.id || p.abha_id}
+              className={`p-5 rounded-2xl transition-all space-y-3 shadow-sm group border ${
+                (selectedPatientId && (p.abha_id === selectedPatientId || p.id === selectedPatientId || p.uhid === selectedPatientId))
+                  ? 'bg-emerald-50/80 border-2 border-emerald-500 shadow-md'
+                  : 'bg-white hover:bg-emerald-50/40 border-slate-100 hover:border-emerald-300'
+              }`}
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -111,12 +115,22 @@ export default function PatientDirectory({ onSelectPatient, onNewCase }) {
                   <Calendar className="w-3 h-3 text-slate-400" />
                   {t('directory.registered', 'Registered:')} {new Date(p.created_at).toLocaleDateString()}
                 </span>
-                <button
-                  onClick={() => onSelectPatient(p.id)}
-                  className="font-bold text-emerald-700 hover:underline cursor-pointer"
-                >
-                  {t('directory.viewTimeline', 'View Timeline & Consultations')} →
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onOpenCaseSheet && onOpenCaseSheet(p.abha_id || p.id, p.abha_id || p.id)}
+                    className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🩺 Open Case Sheet</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onSelectPatient(p.abha_id || p.id)}
+                    className="font-bold text-emerald-700 hover:underline cursor-pointer"
+                  >
+                    {t('directory.viewTimeline', 'View Timeline')} →
+                  </button>
+                </div>
               </div>
             </div>
           ))}

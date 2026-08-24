@@ -276,8 +276,8 @@ def seed_database(force=False):
         private_notes="Patient is mildly anxious about needing knee replacement surgery. Reassured that Janu Basti and conservative Ayurvedic management will restore joint lubrication.",
         prescription_signed=True,
         prescription_signed_at=datetime.utcnow() - timedelta(days=90),
-        ai_case_summary_en="Ramesh Sharma (52M) diagnosed with Sandhivata (Osteoarthritis Grade II) due to Vata-Kapha imbalance. Prescribed Yograj Guggulu & Rasnasaptak Kwath with Janu Basti recommendation.",
-        ai_case_summary_hi="रमेश शर्मा (52 वर्ष) को वात-कफ असंतुलन जन्य संधिवात का निदान हुआ। योगराज गुग्गुलु और रास्नासप्तक क्वाथ के साथ जानु बस्ती की सलाह दी गई।",
+        ai_case_summary_en="Ramesh Sharma (42M) diagnosed with Sandhivata (Osteoarthritis Grade II) due to Vata-Kapha imbalance. Prescribed Yograj Guggulu & Rasnasaptak Kwath with Janu Basti recommendation.",
+        ai_case_summary_hi="रमेश शर्मा (42 वर्ष) को वात-कफ असंतुलन जन्य संधिवात का निदान हुआ। योगराज गुग्गुलु और रास्नासप्तक क्वाथ के साथ जानु बस्ती की सलाह दी गई।",
         ai_risk_factors=["Cartilage degeneration risk if weight bearing increases"],
         ai_missing_fields=["Serum Uric Acid level report"],
         ai_dosha_analysis={"Vata": "High (+42%)", "Pitta": "Normal", "Kapha": "Elevated (+18%)"}
@@ -376,8 +376,8 @@ def seed_database(force=False):
         private_notes="Counselled patient on strict circadian rhythm (Nidra). Advised stopping bed tea completely.",
         prescription_signed=True,
         prescription_signed_at=datetime.utcnow() - timedelta(days=20),
-        ai_case_summary_en="Sunita Devi (44F) presented with severe Urdhvaga Amlapitta (GERD). Prescribed Avipattikar Churna & Kamadudha Rasa with Pitta-pacifying diet.",
-        ai_case_summary_hi="सुनीता देवी (44 वर्ष) को तीव्र अम्लपित्त (GERD) का निदान। अविपत्तिकर चूर्ण और कामदुधा रस के साथ पित्तशामक आहार की सलाह दी गई।",
+        ai_case_summary_en="Sunita Sharma (36F) presented with severe Urdhvaga Amlapitta (GERD). Prescribed Avipattikar Churna & Kamadudha Rasa with Pitta-pacifying diet.",
+        ai_case_summary_hi="सुनीता शर्मा (36 वर्ष) को तीव्र अम्लपित्त (GERD) का निदान। अविपत्तिकर चूर्ण और कामदुधा रस के साथ पित्तशामक आहार की सलाह दी गई।",
         ai_risk_factors=["Gastric ulceration risk if sour diet continues"],
         ai_missing_fields=["Upper GI Endoscopy report"],
         ai_dosha_analysis={"Vata": "Normal", "Pitta": "Severe (+58%)", "Kapha": "Normal"}

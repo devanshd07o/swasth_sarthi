@@ -6,6 +6,16 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getLongitudinalSummary, getVoiceNarration } from '../../services/api';
 
+const safeString = (val, fallback = '') => {
+  if (val === null || val === undefined) return fallback;
+  if (typeof val === 'string') return val;
+  if (typeof val === 'number') return String(val);
+  if (typeof val === 'object') {
+    return val.text || val.point || val.summary || val.title || JSON.stringify(val);
+  }
+  return String(val);
+};
+
 export default function RecentFollowupsView({
   patientHistory = [],
   activePatient,
@@ -13,6 +23,7 @@ export default function RecentFollowupsView({
   setIsBookingModalOpen,
   setWizardStep,
   setActiveView,
+  setActivePrescriptionForPrint,
   lang = 'en'
 }) {
   const { t } = useTranslation();
@@ -189,7 +200,7 @@ export default function RecentFollowupsView({
                   {aiSummary.key_points.map((pt, pIdx) => (
                     <div key={pIdx} className="p-2.5 bg-white/10 rounded-xl border border-white/15 text-xs text-white flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span className="font-medium">{pt}</span>
+                      <span className="font-medium">{safeString(pt)}</span>
                     </div>
                   ))}
                 </div>
@@ -203,7 +214,7 @@ export default function RecentFollowupsView({
                 </span>
                 {aiSummary.recommendations.map((rec, rIdx) => (
                   <span key={rIdx} className="px-2.5 py-1 bg-emerald-400/20 text-emerald-200 rounded-lg text-[11px] font-medium border border-emerald-400/30">
-                    • {rec}
+                    • {safeString(rec)}
                   </span>
                 ))}
               </div>
@@ -253,17 +264,19 @@ export default function RecentFollowupsView({
           </div>
         ) : (
           <div className="space-y-3">
-            {completedCases.map((cCase) => {
+            {completedCases.map((cCase, cIdx) => {
+              if (!cCase) return null;
+              const itemKey = cCase.id || cCase.case_id || `followup_${cIdx}`;
               let docName = cCase.doctor_name || cCase.doctor?.name || 'Dr. Rajesh Vaidya';
               if (!docName || docName.includes('AI Assistant') || docName.includes('AyurSaarthi AI')) {
                 docName = 'Dr. Rajesh Vaidya';
               }
-              const docSpec = cCase.doctor_specialization || cCase.doctor?.specialization || 'BAMS, MD Kayachikitsa';
+              const docSpec = cCase.doctor_qualification || cCase.doctor_specialization || cCase.doctor?.specialization || 'BAMS, MD Kayachikitsa';
               const docHosp = cCase.hospital_name || cCase.doctor?.hospital_name || 'All India Institute of Ayurveda';
               const dateStr = cCase.created_at ? new Date(cCase.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent Visit';
 
               return (
-                <div key={cCase.id} className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-300 transition-all space-y-3">
+                <div key={itemKey} className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-300 transition-all space-y-3">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold shrink-0">
@@ -305,28 +318,40 @@ export default function RecentFollowupsView({
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
                     <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Case Complete & Signed</span>
                     </span>
 
-                    <button
-                      onClick={() => {
-                        const targetDoc = {
-                          id: cCase.doctor_id || 'DOC-AYUR-101',
-                          name: docName,
-                          specialization: docSpec,
-                          hospital_name: docHosp
-                        };
-                        setBookingDoctor(targetDoc);
-                        setIsBookingModalOpen(true);
-                      }}
-                      className="px-4 py-2 bg-gradient-to-r from-[#12372A] to-emerald-700 hover:from-[#0B2B20] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
-                    >
-                      <span>Book Follow-up Consultation</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-amber-300" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {setActivePrescriptionForPrint && (
+                        <button
+                          onClick={() => setActivePrescriptionForPrint(cCase)}
+                          className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>View Rx PDF</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          const targetDoc = {
+                            id: cCase.doctor_id || 'DOC-AYUR-101',
+                            name: docName,
+                            specialization: docSpec,
+                            hospital_name: docHosp
+                          };
+                          setBookingDoctor(targetDoc);
+                          setIsBookingModalOpen(true);
+                        }}
+                        className="px-4 py-1.5 bg-gradient-to-r from-[#12372A] to-emerald-700 hover:from-[#0B2B20] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                      >
+                        <span>Book Follow-up</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-amber-300" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

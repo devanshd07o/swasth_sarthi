@@ -87,7 +87,7 @@ export default function PanIndiaHospitalNetwork() {
           </span>
           <h1 className="text-2xl font-bold text-slate-900 mt-2">Pan-India Ayush Hospital Network</h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Manage accredited Ayush institutions, bed capacity, ICU availability & ABDM compliance across India.
+            Manage accredited Ayush institutions, Panchakarma capacity, Rasayana therapy suites & ABDM compliance across India.
           </p>
         </div>
 
@@ -127,8 +127,8 @@ export default function PanIndiaHospitalNetwork() {
                 <th className="p-4">Hospital Code</th>
                 <th className="p-4">Institution Name</th>
                 <th className="p-4">Location</th>
-                <th className="p-4 text-center">Ayush Beds</th>
-                <th className="p-4 text-center">ICU Fleet</th>
+                <th className="p-4 text-center">Panchakarma Suites</th>
+                <th className="p-4 text-center">Therapy Suites</th>
                 <th className="p-4">ABDM Compliance</th>
                 <th className="p-4">Status</th>
               </tr>
@@ -219,7 +219,7 @@ export default function PanIndiaHospitalNetwork() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Ayush Bed Count</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Panchakarma Suites</label>
                   <input
                     type="number"
                     value={newHosp.beds}
@@ -228,7 +228,7 @@ export default function PanIndiaHospitalNetwork() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">ICU Fleet Units</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Therapy Suites</label>
                   <input
                     type="number"
                     value={newHosp.icu}

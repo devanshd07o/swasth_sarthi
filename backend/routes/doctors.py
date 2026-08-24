@@ -142,14 +142,20 @@ def get_doctor_patients(
     patient_list_result = []
     for p in patients:
         p_cases = [c for c in cases if c.patient_id == p.id]
-        p_cases.sort(key=lambda x: x.created_at, reverse=True)
-        latest_case = p_cases[0] if p_cases else None
-
-        # Filter by status: active vs completed
-        if status == "active" and latest_case and latest_case.status == "completed":
-            continue
-        if status == "completed" and latest_case and latest_case.status != "completed":
-            continue
+        p_cases.sort(key=lambda x: (x.created_at or 0), reverse=True)
+        active_cases = [c for c in p_cases if c.status == "active"]
+        completed_cases = [c for c in p_cases if c.status == "completed"]
+        
+        if status == "active":
+            if not active_cases:
+                continue
+            latest_case = active_cases[0]
+        elif status == "completed":
+            if not completed_cases or active_cases:
+                continue
+            latest_case = completed_cases[0]
+        else:
+            latest_case = p_cases[0] if p_cases else None
 
         has_red_flag = any(c.is_red_flag for c in p_cases if c.status == "active")
         

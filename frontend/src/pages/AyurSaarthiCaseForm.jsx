@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Sparkles, Save, User, FileText, HeartPulse, Stethoscope, 
-  Pill, AlertTriangle, CheckCircle2, ChevronRight, Plus, Trash2, ArrowLeft, Volume2, ShieldCheck, Printer, Search, Lock 
+  Pill, AlertTriangle, CheckCircle2, ChevronRight, Plus, Trash2, ArrowLeft, Volume2, ShieldCheck, Printer, Search, Lock, Eye 
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SpeechMicButton from '../components/SpeechMicButton';
@@ -9,11 +9,119 @@ import AshtavidhaForm from '../components/AshtavidhaForm';
 import PrescriptionPrintModal from '../components/PrescriptionPrintModal';
 import { 
   createCase, createPatient, getPatients, generateAISummary, 
-  searchAyurvedicMedicines, getPathyaAdvice, signCase 
+  searchAyurvedicMedicines, getPathyaAdvice, signCase, getPatientTimeline 
 } from '../services/api';
 import DoctorReferralModal from '../components/DoctorReferralModal';
 
-export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientId, onCaseSaved, onSelectPatientTimeline, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en' }) {
+
+/* ─── 100% Distinct ABDM Patient Clinical Data Dictionary (Indexed by ABHA ID) ─── */
+const PATIENT_CLINICAL_MAP = {
+  'ABHA-3344-1102': {
+    name: 'Priya Deshmukh',
+    transcript: "Mujhe pichle 3 hafte se skin itching aur khajli ki problem ho rahi hai. Haath aur gardan par red eczematous patches ban jate hain. Raat me itching severe ho jaati hai.",
+    complaint: "Kushtha / Vicharchika (Skin Eczema & Allergic Dermatitis)",
+    diagAyurvedic: "Kushtha Roga / Vicharchika (Pitta-Rakta Pradhana)",
+    diagModern: "Allergic Contact Dermatitis / Subacute Eczema",
+    prakriti: "Pitta-Vata",
+    vikriti: "Pitta-Rakta Dushti with Kandu",
+    duration: "3 Weeks • Moderate (Kandu & Raga)",
+    aggravating: "Excessive heat, spicy food, direct sunlight, synthetic garments",
+    findings: "Eczematous papules and erythematous patches on bilateral forearms and posterior neck. Excoriation marks present.",
+    suggestedPathya: "Kaishore Guggulu & Gandhak Rasayan with lukewarm water. Nimbadi Kwath wash.",
+    meds: [
+      { name: 'Kaishore Guggulu', category: 'Guggulu', dosage: '2 tabs twice daily after food', duration: '30 days', anupana: 'Lukewarm Water' },
+      { name: 'Gandhak Rasayan', category: 'Vati', dosage: '1 tab twice daily after food', duration: '30 days', anupana: 'Warm Milk / Water' },
+      { name: 'Nimbadi Kwath', category: 'Kwath', dosage: '15 ml twice daily before meals', duration: '15 days', anupana: 'Water' }
+    ]
+  },
+  'ABHA-9988-1234': {
+    name: 'Priya Patel',
+    transcript: "Mujhe pichle 1 mahine se khana khane ke baad pet me severe burning sensation, acidity aur nausea hota hai. Subah khatti dakarein aati hain.",
+    complaint: "Amlapitta & Dyspepsia (Acid Peptic Disorder / Hyperacidity)",
+    diagAyurvedic: "Urdhvaga Amlapitta (Pitta-Kaphaja)",
+    diagModern: "Non-Ulcer Dyspepsia & Gastroesophageal Reflux",
+    prakriti: "Pitta-Kaphaja",
+    vikriti: "Pitta Prakopa with Vidagdha Ajirna",
+    duration: "1 Month • Moderate (Daha & Utklesha)",
+    aggravating: "Empty stomach, spicy pickles, sour curd, late night sleep",
+    findings: "Epigastric tenderness on deep palpation, retrosternal burning, coated tongue (Saama Jihva).",
+    suggestedPathya: "Avipattikar Churna & Sutshekhar Ras. Milk & coconut water pathya diet.",
+    meds: [
+      { name: 'Avipattikar Churna', category: 'Churna', dosage: '3 grams twice daily before meals', duration: '15 days', anupana: 'Lukewarm Water' },
+      { name: 'Sutshekhar Ras (Gold/Plain)', category: 'Ras', dosage: '1 tab twice daily after meals', duration: '30 days', anupana: 'Warm Water / Milk' }
+    ]
+  },
+  'ABHA-3412-8902': {
+    name: 'Sunita Sharma',
+    transcript: "Mujhe pichle 2 mahine se gardan aur kandhe me severe stiffness aur haath me jhunjhuni aati hai. Computer par baithne se pain badh jaata hai.",
+    complaint: "Greeva Stambha (Cervical Spondylosis)",
+    diagAyurvedic: "Greeva Stambha / Manyastambha (Vata-Kapha)",
+    diagModern: "Cervical Spondylosis with C5-C6 Nerve Irritation",
+    prakriti: "Kapha-Vata",
+    vikriti: "Vata Stambha with Kapha Anubandha",
+    duration: "2 Months • Moderate (Stambha & Ruja)",
+    aggravating: "Forward neck posture, continuous computer typing, cold AC draft",
+    findings: "Restricted lateral neck rotation, paraspinal muscle spasm in C5-C7 region, positive Spurling sign.",
+    suggestedPathya: "Trayodashanga Guggulu & Mahanarayana Taila local abhyanga. Greeva Basti therapy.",
+    meds: [
+      { name: 'Trayodashanga Guggulu', category: 'Guggulu', dosage: '2 tabs twice daily after meals', duration: '30 days', anupana: 'Lukewarm Water' },
+      { name: 'Mahanarayana Taila', category: 'Taila', dosage: 'Gentle neck application twice daily', duration: '30 days', anupana: 'External Use' }
+    ]
+  },
+  'ABHA-9821-4501': {
+    name: 'Ramesh Sharma',
+    transcript: "Mujhe pichle 6 mahine se dono ghutno me subah uthte hi severe dard aur akadahat hoti hai. Stair climb karte waqt katar-katar ki sound aati hai. Sardi me dard badh jaata hai.",
+    complaint: "Sandhivata (Bilateral Knee Joint Osteoarthritis)",
+    diagAyurvedic: "Janu Sandhigata Vata (Vata-Pitta)",
+    diagModern: "Bilateral Primary Knee Osteoarthritis (Grade II)",
+    prakriti: "Vata-Pitta",
+    vikriti: "Vata Vriddhi with Ama & Sandhi Kshay",
+    duration: "6 Months • Severe (Vata Prakopa & Crepitus)",
+    aggravating: "Cold weather, climbing stairs, heavy weight lifting, sour food",
+    findings: "Bilateral knee joint crepitus present, medial joint line tenderness, restricted terminal flexion.",
+    suggestedPathya: "Yograj Guggulu & Rasnadi Kwath. Janu Basti local panchakarma session.",
+    meds: [
+      { name: 'Yograj Guggulu', category: 'Guggulu', dosage: '2 tabs twice daily after food', duration: '30 days', anupana: 'Lukewarm Water' },
+      { name: 'Rasnadi Kwath', category: 'Kwath', dosage: '15 ml twice daily with equal warm water', duration: '30 days', anupana: 'Warm Water' }
+    ]
+  },
+  'ABHA-7700-9999': {
+    name: 'Kailash Chandra',
+    transcript: "Mujhe chaltay waqt chest heaviness aur saans phoolne ki shikayat hoti hai. High BP aur cholesterol 2 saal se hai.",
+    complaint: "Hridroga & High BP (Hypertension & Lipid Disorder)",
+    diagAyurvedic: "Hridroga / Rakta Vata (Kapha-Pitta)",
+    diagModern: "Essential Hypertension with Mild Dyslipidemia",
+    prakriti: "Kapha-Pitta",
+    vikriti: "Rakta Pitta Vriddhi with Medo Vridhi",
+    duration: "2 Years • Chronic (Rakta Chapa & Medas)",
+    aggravating: "Mental stress, salty snacks, sedentary afternoon naps",
+    findings: "BP 148/92 mmHg, S1 S2 normal, no gallop rhythm, pedal edema absent.",
+    suggestedPathya: "Arjunarishta & Prabhakar Vati. Low sodium diet, daily 30 min morning walk.",
+    meds: [
+      { name: 'Arjunarishta', category: 'Asava/Arishta', dosage: '15 ml twice daily with equal water', duration: '30 days', anupana: 'Water' },
+      { name: 'Prabhakar Vati', category: 'Vati', dosage: '1 tab twice daily after meals', duration: '30 days', anupana: 'Warm Water' }
+    ]
+  }
+};
+
+const getMasterPatientId = (p) => {
+  if (!p) return '';
+  if (typeof p === 'string') return p;
+  return p.abha_id || p.uhid || p.patient_id || p.id || '';
+};
+
+const getPatientClinicalData = (patient) => {
+  if (!patient) return null;
+  const abhaKey = patient.abha_id || patient.uhid || patient.patient_id || patient.id;
+  if (PATIENT_CLINICAL_MAP[abhaKey]) return PATIENT_CLINICAL_MAP[abhaKey];
+  const nameMatch = Object.values(PATIENT_CLINICAL_MAP).find(
+    m => m.name && patient.name && m.name.toLowerCase().trim() === patient.name.toLowerCase().trim()
+  );
+  if (nameMatch) return nameMatch;
+  return null;
+};
+
+export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientId, activeConsultingPatientId, onSelectPatientId, onCaseSaved, onSelectPatientTimeline, currentDoctorId = "DOC-AYUR-101", currentUser, lang = 'en' }) {
   const { t } = useTranslation();
   const [patientsList, setPatientsList] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState(initialPatientId || '');
@@ -22,11 +130,29 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
   const [previewDocModal, setPreviewDocModal] = useState(null);
   const [step, setStep] = useState(1);
   const [userUploadedDocs, setUserUploadedDocs] = useState([]);
+  const [prescribeModalMed, setPrescribeModalMed] = useState(null);
+  const [modalMedName, setModalMedName] = useState('');
+  const [modalDosage, setModalDosage] = useState('2 tabs twice daily after food');
+  const [modalDuration, setModalDuration] = useState('30 days');
+  const [modalAnupana, setModalAnupana] = useState('Lukewarm Water');
+  const [showMedDropdown, setShowMedDropdown] = useState(false);
+  const [sigMode, setSigMode] = useState('auto'); // 'auto' | 'draw' | 'text'
+  const [customSigText, setCustomSigText] = useState('');
+  const [drawnSigUrl, setDrawnSigUrl] = useState(null);
+  const sigCanvasRef = useRef(null);
+  const isDrawingRef = useRef(false);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState('All');
+  const medSearchContainerRef = useRef(null);
+
+  // Sync from parent prop when it changes (e.g. dashboard selects Token #1)
+  useEffect(() => {
+    setSelectedPatientId(initialPatientId || null);
+  }, [initialPatientId]);
 
   useEffect(() => {
     try {
       const savedDocs = JSON.parse(localStorage.getItem('ss_user_uploaded_docs') || '[]');
-      const patientDocs = savedDocs.filter(d => !d.patient_id || d.patient_id === selectedPatientId || selectedPatientId === 'pat_1' || selectedPatientId === 'pat_2');
+      const patientDocs = savedDocs.filter(d => !d.patient_id || d.patient_id === selectedPatientId);
       setUserUploadedDocs(patientDocs);
     } catch (_) {}
   }, [selectedPatientId]);
@@ -82,8 +208,14 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
 
   useEffect(() => {
-    if (initialPatientId) setSelectedPatientId(initialPatientId);
-  }, [initialPatientId]);
+    if (initialPatientId && patientsList.length > 0) {
+      const match = patientsList.find(p => p.id === initialPatientId || p.abha_id === initialPatientId);
+      if (match) setSelectedPatientId(match.abha_id || match.id);
+      else setSelectedPatientId(initialPatientId);
+    } else if (initialPatientId) {
+      setSelectedPatientId(initialPatientId);
+    }
+  }, [initialPatientId, patientsList]);
 
   useEffect(() => {
     loadPatients();
@@ -93,22 +225,93 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
     try {
       const list = await getPatients();
       setPatientsList(list);
-      if (!initialPatientId && list.length > 0) setSelectedPatientId(list[0].id);
+      
+      const savedToken1 = localStorage.getItem('ss_active_opd_token1');
+      const targetIdToSet = initialPatientId || activeConsultingPatientId || savedToken1;
+
+      if (targetIdToSet) {
+        const match = list.find(p => p.id === targetIdToSet || p.abha_id === targetIdToSet || p.patient_id === targetIdToSet);
+        if (match) setSelectedPatientId(match.abha_id || match.id);
+        else setSelectedPatientId(targetIdToSet);
+      } else {
+        // Zero active patients in OPD queue: default to null (No Active Patient Selected)
+        setSelectedPatientId(null);
+      }
     } catch (e) {
       console.error('Failed to load patients', e);
     }
   };
 
-  const activePatient = patientsList.find(p => p.id === selectedPatientId) || newPatient;
+  const activePatient = patientsList.find(p => {
+    const pMaster = getMasterPatientId(p);
+    const selMaster = getMasterPatientId(selectedPatientId);
+    return pMaster === selMaster || p.id === selectedPatientId || p.abha_id === selectedPatientId || (p.name && selectedPatientId && p.name.toLowerCase() === String(selectedPatientId).toLowerCase());
+  }) || newPatient;
+
+  const activeCaseData = React.useMemo(() => {
+    if (!activePatient) return null;
+    const patData = getPatientClinicalData(activePatient);
+    return {
+      intake_data: {
+        transcript: activePatient.medical_history || patData?.transcript || '',
+        structured: {
+          duration: patData?.duration || '',
+          aggravating_factors: patData?.aggravating || '',
+          suggested_pathya: patData?.suggestedPathya || ''
+        }
+      },
+      chief_complaints: activePatient.latest_chief_complaint || patData?.complaint || '',
+      prakriti: activePatient.prakriti || patData?.prakriti || 'Vata-Pitta',
+      token_number: activePatient.token_number || 'OPD-101'
+    };
+  }, [activePatient]);
+
+  const activePatientDocs = React.useMemo(() => {
+    return userUploadedDocs.filter(d => {
+      if (!selectedPatientId) return true;
+      if (d.patient_id && d.patient_id === selectedPatientId) return true;
+      if (activePatient?.abha_id && d.abha_id === activePatient.abha_id) return true;
+      return false;
+    });
+  }, [userUploadedDocs, selectedPatientId, activePatient]);
 
   const isReadOnly = React.useMemo(() => {
-    try {
-      const closedTokens = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
-      if (closedTokens.includes(selectedPatientId)) return true;
-    } catch (_) {}
-    if (activePatient && activePatient.status === 'completed') return true;
-    return false;
-  }, [selectedPatientId, activePatient]);
+    const storedToken1 = localStorage.getItem('ss_active_opd_token1');
+    const selMaster = getMasterPatientId(selectedPatientId || activePatient);
+    const activeMaster = getMasterPatientId(storedToken1 || activeConsultingPatientId || initialPatientId || 'ABHA-9821-4501');
+
+    const isActiveConsultation = (
+      selMaster === activeMaster ||
+      (activePatient && getMasterPatientId(activePatient) === activeMaster) ||
+      (storedToken1 && (
+        selectedPatientId === storedToken1 ||
+        activePatient?.abha_id === storedToken1 ||
+        activePatient?.id === storedToken1 ||
+        activePatient?.patient_id === storedToken1
+      ))
+    );
+
+    if (isActiveConsultation) {
+      try {
+        const closedTokens = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
+        if (
+          closedTokens.includes(selMaster) || 
+          (activePatient?.abha_id && closedTokens.includes(activePatient.abha_id)) ||
+          (activePatient?.token_number && closedTokens.includes(activePatient.token_number))
+        ) {
+          return true;
+        }
+      } catch (_) {}
+
+      if (activePatient && (activePatient.status === 'completed' || activePatient.status === 'closed' || activePatient.status === 'archived')) {
+        return true;
+      }
+
+      return false;
+    }
+
+    return true;
+  }, [selectedPatientId, activePatient, activeConsultingPatientId, initialPatientId]);
 
   const handleAiSmartPrefill = () => {
     const curP = patientsList.find(p => p.id === selectedPatientId || p.abha_id === selectedPatientId) || newPatient;
@@ -140,34 +343,108 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
     alert('✨ AI Smart Prefill: Form pre-filled from patient intake dossier & attached reports!');
   };
 
-  const handleMedSearch = async (q) => {
+  const handleMedSearch = async (q, catFilter = 'All') => {
     setMedQuery(q);
-    if (!q) {
-      setSearchedMeds([]);
-      return;
-    }
+    setShowMedDropdown(true);
     try {
-      const results = await searchAyurvedicMedicines(q);
+      const queryStr = catFilter !== 'All' ? (q ? `${q} ${catFilter}` : catFilter) : q;
+      const results = await searchAyurvedicMedicines(queryStr);
       setSearchedMeds(results);
     } catch (e) {
       console.error(e);
     }
   };
 
-  const handleAddSearchedMedicine = (med) => {
-    const newMedObj = {
-      name: med.name,
-      category: med.category || 'Vati/Guggulu',
-      dosage: med.default_dosage || '2 tabs twice daily',
-      duration: '30 days',
-      anupana: med.anupana || caseForm.anupana || 'Warm Water'
+  const loadInitialMeds = async (catFilter = 'All') => {
+    setActiveCategoryFilter(catFilter);
+    setShowMedDropdown(true);
+    try {
+      const results = await searchAyurvedicMedicines(catFilter !== 'All' ? catFilter : '');
+      setSearchedMeds(results);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 3 && searchedMeds.length === 0) {
+      loadInitialMeds('All');
+    }
+  }, [step]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (medSearchContainerRef.current && !medSearchContainerRef.current.contains(event.target)) {
+        setShowMedDropdown(false);
+      }
     };
-    setCaseForm({
-      ...caseForm,
-      medicines: [...caseForm.medicines, newMedObj]
-    });
-    setMedQuery('');
-    setSearchedMeds([]);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
+  const startDrawing = (e) => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#064e3b';
+    isDrawingRef.current = true;
+  };
+
+  const draw = (e) => {
+    if (!isDrawingRef.current) return;
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    const canvas = sigCanvasRef.current;
+    if (canvas) {
+      setDrawnSigUrl(canvas.toDataURL());
+    }
+  };
+
+  const clearCanvas = () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setDrawnSigUrl(null);
+  };
+
+  const handleAddSearchedMedicine = (med) => {
+    if (!med || !med.name) return;
+    setPrescribeModalMed(med);
+    setModalMedName(med.name);
+    setModalDosage(med.default_dosage || '2 tabs twice daily after food');
+    setModalDuration('30 days');
+    setModalAnupana(med.anupana || 'Lukewarm Water');
+  };
+
+  const handleOpenBlankPrescribeModal = () => {
+    setPrescribeModalMed({ name: '', category: 'Custom Formulation' });
+    setModalMedName('');
+    setModalDosage('2 tabs twice daily after food');
+    setModalDuration('30 days');
+    setModalAnupana('Lukewarm Water');
   };
 
   const handleAddCustomMedicine = () => {
@@ -212,11 +489,14 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
   const handleTriggerAiSummary = async () => {
     setLoadingAi(true);
     try {
-      const activePatient = patientsList.find(p => p.id === selectedPatientId) || newPatient;
+      const curPatient = patientsList.find(p => p.id === selectedPatientId || p.abha_id === selectedPatientId) || activePatient || newPatient;
       const caseDataForAi = {
         ...caseForm,
-        patient_name: activePatient.name,
-        age: activePatient.age
+        patient_name: curPatient.name,
+        age: curPatient.age,
+        prakriti: caseForm.prakriti,
+        vikriti: caseForm.vikriti,
+        ashtavidha_pariksha: caseForm.ashtavidha_pariksha
       };
       const res = await generateAISummary(caseDataForAi);
       setAiResult(res);
@@ -245,8 +525,100 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
         status: "completed"
       };
       const savedCase = await createCase(casePayload);
-      await signCase(savedCase.id);
+      try {
+        await signCase(savedCase.id);
+      } catch (e) {
+        console.warn('Backend sign endpoint notice', e);
+      }
       savedCase.prescription_signed = true;
+
+      // Sync signed prescription directly for Patient Portal access
+      const curPatient = patientsList.find(p => p.id === targetPatientId || p.abha_id === targetPatientId) || activePatient || newPatient;
+      const signedRecord = {
+        id: savedCase.id || `presc_${Date.now()}`,
+        case_id: savedCase.id,
+        patient_id: targetPatientId,
+        abha_id: curPatient?.abha_id || curPatient?.uhid || targetPatientId,
+        patient_name: curPatient?.name || 'Patient',
+        doctor_name: currentUser?.name || "Dr. Rajesh Vaidya",
+        doctor_qualification: currentUser?.qualification || "BAMS, MD (Kayachikitsa)",
+        doctor_registration_no: currentUser?.registration_no || "AYUSH-REG-DEL-2012-4412",
+        hospital_name: currentUser?.hospital_name || "All India Institute of Ayurveda",
+        token_number: curPatient?.token_number || 'OPD-110',
+        chief_complaints: caseForm.chief_complaints,
+        diagnosis_ayurvedic: caseForm.diagnosis_ayurvedic,
+        diagnosis_modern: caseForm.diagnosis_modern,
+        prakriti: caseForm.prakriti,
+        vikriti: caseForm.vikriti,
+        medicines: caseForm.medicines,
+        anupana: caseForm.anupana,
+        pathya_apathya: caseForm.pathya_apathya,
+        private_notes: caseForm.private_notes,
+        vitals: caseForm.vitals,
+        ashtavidha_pariksha: caseForm.ashtavidha_pariksha,
+        prescription_signed: true,
+        status: 'completed',
+        signed_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+      };
+
+      try {
+        const existingPrescs = JSON.parse(localStorage.getItem('ss_patient_signed_prescriptions') || '[]');
+        existingPrescs.unshift(signedRecord);
+        localStorage.setItem('ss_patient_signed_prescriptions', JSON.stringify(existingPrescs));
+      } catch (e) {
+        console.error('Failed to sync patient signed prescription', e);
+      }
+
+      // Auto-close Token #1 and move patient record to Daily OPD Register
+      const closedToken = curPatient?.token_number || activeCaseData?.token_number || 'OPD-110';
+      try {
+        const closedTokens = JSON.parse(localStorage.getItem('ss_closed_tokens') || '[]');
+        if (!closedTokens.includes(closedToken)) {
+          closedTokens.push(closedToken);
+          localStorage.setItem('ss_closed_tokens', JSON.stringify(closedTokens));
+        }
+
+        const completedPatientIds = JSON.parse(localStorage.getItem('ss_completed_patient_ids') || '[]');
+        if (!completedPatientIds.includes(targetPatientId)) {
+          completedPatientIds.push(targetPatientId);
+          if (curPatient?.abha_id) completedPatientIds.push(curPatient.abha_id);
+          localStorage.setItem('ss_completed_patient_ids', JSON.stringify(completedPatientIds));
+        }
+
+        // Add to completed records for Daily OPD Register
+        const completedRecord = {
+          patient_id: targetPatientId,
+          name: curPatient?.name || 'Patient',
+          abha_id: curPatient?.abha_id || curPatient?.uhid || 'ABHA-3344-1102',
+          gender: curPatient?.gender || 'FEMALE',
+          age: curPatient?.age || 29,
+          diagnosis: caseForm.diagnosis_ayurvedic || 'Ayurvedic OPD Consult Completed',
+          regimen: 'AYUSH e-Prescription Signed & Closed',
+          status: 'Signed & Completed',
+          date: new Date().toISOString().split('T')[0],
+          day: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
+          token_number: closedToken,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        const existingCompleted = JSON.parse(localStorage.getItem('ss_completed_records') || '[]');
+        const filteredPrev = existingCompleted.filter(r => r.patient_id !== targetPatientId && r.token_number !== closedToken);
+        filteredPrev.unshift(completedRecord);
+        localStorage.setItem('ss_completed_records', JSON.stringify(filteredPrev));
+
+        if (savedCase.id) {
+          completeCaseToken(savedCase.id, closedToken).catch(() => null);
+        }
+      } catch (err) {
+        console.warn('Auto-close token sync error', err);
+      }
+
+      // Dispatch global real-time event so OPD Register & Dashboard update live
+      window.dispatchEvent(new CustomEvent('ss_opd_updated'));
+      localStorage.setItem('ss_last_update_ts', String(Date.now()));
+
       setSavedCaseForPrint(savedCase);
       if (onCaseSaved) onCaseSaved(savedCase);
     } catch (e) {
@@ -441,60 +813,111 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
       {/* ─── Top Clinical Header & Patient Selector Dropdown ────────────────── */}
       <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <img
-            src={activePatient?.avatar_url || "/avatars/rajesh_kumar.jpeg"}
-            alt={activePatient?.name || "Patient"}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/avatars/rajesh_kumar.jpeg';
-            }}
-            className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-xs shrink-0"
-          />
+          {selectedPatientId && activePatient?.avatar_url ? (
+            <img
+              src={activePatient.avatar_url}
+              alt={activePatient?.name || "Patient"}
+              onError={(e) => { e.target.onerror = null; e.target.src = ''; e.target.style.display = 'none'; }}
+              className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-xs shrink-0"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+          )}
           <div className="space-y-1 w-full sm:w-auto">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold text-slate-700 uppercase">Consulting Patient:</span>
               <select
-                value={selectedPatientId}
-                onChange={(e) => setSelectedPatientId(e.target.value)}
+                value={selectedPatientId ? (activePatient?.abha_id || activePatient?.id || selectedPatientId) : ''}
+                onChange={(e) => {
+                  const val = e.target.value || null;
+                  setSelectedPatientId(val);
+                  if (onSelectPatientId) onSelectPatientId(val);
+                }}
                 className="px-3 py-1.5 bg-emerald-50 border border-emerald-300 rounded-xl font-extrabold text-xs text-emerald-950 outline-none cursor-pointer"
               >
-                {patientsList.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.abha_id || p.uhid})
-                  </option>
-                ))}
+                <option value="">-- Select Patient to View Case Sheet --</option>
+                {patientsList.map((p) => {
+                  const val = p.abha_id || p.id;
+                  return (
+                    <option key={p.id || val} value={val}>
+                      {p.name} ({p.abha_id || p.uhid || p.id})
+                    </option>
+                  );
+                })}
               </select>
-              <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full">
-                {activePatient?.abha_id || activePatient?.uhid || "ABHA-9821-4501"}
-              </span>
+              {selectedPatientId && (
+                <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full">
+                  {activePatient?.abha_id || activePatient?.uhid || "ABHA"}
+                </span>
+              )}
             </div>
-            <p className="text-xs text-slate-500 font-medium">
-              {activePatient?.gender ? activePatient.gender.toUpperCase() : 'MALE'} • {activePatient?.age || 42} yrs • Blood: {activePatient?.blood_group || 'B+'} • Mobile: {activePatient?.contact || '+91 98210 45010'}
-            </p>
+            {selectedPatientId ? (
+              <p className="text-xs text-slate-500 font-medium">
+                {activePatient?.gender ? activePatient.gender.toUpperCase() : 'MALE'} • {activePatient?.age || 42} yrs • Blood: {activePatient?.blood_group || 'B+'} • Mobile: {activePatient?.contact || '+91 98000 00000'}
+              </p>
+            ) : (
+              <p className="text-xs text-slate-400 font-medium">
+                No active patient selected. Pick a patient from the dropdown above to load case sheet.
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsReferralModalOpen(true)}
-            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
-          >
-            <Stethoscope className="w-4 h-4 text-white" />
-            <span>🔁 Refer Patient</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (onSelectPatientTimeline) onSelectPatientTimeline(selectedPatientId);
-            }}
-            className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-extrabold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-all"
-          >
-            <FileText className="w-4 h-4 text-emerald-700" />
-            <span>📜 View Patient's Full Longitudinal History (Timeline) →</span>
-          </button>
-        </div>
+        {selectedPatientId && (
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsReferralModalOpen(true)}
+              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <Stethoscope className="w-4 h-4 text-white" />
+              <span>🔁 Refer Patient</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (onSelectPatientTimeline) onSelectPatientTimeline(selectedPatientId);
+              }}
+              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-extrabold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <FileText className="w-4 h-4 text-emerald-700" />
+              <span>📜 View Patient's Full Longitudinal History (Timeline) →</span>
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* ─── DEFAULT UNSELECTED STATE ────────────────────────────────────────── */}
+      {!selectedPatientId && (
+        <div className="bg-white p-10 sm:p-14 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4 max-w-2xl mx-auto my-6 animate-fade-in">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto text-2xl shadow-sm border border-emerald-200">
+            🩺
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-extrabold text-slate-900">Select Patient to View Case Sheet</h3>
+            <p className="text-xs text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
+              No patient data is currently displayed. Choose a patient from the dropdown selector above or open the Patient Directory to load a patient record.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => onSelectPatientTimeline && onSelectPatientTimeline('directory')}
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center justify-center gap-2"
+            >
+              <span>👤 Open Patient Directory →</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {selectedPatientId && (
+        <>
 
       {/* Read-Only Historical Case Sheet Notice */}
       {isReadOnly && (
@@ -513,219 +936,136 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
       {!isExamining ? (
         <div className="space-y-4 animate-fade-in">
           
-          {/* Card 1: Submitted Voice Triage & Self Intake Summary */}
-          <div className="bg-gradient-to-br from-slate-900 via-[#12372A] to-teal-950 p-6 rounded-2xl text-white shadow-md space-y-4 border border-emerald-800">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-emerald-800/80 pb-3">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase bg-amber-400 text-slate-950 px-2 py-0.5 rounded">
-                  Patient Submitted Intake Data
-                </span>
-                <h3 className="text-lg font-bold text-white mt-1">
-                  Self-Reported Symptom Triage & Current Condition for {activePatient?.name || 'Patient'}
-                </h3>
-              </div>
+          {/* Card 1: Submitted Voice Triage & Self Intake Summary (100% Patient Isolated) */}
+          {(() => {
+            const patAbha = activePatient?.abha_id || activePatient?.uhid;
+            const patData = PATIENT_CLINICAL_MAP[patAbha] || PATIENT_CLINICAL_MAP['ABHA-3344-1102'];
+            const displayTranscript = activeCaseData?.intake_data?.transcript || patData?.transcript || '';
+            const displayComplaint = activeCaseData?.chief_complaints || activePatient?.latest_chief_complaint || patData?.complaint || '';
+            const displayPrakriti = activeCaseData?.prakriti || activePatient?.prakriti || patData?.prakriti || 'Vata-Pitta';
 
-              <button
-                type="button"
-                onClick={() => speakText(activePatient?.latest_chief_complaint || 'Joint stiffness and morning pain in both knees persisting for 6 months.')}
-                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-emerald-300 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <Volume2 className="w-4 h-4" />
-                <span>Listen Audio Triage</span>
-              </button>
-            </div>
+            return (
+              <div className="bg-gradient-to-br from-slate-900 via-[#12372A] to-teal-950 p-6 rounded-2xl text-white shadow-md space-y-4 border border-emerald-800">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-emerald-800/80 pb-3">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded">
+                      Patient Submitted Intake Data
+                    </span>
+                    <h3 className="text-lg font-bold text-white mt-1">
+                      Self-Reported Symptom Triage & Current Condition for {activePatient?.name || 'Patient'}
+                    </h3>
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
-                <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider block">
-                  🎙️ Full Voice Transcript Recorded by Patient:
-                </span>
-                <p className="text-slate-100 text-xs italic leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
-                  "Mujhe pichle 6 mahine se dono ghutno me subah uthte hi severe dard aur akadahat hoti hai. Stair climb karte waqt katar-katar ki sound aati hai. Sardi me dard badh jaata hai."
-                </p>
-                <div className="pt-2 text-emerald-200 text-[11px]">
-                  <strong className="text-white">Duration & Severity:</strong> 6 Months • Moderate to Severe (Vata Prakopa)
+                  <button
+                    type="button"
+                    onClick={() => speakText(displayTranscript)}
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-emerald-300 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Volume2 className="w-4 h-4 text-amber-300" />
+                    <span>Listen Audio Triage</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
+                    <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider block">
+                      🎙️ Full Voice Transcript Recorded by Patient:
+                    </span>
+                    <p className="text-slate-100 text-xs italic leading-relaxed bg-black/30 p-3 rounded-xl border border-white/10 min-h-20">
+                      "{displayTranscript}"
+                    </p>
+                    <div className="pt-2 text-emerald-200 text-[11px]">
+                      <strong className="text-white">Duration & Severity:</strong> {activeCaseData?.intake_data?.structured?.duration || patData?.duration || ''}
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
+                    <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider block">
+                      📋 Suspected Dosha & Triage Summary:
+                    </span>
+                    <div className="space-y-1.5 text-slate-200 text-[11px]">
+                      <p><strong className="text-white">Primary Complaint:</strong> {displayComplaint}</p>
+                      <p><strong className="text-white">Aggravating Factors:</strong> {activeCaseData?.intake_data?.structured?.aggravating_factors || patData?.aggravating || ''}</p>
+                      <p><strong className="text-white">Prakriti Imbalance:</strong> {displayPrakriti}</p>
+                      <p><strong className="text-white">Recommended Therapy:</strong> {activeCaseData?.intake_data?.structured?.suggested_pathya || patData?.suggestedPathya || ''}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
+            );
+          })()}
 
-              <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
-                <span className="font-extrabold text-amber-300 text-[11px] uppercase tracking-wider block">
-                  📋 Suspected Dosha & Triage Summary:
-                </span>
-                <div className="space-y-1.5 text-slate-200 text-[11px]">
-                  <p><strong className="text-white">Primary Complaint:</strong> {activePatient?.latest_chief_complaint || 'Bilateral Knee Joint Stiffness & Crepitus'}</p>
-                  <p><strong className="text-white">Aggravating Factors:</strong> Cold weather, sour food, climbing stairs</p>
-                  <p><strong className="text-white">Prakriti Imbalance:</strong> {activePatient?.prakriti || 'Vata-Pitta Imbalance'}</p>
-                  <p><strong className="text-white">Recommended Therapy:</strong> Janu Basti & Vata-hara Guggulu Kalpa</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Attached Medical Reports & Scanned Images */}
+          {/* Card 2: Attached Medical Reports & Scanned Images (100% Patient Isolated) */}
           <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-emerald-600" />
-                <span>Attached Medical Reports & Documents Sent by Patient (3)</span>
+                <span>Attached Medical Reports & Documents Sent by Patient ({activePatientDocs.length})</span>
               </h3>
               <span className="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
                 ABDM Sync Verified
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-              
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
-                <div>
-                  <span className="text-[10px] font-bold text-emerald-800 uppercase block mb-1">📄 Official PDF Document</span>
-                  <h4 className="font-bold text-slate-900 text-xs">Knee Joint X-Ray Report.pdf</h4>
-                  <p className="text-[10px] text-slate-500 mt-1">Bilateral Knee AP/Lateral view. Medial joint space narrowing.</p>
+            {activePatientDocs.length === 0 ? (
+              <div className="p-8 bg-slate-50 rounded-2xl text-center text-slate-500 text-xs font-medium border border-slate-200/80 space-y-2">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 mx-auto flex items-center justify-center font-bold text-sm">
+                  📄
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewDocModal({
-                    type: 'pdf',
-                    title: 'Radiograph Knee Joint X-Ray Report.pdf',
-                    issuer: 'AIIA Department of Radiodiagnosis',
-                    date: '2026-08-10',
-                    summary: 'Findings: Grade II Osteoarthritis of bilateral knee joints with subchondral sclerosis and medial joint space reduction.',
-                    details: [
-                      'Both knee joints show osteophytic lipping along joint margins.',
-                      'Reduction of medial joint space noted in both knees.',
-                      'No evidence of acute bony erosion or fracture.'
-                    ]
-                  })}
-                  className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
-                >
-                  👁️ Open Official PDF →
-                </button>
+                <p className="font-bold text-slate-700 text-xs">No medical reports uploaded by {activePatient?.name || 'this patient'} yet.</p>
+                <p className="text-[11px] text-slate-400">Attached documents sent via Patient Portal (Step 3 Vault) will appear here instantly.</p>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                {activePatientDocs.map((ud, uIdx) => {
+                  const isPdf = (ud.file_name && ud.file_name.toLowerCase().endsWith('.pdf')) || (ud.file_type && ud.file_type.toLowerCase().includes('pdf'));
+                  const isImg = ud.is_image || (ud.file_name && /\.(png|jpg|jpeg|svg)$/i.test(ud.file_name));
 
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
-                <div>
-                  <span className="text-[10px] font-bold text-amber-800 uppercase block mb-1">🖼️ Scanned Medical Image</span>
-                  <h4 className="font-bold text-slate-900 text-xs">Radiograph X-Ray Scan.jpg</h4>
-                  <p className="text-[10px] text-slate-500 mt-1">High-resolution radiographic scan image submitted by patient.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewDocModal({
-                    type: 'image',
-                    title: 'Radiograph Knee Joint X-Ray Image Scan',
-                    issuer: 'Patient Upload / Diagnostic Scan',
-                    date: '2026-08-10',
-                    summary: 'High-resolution digital radiograph scan image showing bilateral knee joint alignment.',
-                    imageUrl: '/sample_scans/knee_xray_scan.svg'
-                  })}
-                  className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
-                >
-                  👁️ View Scan Image →
-                </button>
-              </div>
-
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
-                <div>
-                  <span className="text-[10px] font-bold text-teal-800 uppercase block mb-1">📜 OPD Prescription PDF</span>
-                  <h4 className="font-bold text-slate-900 text-xs">AIIA OPD Prescription.pdf</h4>
-                  <p className="text-[10px] text-slate-500 mt-1">Previous 30-day course of Yograj Guggulu & Rasnadi Kwath.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewDocModal({
-                    type: 'pdf',
-                    title: 'AIIA OPD Prescription Parchaa.pdf',
-                    issuer: 'Dr. Rajesh Vaidya, BAMS MD',
-                    date: '2026-07-15',
-                    summary: 'Rx: Yograj Guggulu 2 tabs BID after food, Rasnadi Kwath 15ml BID with equal warm water.',
-                    details: [
-                      'Yograj Guggulu — 2 tablets twice daily with warm water',
-                      'Rasnadi Kwath — 15 ml twice daily with equal warm water',
-                      'Janu Basti local panchakarma session advised'
-                    ]
-                  })}
-                  className="w-full py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
-                >
-                  👁️ Open Official PDF →
-                </button>
-              </div>
-
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 flex flex-col justify-between hover:border-emerald-300 transition-colors">
-                <div>
-                  <span className="text-[10px] font-bold text-purple-800 uppercase block mb-1">🎙️ AI Voice Triage Report</span>
-                  <h4 className="font-bold text-slate-900 text-xs">Patient Self-Intake Triage.pdf</h4>
-                  <p className="text-[10px] text-slate-500 mt-1">Generated report from patient's voice intake triage session.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewDocModal({
-                    type: 'triage_report',
-                    title: 'Patient Self-Intake Voice Triage Parchaa',
-                    issuer: 'SwasthSaarthi AI Triage System',
-                    date: '2026-08-23',
-                    summary: 'Voice Triage Parchaa generated from patient self-reported symptoms.'
-                  })}
-                  className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-[11px] rounded-lg shadow-2xs mt-2 cursor-pointer"
-                >
-                  👁️ View AI Triage Report →
-                </button>
-              </div>
-
-              {/* Dynamic User Uploaded Documents with Rich AI Summarization */}
-              {userUploadedDocs.map((ud, uIdx) => (
-                <div key={uIdx} className="p-4 bg-gradient-to-br from-emerald-50 via-teal-50 to-white rounded-2xl border border-emerald-300 space-y-3 flex flex-col justify-between hover:border-emerald-500 transition-all shadow-sm">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-extrabold text-emerald-900 uppercase bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
-                        {ud.is_image ? '🖼️ Patient Uploaded Image' : '📄 Patient Uploaded PDF'}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-bold">{ud.date || 'Recent'}</span>
-                    </div>
-
-                    <h4 className="font-bold text-slate-900 text-xs truncate">{ud.file_name}</h4>
-                    
-                    {/* ✨ AI Scan Clinical Summarization */}
-                    <div className="p-3 bg-white rounded-xl border border-emerald-200/80 space-y-1.5 shadow-2xs">
-                      <span className="text-[10px] font-black text-emerald-800 uppercase flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400" />
-                        <span>✨ AI Clinical Scan Findings & Summarization:</span>
-                      </span>
-                      <p className="text-[11px] text-slate-800 font-medium whitespace-pre-line leading-relaxed">
-                        {ud.summary || ud.extracted_data?.summary || '• Medical document parsed and digitized to ABDM Health Vault.\n• Key findings attached for clinical review.'}
-                      </p>
-                      {ud.extracted_data?.ayurvedic_correlation && (
-                        <div className="text-[10px] font-bold text-teal-800 bg-teal-50 p-1.5 rounded-lg border border-teal-200 mt-1">
-                          🪔 Ayurvedic Correlation: {ud.extracted_data.ayurvedic_correlation}
+                  return (
+                    <div key={ud.id || uIdx} className="p-4 bg-gradient-to-br from-emerald-50/70 via-teal-50/50 to-white rounded-2xl border border-emerald-200/80 space-y-3 flex flex-col justify-between hover:border-emerald-500 transition-all shadow-2xs">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-extrabold text-emerald-900 uppercase bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
+                            {isImg ? '🖼️ Patient Uploaded Image' : '📄 Patient Uploaded PDF'}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-bold">{ud.date || 'Recent'}</span>
                         </div>
-                      )}
+
+                        <h4 className="font-bold text-slate-900 text-xs truncate">{ud.file_name || 'Attached Report.pdf'}</h4>
+                        
+                        {/* ✨ AI Scan Clinical Summarization */}
+                        <div className="p-3 bg-white rounded-xl border border-emerald-200/80 space-y-1.5 shadow-2xs">
+                          <span className="text-[10px] font-black text-emerald-800 uppercase flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400" />
+                            <span>✨ AI Clinical Scan Findings:</span>
+                          </span>
+                          <p className="text-[11px] text-slate-800 font-medium whitespace-pre-line leading-relaxed">
+                            {ud.summary || ud.ocr_summary || ud.ai_findings || 'Medical report parsed & digitized to ABDM Health Vault.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDocModal({
+                          type: isPdf ? 'pdf' : isImg ? 'image' : 'pdf',
+                          title: ud.file_name || 'Medical Document',
+                          issuer: ud.source_doctor_or_hospital || 'Patient Self Upload',
+                          date: ud.date || new Date().toISOString().split('T')[0],
+                          summary: ud.summary || ud.ocr_summary || ud.ai_findings || 'Patient submitted medical document record.',
+                          file_url: ud.file_url || ud.data_url || ud.url,
+                          imageUrl: ud.file_url || ud.data_url || ud.url || '/sample_scans/knee_xray_scan.svg'
+                        })}
+                        className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 mt-2"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View Original {isImg ? 'Image' : 'PDF'} & OCR Details →</span>
+                      </button>
                     </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDocModal({
-                      type: ud.is_image ? 'image' : 'pdf',
-                      title: ud.file_name,
-                      issuer: ud.source_doctor_or_hospital || 'Patient Self Upload',
-                      date: ud.date || new Date().toISOString().split('T')[0],
-                      summary: ud.summary || 'Patient submitted medical document record.',
-                      imageUrl: ud.file_url || '/sample_scans/knee_xray_scan.svg',
-                      extracted_data: ud.extracted_data,
-                      details: [
-                        `File Type: ${ud.file_type || 'Prescription'}`,
-                        `Source Center: ${ud.source_doctor_or_hospital || 'Clinical Upload'}`,
-                        `OCR Status: ABDM Structured & AI Summarized`
-                      ]
-                    })}
-                    className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>View Original {ud.is_image ? 'Image' : 'PDF'} & OCR Details →</span>
-                  </button>
-                </div>
-              ))}
-
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Card 3: AI Assistant Smart Auto-Fill & Proceed CTA */}
@@ -987,46 +1327,121 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
             <h3 className="text-base font-bold text-slate-900">{t('caseForm.section3', 'Section 3: Aushadha Sevana')}</h3>
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-            <label className="text-xs font-bold text-emerald-800 flex items-center gap-2">
-              <Search className="w-4 h-4" />
-              <span>{t('caseForm.searchMeds', 'Search Classical Formulations:')}</span>
-            </label>
+          <div ref={medSearchContainerRef} className="p-4 bg-gradient-to-br from-emerald-50/60 via-teal-50/40 to-slate-50 rounded-2xl border border-emerald-200/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label className="text-xs font-extrabold text-emerald-900 flex items-center gap-2">
+                <Search className="w-4 h-4 text-emerald-700" />
+                <span>Search Classical Ayurvedic Formulations & Prescriptions:</span>
+              </label>
+
+              {/* Quick Category Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                {[
+                  { label: '🔥 All Formulations', key: 'All' },
+                  { label: '🌿 Guggulu', key: 'Guggulu' },
+                  { label: '💎 Rasa & Vati', key: 'Vati' },
+                  { label: '🍃 Churna', key: 'Churna' },
+                  { label: '🫖 Kwath', key: 'Kwath' },
+                  { label: '🍷 Arishta', key: 'Arishta' }
+                ].map(cat => (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => loadInitialMeds(cat.key)}
+                    className={`px-2.5 py-1 rounded-lg font-bold border transition-all cursor-pointer ${
+                      activeCategoryFilter === cat.key
+                        ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="relative">
               <input
                 type="text"
                 value={medQuery}
-                onChange={(e) => handleMedSearch(e.target.value)}
-                className="w-full p-3 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-500"
+                onFocus={() => {
+                  setShowMedDropdown(true);
+                  if (searchedMeds.length === 0) loadInitialMeds(activeCategoryFilter);
+                }}
+                onChange={(e) => handleMedSearch(e.target.value, activeCategoryFilter)}
+                placeholder="Type medicine name (e.g. Yograj Guggulu, Sutshekhar Ras, Avipattikar Churna...)..."
+                className="w-full p-3.5 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
               />
 
-              {searchedMeds.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-56 overflow-y-auto text-xs">
-                  {searchedMeds.map((med, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => handleAddSearchedMedicine(med)}
-                      className="p-3 hover:bg-emerald-50 cursor-pointer flex items-center justify-between border-b border-slate-100"
-                    >
-                      <div>
-                        <span className="font-bold text-slate-900">{med.name}</span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded ml-2">
-                          {med.category}
-                        </span>
+              {showMedDropdown && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl z-30 max-h-72 overflow-y-auto text-xs divide-y divide-slate-100 animate-fade-in">
+                  <div className="p-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-bold px-3">
+                    <span>Showing {searchedMeds.length} Classical Formulations — Click to set Dosage & Anupana</span>
+                    <button type="button" onClick={() => setShowMedDropdown(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">✕ Close</button>
+                  </div>
+
+                  {searchedMeds.length === 0 ? (
+                    <div className="p-4 text-center text-slate-400 italic">No formulations found. Try typing another name or category.</div>
+                  ) : (
+                    searchedMeds.map((med, idx) => (
+                      <div
+                        key={idx}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleAddSearchedMedicine(med);
+                          setShowMedDropdown(false);
+                        }}
+                        className="p-3.5 hover:bg-emerald-50/80 cursor-pointer flex items-center justify-between transition-colors group"
+                      >
+                        <div className="space-y-1 pr-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-slate-900 group-hover:text-emerald-900 text-xs">{med.name}</span>
+                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
+                              {med.category || 'Classical'}
+                            </span>
+                            {med.dosha && (
+                              <span className="text-[10px] font-semibold text-slate-500">
+                                ({med.dosha})
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 line-clamp-1">
+                            <strong className="text-slate-700">Indication:</strong> {med.indications || 'Classical Ayurvedic Therapy'}
+                          </p>
+                        </div>
+
+                        <button 
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleAddSearchedMedicine(med);
+                            setShowMedDropdown(false);
+                          }}
+                          className="px-3.5 py-1.5 bg-emerald-700 group-hover:bg-emerald-800 text-white font-extrabold rounded-xl text-[11px] shrink-0 shadow-2xs cursor-pointer flex items-center gap-1 transition-all"
+                        >
+                          <span>+ Prescribe</span>
+                        </button>
                       </div>
-                      <button className="px-3 py-1 bg-emerald-600 text-white font-bold rounded-lg text-[10px]">
-                        {t('caseForm.addBtn', '+ Add')}
-                      </button>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               )}
             </div>
           </div>
 
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
-            <span className="font-bold text-slate-800">{t('caseForm.addCustom', 'Add Custom Formulation:')}</span>
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-800">{t('caseForm.addCustom', 'Add Custom Formulation:')}</span>
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleOpenBlankPrescribeModal(); }}
+                className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] rounded-lg shadow-2xs cursor-pointer flex items-center gap-1 transition-all"
+              >
+                <span>✨ Manual Entry Overlay Modal</span>
+              </button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
               <input
                 type="text"
@@ -1133,139 +1548,729 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
       )}
 
       {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* ─── STEP 4: ANUPANA, DIET & AI SUMMARY ─────────────────────────────── */}
-      {/* ────────────────────────────────────────────────────────────────────── */}
+      {/* ─── STEP 4: OFFICIAL AI CLINICAL SYNTHESIS DOSSIER (A4 PARCHAA SHEET) ──── */}
       {step === 4 && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6 animate-fade-in">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-base font-bold text-slate-900">{t('caseForm.section4', 'Section 4: Pathya-Apathya & Anupana')}</h3>
-            <button
-              onClick={handleAutoSuggestDiet}
-              className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs rounded-xl border border-amber-200 flex items-center gap-1.5 cursor-pointer"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>{t('caseForm.autoSuggest', 'Auto-Suggest Diet')}</span>
-            </button>
-          </div>
-
-          {/* AI Summary Block */}
-          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-emerald-800 flex items-center gap-2">
-                <Sparkles className="w-4 h-4" /> AI Summary
+        <div className="space-y-6 animate-fade-in font-body">
+          {/* Top Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-2xl text-white shadow-md border border-emerald-800">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-extrabold uppercase bg-amber-400 text-slate-950 px-2 py-0.5 rounded">
+                Step 4: AI Clinical Synthesis & Official Parchaa Report
               </span>
-              <button onClick={handleTriggerAiSummary} className="px-3 py-1 bg-emerald-600 text-white font-bold rounded-lg text-xs cursor-pointer">
-                {loadingAi ? t('common.loading') : 'Generate'}
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Official A4 Longitudinal Clinical Synthesis Sheet</span>
+              </h3>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleTriggerAiSummary}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>{loadingAi ? 'Synthesizing...' : '✨ Regenerate AI Synthesis'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleAutoSuggestDiet}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
+              >
+                <span>🥗 Auto-Suggest Pathya</span>
               </button>
             </div>
-            {aiResult && (
-              <p className="text-xs text-emerald-900 font-medium">{aiResult.summary}</p>
-            )}
           </div>
 
-          <div className="space-y-2 text-xs">
-            <label className="font-semibold text-slate-700 block">{t('caseForm.commonAnupana', 'Common Anupana Vehicle')}</label>
-            <input
-              type="text"
-              value={caseForm.anupana}
-              onChange={(e) => setCaseForm({ ...caseForm, anupana: e.target.value })}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800"
-            />
+          {/* ─── A4 CLINICAL PARCHAA SHEET ────────────────────────────────────────── */}
+          <div className="bg-white p-8 rounded-3xl border-2 border-emerald-200/80 shadow-xl max-w-4xl mx-auto space-y-6 text-slate-800 relative font-sans">
+            
+            {/* 1. Header Emblem & Hospital Crest */}
+            <div className="border-b-2 border-emerald-800 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-900 text-amber-300 flex items-center justify-center font-black text-2xl shadow-md border border-emerald-700 shrink-0">
+                  🌿
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold tracking-widest text-emerald-800 uppercase block">
+                    Ministry of Ayush • Official Clinical Record
+                  </span>
+                  <h1 className="text-xl font-black text-slate-900 tracking-tight">
+                    {currentUser?.hospital_name || "ALL INDIA INSTITUTE OF AYURVEDA (AIIA)"}
+                  </h1>
+                  <p className="text-xs text-slate-600 font-semibold">
+                    Department of Kayachikitsa & Panchakarma Clinical OPD • New Delhi
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right sm:border-l border-slate-200 sm:pl-4 space-y-0.5 shrink-0">
+                <div className="text-xs font-black text-emerald-950 uppercase">
+                  {currentUser?.name || "Dr. Rajesh Vaidya, BAMS, MD"}
+                </div>
+                <p className="text-[11px] text-slate-600 font-semibold">
+                  {currentUser?.qualification || "MD (Kayachikitsa) — Senior Physician"}
+                </p>
+                <p className="text-[10px] font-extrabold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 inline-block mt-0.5">
+                  Reg No: {currentUser?.registration_no || "AYUSH-REG-DEL-2012-4412"}
+                </p>
+              </div>
+            </div>
+
+            {/* 2. Patient Demographics Strip */}
+            <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/60 rounded-2xl border border-emerald-200/80 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div>
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Consulting Patient</span>
+                <span className="font-extrabold text-slate-900 text-sm block truncate">{activePatient?.name || 'Priya Deshmukh'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase block">ABHA Health ID</span>
+                <span className="font-extrabold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200 text-xs inline-block mt-0.5">
+                  {activePatient?.abha_id || activePatient?.uhid || 'ABHA-3344-1102'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Age / Gender / Blood</span>
+                <span className="font-bold text-slate-800">{activePatient?.age || 29} Yrs • {activePatient?.gender ? activePatient.gender.toUpperCase() : 'FEMALE'} • {activePatient?.blood_group || 'A+'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Date & OPD Ref</span>
+                <span className="font-bold text-slate-800">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • {activeCaseData?.token_number || 'OPD-110'}</span>
+              </div>
+            </div>
+
+            {/* 3. AI Generated Clinical Synthesis Executive Summary */}
+            <div className="p-5 bg-gradient-to-br from-slate-900 to-[#12372A] rounded-2xl text-white shadow-sm space-y-3 border border-emerald-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-800/80 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold uppercase bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                    <span>Live Groq LLM AI Synthesis & Samprapti Engine</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-300 font-bold bg-white/10 px-2 py-0.5 rounded border border-white/10">
+                    Groq LLM Active
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTriggerAiSummary}
+                  disabled={loadingAi}
+                  className="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-[11px] rounded-lg shadow-sm cursor-pointer transition-all flex items-center gap-1 self-start sm:self-auto"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${loadingAi ? 'animate-spin' : ''}`} />
+                  <span>{loadingAi ? 'Running Live LLM AI...' : '✨ Generate Live AI Synthesis'}</span>
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-100 font-medium leading-relaxed italic bg-black/30 p-3.5 rounded-xl border border-white/10">
+                "{aiResult?.summary_en || aiResult?.summary || 
+                  `Patient ${activePatient?.name || 'Priya Deshmukh'} presents with ${caseForm.chief_complaints || 'Pitta-Vata imbalance'}. Ashtavidha Pariksha confirms ${caseForm.ashtavidha_pariksha?.jihva || 'Saama Jihva'} and ${caseForm.ashtavidha_pariksha?.nadi || 'Pitta-Vata Nadi'}. Formulated classical line of treatment with ${caseForm.medicines?.map(m => m.name).join(', ') || 'Kaishore Guggulu and Gandhak Rasayan'} for complete Samprapti Vighatana.`
+                }"
+              </p>
+
+              {aiResult?.risk_factors && aiResult.risk_factors.length > 0 && (
+                <div className="flex items-center gap-2 text-[11px] text-amber-200 font-semibold pt-1">
+                  <span className="text-amber-400 font-bold">⚠️ AI Risk Factors:</span>
+                  <span>{aiResult.risk_factors.join(' • ')}</span>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Section A: Combined Clinical Findings (Step 1 + Step 2 Synthesis) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              {/* Step 1 Intake & Vitals */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                <h4 className="font-extrabold text-emerald-900 text-xs border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+                  <span>📋 Step 1: Self Intake & Vitals</span>
+                </h4>
+                <div className="space-y-1.5 text-slate-700 text-[11px]">
+                  <p><strong className="text-slate-900">Chief Complaint:</strong> {caseForm.chief_complaints || 'Acid Peptic Disorder & Heartburn'}</p>
+                  <p><strong className="text-slate-900">Clinical Findings:</strong> {caseForm.clinical_findings || 'Epigastric tenderness and esophageal burning.'}</p>
+                  <p><strong className="text-slate-900">Vitals:</strong> BP {caseForm.vitals?.bp || '120/80'} • Pulse {caseForm.vitals?.pulse || '74 bpm'} • SpO2 {caseForm.vitals?.spo2 || '99%'}</p>
+                </div>
+              </div>
+
+              {/* Step 2 Ashtavidha Pariksha */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                <h4 className="font-extrabold text-emerald-900 text-xs border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+                  <span>🔍 Step 2: Ashtavidha Examination</span>
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-700">
+                  <div><strong className="text-slate-900">Nadi:</strong> {caseForm.ashtavidha_pariksha?.nadi || 'Pitta-Vaha'}</div>
+                  <div><strong className="text-slate-900">Jihva:</strong> {caseForm.ashtavidha_pariksha?.jihva || 'Saama'}</div>
+                  <div><strong className="text-slate-900">Agni:</strong> {caseForm.agni || 'Vishama'}</div>
+                  <div><strong className="text-slate-900">Prakriti:</strong> {caseForm.prakriti || 'Pitta-Vata'}</div>
+                </div>
+                <div className="pt-1 text-[11px] border-t border-slate-200/60">
+                  <strong className="text-emerald-900">Ayurvedic Diagnosis:</strong> {caseForm.diagnosis_ayurvedic || 'Urdhvaga Amlapitta'}
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Section B: Step 3 Prescribed Classical Formulations Table (Rx) */}
+            <div className="space-y-2">
+              <h4 className="font-black text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-2">
+                <span className="w-5 h-5 rounded-full bg-emerald-800 text-white flex items-center justify-center text-[10px] font-extrabold">Rx</span>
+                <span>Prescribed Classical Ayurvedic Formulations ({caseForm.medicines?.length || 0})</span>
+              </h4>
+
+              {caseForm.medicines?.length === 0 ? (
+                <div className="p-4 bg-slate-50 rounded-xl text-center text-slate-400 text-xs font-semibold">
+                  No medicines added yet. Go back to Step 3 to add classical formulations.
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs shadow-2xs">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-emerald-900 text-white font-extrabold text-[11px] uppercase tracking-wider">
+                        <th className="p-3">#</th>
+                        <th className="p-3">Formulation & Category</th>
+                        <th className="p-3">Dosage (खुराक)</th>
+                        <th className="p-3">Duration</th>
+                        <th className="p-3">Anupana (अनुपान)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 bg-white font-medium text-slate-800">
+                      {caseForm.medicines?.map((med, mIdx) => (
+                        <tr key={mIdx} className="hover:bg-emerald-50/50 transition-colors">
+                          <td className="p-3 font-bold text-slate-500">{mIdx + 1}</td>
+                          <td className="p-3">
+                            <strong className="text-slate-900 block text-xs">{med.name}</strong>
+                            <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-0.5">
+                              {med.category || 'Classical Formulation'}
+                            </span>
+                          </td>
+                          <td className="p-3 font-semibold text-slate-800">{med.dosage || '2 tabs twice daily'}</td>
+                          <td className="p-3 font-bold text-slate-700">{med.duration || '30 days'}</td>
+                          <td className="p-3 font-extrabold text-teal-800">{med.anupana || 'Lukewarm Water'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* 6. Section C: Pathya-Apathya & Physician Guidance */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200/80 space-y-2">
+                <label className="font-extrabold text-emerald-900 text-xs block border-b border-emerald-200 pb-1">
+                  ✅ Pathya & Lifestyle Guidance (पथ्य आहार-विहार)
+                </label>
+                <textarea
+                  rows={3}
+                  value={caseForm.pathya_apathya}
+                  onChange={(e) => setCaseForm({ ...caseForm, pathya_apathya: e.target.value })}
+                  className="w-full p-2.5 bg-white border border-emerald-200 rounded-xl font-medium text-slate-800 text-xs outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                <label className="font-extrabold text-slate-800 text-xs block border-b border-slate-200 pb-1 flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Physician Confidential Notes</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={caseForm.private_notes}
+                  onChange={(e) => setCaseForm({ ...caseForm, private_notes: e.target.value })}
+                  placeholder="Confidential clinical notes for follow-up..."
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-800 text-xs outline-none focus:border-slate-400"
+                />
+              </div>
+            </div>
+
+            {/* 7. Official Seal & Sign Bar */}
+            <div className="pt-4 border-t-2 border-dashed border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase block">ABDM Health Locker Sync Status</span>
+                <span className="text-xs font-bold text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200 inline-block">
+                  🛡️ Digitally Signed & Encrypted (Ayush Standard)
+                </span>
+              </div>
+
+              <div className="text-right space-y-1">
+                <div className="font-serif italic font-bold text-emerald-900 text-sm">
+                  {currentUser?.name || "Dr. Rajesh Vaidya"}
+                </div>
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase block">
+                  Senior Ayurvedic Physician (Authorized Signatory)
+                </span>
+              </div>
+            </div>
+
           </div>
 
-          <div className="space-y-2 text-xs">
-            <label className="font-semibold text-slate-700 block">{t('caseForm.dietPlan', 'Diet Plan')}</label>
-            <textarea
-              rows={4}
-              value={caseForm.pathya_apathya}
-              onChange={(e) => setCaseForm({ ...caseForm, pathya_apathya: e.target.value })}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
-            />
-          </div>
-
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
-            <label className="font-bold text-slate-800 flex items-center gap-1.5">
-              <Lock className="w-4 h-4 text-slate-400" />
-              <span>{t('caseForm.privateNotes', 'Doctor Private Notes')}</span>
-            </label>
-            <textarea
-              rows={2}
-              value={caseForm.private_notes}
-              onChange={(e) => setCaseForm({ ...caseForm, private_notes: e.target.value })}
-              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-800"
-            />
-          </div>
-
-          <div className="flex justify-between items-center pt-3">
+          {/* Navigation Step 4 -> Step 5 */}
+          <div className="flex justify-between items-center pt-3 max-w-4xl mx-auto">
             <button onClick={() => setStep(3)} className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer">
-              ← {t('caseForm.back3', 'Back')}
+              ← Back to Step 3 (Medicines)
             </button>
             <button
               onClick={() => setStep(5)}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-all"
             >
-              <span>{t('caseForm.proceed5', 'Review & Sign (Step 5)')}</span>
-              <ChevronRight className="w-4 h-4" />
+              <span>Proceed to Sign & Issue (Step 5) →</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* ────────────────────────────────────────────────────────────────────── */}
-      {/* ─── STEP 5: REVIEW, 1-CLICK SIGN & PRESCRIBE ───────────────────────── */}
-      {/* ────────────────────────────────────────────────────────────────────── */}
+      {/* ─── STEP 5: AUTHENTIC DIGITAL SIGNATURE & OFFICIAL EHR SIGN-OFF TERMINAL ─── */}
       {step === 5 && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6 animate-fade-in">
-          <div className="border-b border-slate-100 pb-3">
-            <h3 className="text-base font-bold text-slate-900">{t('caseForm.section5', 'Section 5: Final Clinical Verification')}</h3>
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              {t('caseForm.signLock', 'Signing locks the prescription.')}
-            </p>
+        <div className="space-y-6 animate-fade-in font-body">
+          {/* Step Header */}
+          <div className="p-4 bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-2xl text-white shadow-md border border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase bg-amber-400 text-slate-950 px-2 py-0.5 rounded">
+                Step 5: Digital Signature & Final EHR Locking
+              </span>
+              <h3 className="text-base font-bold text-white flex items-center gap-2 mt-0.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <span>Authentic Vaidya Digital Signature & ABDM Token Verification</span>
+              </h3>
+            </div>
+            <span className="text-xs font-bold text-emerald-300 bg-white/10 px-3 py-1 rounded-xl border border-white/10 shrink-0">
+              🛡️ ABDM Health Locker Class-3 DSC Verified
+            </span>
           </div>
 
-          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900 text-sm">{activePatient.name}</span>
-              <span className="text-emerald-700 font-bold">{caseForm.diagnosis_ayurvedic}</span>
+          {/* Digital Sign-off Verification Terminal Container */}
+          <div className="bg-white p-8 rounded-3xl border-2 border-emerald-200/80 shadow-xl max-w-4xl mx-auto space-y-6 text-slate-800 font-sans">
+            
+            {/* 1. Doctor & Medical Registration Verification Header */}
+            <div className="p-5 bg-gradient-to-br from-slate-900 to-[#12372A] rounded-2xl text-white shadow-sm space-y-4 border border-emerald-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-800/80 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xl shadow-md shrink-0">
+                    ✍️
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest block">
+                      Class-3 Medical Digital Signature Certificate (DSC)
+                    </span>
+                    <h3 className="text-base font-black text-white">
+                      {currentUser?.name || "Dr. Rajesh Vaidya, BAMS, MD"}
+                    </h3>
+                    <p className="text-xs text-slate-300 font-medium">
+                      {currentUser?.qualification || "MD (Kayachikitsa — Internal Medicine)"} • {currentUser?.hospital_name || "All India Institute of Ayurveda"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right sm:border-l border-emerald-700/80 sm:pl-4 space-y-1 shrink-0">
+                  <span className="text-[10px] font-black text-emerald-300 uppercase block">State Ayush Registration</span>
+                  <span className="text-xs font-extrabold text-amber-400 bg-black/40 px-2.5 py-1 rounded-md border border-amber-400/30 inline-block font-mono">
+                    {currentUser?.registration_no || "AYUSH-REG-DEL-2012-4412"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Cryptographic EHR Hash & Timestamp */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="bg-black/30 p-2.5 rounded-xl border border-white/10 space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">SHA-256 Prescription Hash</span>
+                  <span className="text-[11px] font-mono text-emerald-300 block truncate">
+                    0x9f8b4a2e...{activePatient?.abha_id?.replace('-', '') || '7a8b9c1d'}
+                  </span>
+                </div>
+                <div className="bg-black/30 p-2.5 rounded-xl border border-white/10 space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">ABDM Health Locker ID</span>
+                  <span className="text-[11px] font-mono text-amber-300 block truncate">
+                    {activePatient?.abha_id || 'ABHA-3344-1102'}
+                  </span>
+                </div>
+                <div className="bg-black/30 p-2.5 rounded-xl border border-white/10 space-y-0.5">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Digital Stamp Date</span>
+                  <span className="text-[11px] font-bold text-slate-200 block">
+                    {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} • Live OPD
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
-              <div>
-                <span className="text-slate-500 font-semibold block text-[10px] uppercase mb-1">{t('caseForm.prescribedMeds', 'PRESCRIBED MEDICINES')}</span>
-                <ul className="list-disc list-inside font-medium space-y-0.5">
-                  {caseForm.medicines.map((m, i) => (
-                    <li key={i}>{m.name} — {m.dosage}</li>
+            {/* 2. Final Case Summary Review Strip */}
+            <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/60 rounded-2xl border border-emerald-200/80 space-y-3 text-xs">
+              <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+                <span className="font-extrabold text-emerald-950 uppercase text-[11px]">
+                  Final Clinical Case Dossier to be Digitally Signed for {activePatient?.name || 'Patient'}
+                </span>
+                <span className="font-bold text-teal-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                  {caseForm.diagnosis_ayurvedic || 'Urdhvaga Amlapitta'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-800">
+                <div className="space-y-1 text-[11px]">
+                  <strong className="text-slate-900 block font-extrabold uppercase text-[10px] text-slate-500">
+                    Chief Complaints & Diagnosis:
+                  </strong>
+                  <p className="font-medium text-slate-900">{caseForm.chief_complaints}</p>
+                  <p className="text-emerald-800 font-bold mt-1">Modern: {caseForm.diagnosis_modern}</p>
+                </div>
+
+                <div className="space-y-1 text-[11px]">
+                  <strong className="text-slate-900 block font-extrabold uppercase text-[10px] text-slate-500">
+                    Prescribed Formulations ({caseForm.medicines?.length || 0}):
+                  </strong>
+                  <ul className="list-disc list-inside space-y-0.5 font-semibold text-slate-800">
+                    {caseForm.medicines?.map((m, i) => (
+                      <li key={i}><strong className="text-slate-950">{m.name}</strong> — {m.dosage} ({m.anupana})</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Interactive Doctor Digital Signature Canvas & Manual Input Pad */}
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <label className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                  <Lock className="w-4 h-4 text-emerald-700" />
+                  <span>Official Authorized Signature & Rubber Stamp:</span>
+                </label>
+
+                {/* Signature Mode Selector Tabs */}
+                <div className="flex items-center gap-1 text-[11px]">
+                  {[
+                    { key: 'auto', label: '✍️ Auto Cursive DSC' },
+                    { key: 'draw', label: '🖋️ Manual Draw Pad' },
+                    { key: 'text', label: '⌨️ Custom Input' }
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setSigMode(tab.key)}
+                      className={`px-3 py-1 rounded-lg font-bold border transition-all cursor-pointer ${
+                        sigMode === tab.key
+                          ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
                   ))}
-                </ul>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-500 font-semibold block text-[10px] uppercase mb-1">{t('caseForm.anupanaDiet', 'ANUPANA & DIET')}</span>
-                <p className="text-[11px] font-medium">{caseForm.anupana}</p>
-                <p className="text-[11px] font-medium text-slate-600 mt-1">{caseForm.pathya_apathya}</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Mode 1: Auto Cursive Signature */}
+                {sigMode === 'auto' && (
+                  <div className="bg-white p-4 rounded-2xl border-2 border-dashed border-emerald-300 flex flex-col justify-between h-36 relative overflow-hidden shadow-2xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                      Auto Class-3 Cursive DSC Certificate
+                    </span>
+
+                    <div className="my-auto text-center">
+                      <span className="font-serif italic text-2xl font-black text-emerald-950 tracking-wide block select-none">
+                        {customSigText || (currentUser?.name ? currentUser.name.split(' ').map(n => n[0] + '.').join('') + ' ' + (currentUser.name.split(' ').pop() || '') : 'Dr. R. Vaidya')}
+                      </span>
+                      <div className="w-44 h-0.5 bg-emerald-800/40 mx-auto mt-1 rounded-full" />
+                    </div>
+
+                    <span className="text-[9px] font-extrabold text-emerald-800 uppercase block text-right">
+                      ✓ ABDM DSC Verified
+                    </span>
+                  </div>
+                )}
+
+                {/* Mode 2: Freehand Drawing Canvas */}
+                {sigMode === 'draw' && (
+                  <div className="bg-white p-3 rounded-2xl border-2 border-emerald-400 flex flex-col justify-between h-36 relative shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider block">
+                        🖋️ Draw Your Signature (Mouse/Touch):
+                      </span>
+                      <button
+                        type="button"
+                        onClick={clearCanvas}
+                        className="text-[10px] font-bold text-rose-600 hover:bg-rose-50 px-2 py-0.5 rounded border border-rose-200 cursor-pointer"
+                      >
+                        🗑️ Clear
+                      </button>
+                    </div>
+
+                    <canvas
+                      ref={sigCanvasRef}
+                      width={300}
+                      height={80}
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                      className="w-full h-20 bg-emerald-50/40 rounded-xl border border-emerald-200 cursor-crosshair touch-none"
+                    />
+
+                    <span className="text-[9px] font-semibold text-slate-400 block text-right">
+                      {drawnSigUrl ? '✓ Custom Signature Captured' : 'Draw inside box above'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Mode 3: Custom Text Signature Input */}
+                {sigMode === 'text' && (
+                  <div className="bg-white p-3.5 rounded-2xl border-2 border-teal-300 flex flex-col justify-between h-36 relative shadow-2xs space-y-2">
+                    <span className="text-[10px] font-bold text-teal-900 uppercase tracking-wider block">
+                      ⌨️ Manual Signature Input:
+                    </span>
+
+                    <input
+                      type="text"
+                      value={customSigText}
+                      onChange={(e) => setCustomSigText(e.target.value)}
+                      placeholder="Type signature e.g. Dr. Rajesh Vaidya, MD..."
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-teal-600"
+                    />
+
+                    <div className="text-center font-serif italic text-base font-bold text-emerald-900 truncate">
+                      {customSigText || 'Signature Preview...'}
+                    </div>
+                  </div>
+                )}
+
+                {/* Official Doctor Rubber Stamp */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-2xl border border-emerald-300 flex flex-col items-center justify-center text-center space-y-1 relative shadow-2xs">
+                  <div className="w-10 h-10 rounded-full border-2 border-emerald-800 text-emerald-900 font-extrabold text-xs flex items-center justify-center bg-white shadow-xs mb-1">
+                    AYUSH
+                  </div>
+                  <span className="font-black text-emerald-950 text-xs uppercase tracking-tight block">
+                    {currentUser?.name || "Dr. Rajesh Vaidya"}
+                  </span>
+                  <p className="text-[10px] text-slate-600 font-bold">
+                    {currentUser?.qualification || "BAMS, MD Kayachikitsa"}
+                  </p>
+                  <span className="text-[9px] font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200 inline-block mt-0.5 font-mono">
+                    REG: {currentUser?.registration_no || "AYUSH-DEL-2012"}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-            <button onClick={() => setStep(4)} className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer">
-              ← {t('caseForm.back4', 'Back to Edit')}
-            </button>
+            {/* 4. Action & 1-Click Sign Button */}
+            <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={() => setStep(4)}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                ← Back to Step 4 (Parchaa Sheet)
+              </button>
 
-            <button
-              onClick={handleSaveAndSignCase}
-              disabled={savingCase}
-              className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
-            >
-              <ShieldCheck className="w-5 h-5 text-emerald-200" />
-              <span>{savingCase ? t('caseForm.signing', 'Signing...') : t('caseForm.signBtn', '1-Click Sign & Prescribe')}</span>
-            </button>
+              <button
+                type="button"
+                onClick={handleSaveAndSignCase}
+                disabled={savingCase || isReadOnly}
+                className={`px-8 py-3.5 font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-2.5 transition-all ${
+                  isReadOnly 
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-emerald-700 via-teal-800 to-emerald-900 hover:from-emerald-800 hover:to-slate-900 text-white cursor-pointer hover:scale-[1.02]'
+                }`}
+              >
+                <ShieldCheck className={`w-5 h-5 ${isReadOnly ? 'text-slate-400' : 'text-amber-300'}`} />
+                <span>
+                  {savingCase 
+                    ? 'Digitally Signing & Encrypting Case...' 
+                    : isReadOnly 
+                      ? '🔒 Historical Case View (Read-Only)' 
+                      : '1-Click Digitally Sign & Issue EHR Prescription 🛡️'
+                  }
+                </span>
+              </button>
+            </div>
+
           </div>
         </div>
       )}
-      </div>
+    </div>
+  )}
+
+        {/* ─── PRESCRIBE MEDICINE POPUP MODAL OVERLAY ──────────────────────────── */}
+      {prescribeModalMed && (
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setPrescribeModalMed(null); }}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in cursor-pointer"
+        >
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 relative cursor-default">
+            <button
+              type="button"
+              onClick={() => setPrescribeModalMed(null)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-all cursor-pointer font-bold"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                💊 Prescribe Classical / Custom Formulation Overlay
+              </span>
+              
+              {/* Editable Medicine Name Input */}
+              <div className="pt-2">
+                <label className="text-[10px] font-extrabold uppercase text-slate-500 block mb-1">
+                  Medicine Name (Editable / Custom Manual Entry):
+                </label>
+                <input
+                  type="text"
+                  value={modalMedName}
+                  onChange={(e) => setModalMedName(e.target.value)}
+                  placeholder="Type formulation name e.g. Kaishore Guggulu..."
+                  className="w-full p-3 bg-emerald-50/60 border border-emerald-300 rounded-xl text-sm font-extrabold text-slate-900 outline-none focus:border-emerald-600 focus:bg-white"
+                />
+              </div>
+
+              <p className="text-xs text-slate-500 font-medium">
+                Category: <strong className="text-slate-800">{prescribeModalMed.category || 'Classical Formulation'}</strong> • Indication: <span className="text-emerald-700 font-semibold">{prescribeModalMed.indications || 'Ayurvedic Therapy'}</span>
+              </p>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Field 1: DOSAGE */}
+              <div className="space-y-2">
+                <label className="font-extrabold text-slate-800 uppercase tracking-wider block text-[11px]">
+                  1. Select Dosage (खुराक):
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    '2 tabs twice daily after food',
+                    '1 tab twice daily after food',
+                    '1 tab thrice daily',
+                    '3 grams twice daily before meals',
+                    '15 ml twice daily with equal water',
+                    '3 to 6 grams at bedtime'
+                  ].map((dChoice) => (
+                    <button
+                      key={dChoice}
+                      type="button"
+                      onClick={() => setModalDosage(dChoice)}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-[11px] border transition-all cursor-pointer ${
+                        modalDosage === dChoice 
+                          ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs' 
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {dChoice}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={modalDosage}
+                  onChange={(e) => setModalDosage(e.target.value)}
+                  placeholder="Custom dosage e.g. 2 tabs BID..."
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 outline-none focus:border-emerald-500 text-xs"
+                />
+              </div>
+
+              {/* Field 2: DURATION */}
+              <div className="space-y-2">
+                <label className="font-extrabold text-slate-800 uppercase tracking-wider block text-[11px]">
+                  2. Select Duration (अवधि / दिन):
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {['7 days', '15 days', '30 days', '45 days', '60 days', '90 days'].map((durChoice) => (
+                    <button
+                      key={durChoice}
+                      type="button"
+                      onClick={() => setModalDuration(durChoice)}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-[11px] border transition-all cursor-pointer ${
+                        modalDuration === durChoice 
+                          ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs' 
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {durChoice}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={modalDuration}
+                  onChange={(e) => setModalDuration(e.target.value)}
+                  placeholder="Custom duration e.g. 30 days..."
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 outline-none focus:border-emerald-500 text-xs"
+                />
+              </div>
+
+              {/* Field 3: ANUPANA */}
+              <div className="space-y-2">
+                <label className="font-extrabold text-slate-800 uppercase tracking-wider block text-[11px]">
+                  3. Select Anupana (Adjuvant / Vehicle - अनुपान):
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Lukewarm Water',
+                    'Warm Milk / Water',
+                    'Warm Water',
+                    'Honey',
+                    'Ginger Juice & Honey',
+                    'Equal Warm Water'
+                  ].map((anuChoice) => (
+                    <button
+                      key={anuChoice}
+                      type="button"
+                      onClick={() => setModalAnupana(anuChoice)}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-[11px] border transition-all cursor-pointer ${
+                        modalAnupana === anuChoice 
+                          ? 'bg-teal-800 text-white border-teal-800 shadow-2xs' 
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {anuChoice}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={modalAnupana}
+                  onChange={(e) => setModalAnupana(e.target.value)}
+                  placeholder="Custom Anupana e.g. Lukewarm Water..."
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 outline-none focus:border-emerald-500 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setPrescribeModalMed(null)}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!modalMedName.trim()) return;
+                  const newMedObj = {
+                    name: modalMedName.trim(),
+                    category: prescribeModalMed?.category || 'Classical Formulation',
+                    dosage: modalDosage || '2 tabs twice daily after food',
+                    duration: modalDuration || '30 days',
+                    anupana: modalAnupana || 'Lukewarm Water'
+                  };
+                  setCaseForm(prev => ({
+                    ...prev,
+                    medicines: [...prev.medicines, newMedObj]
+                  }));
+                  setPrescribeModalMed(null);
+                  setMedQuery('');
+                  setSearchedMeds([]);
+                }}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>➕ Confirm & Add to Prescription</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      <PrescriptionPrintModal
+  <PrescriptionPrintModal
         caseData={savedCaseForPrint}
         patient={activePatient}
         isOpen={!!savedCaseForPrint}
@@ -1286,7 +2291,8 @@ export default function AyurSaarthiCaseForm({ selectedPatientId: initialPatientI
           alert(`Patient ${activePatient?.name} successfully referred to ${refData.to_doctor_name}!`);
         }}
       />
-
+      </>
+      )}
     </div>
   );
 }

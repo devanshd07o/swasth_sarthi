@@ -157,11 +157,11 @@ export default function PublicLanding({ onOpenAuth, lang = 'en' }) {
       `}</style>
 
       {/* ─── 1. SLEEK FLOATING ROUNDED AYUSH PILL BAR ───────────────────────── */}
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pt-3 relative z-10">
-        <div className="bg-white/60 backdrop-blur-md border border-slate-200/60 rounded-full py-1.5 px-3 sm:px-6 flex items-center justify-between text-xs font-display shadow-xs overflow-hidden">
+      <div className="w-full pt-3 relative z-10">
+        <div className="bg-white/60 backdrop-blur-md border border-slate-200/60 rounded-full py-1.5 flex items-center justify-between text-xs font-display shadow-xs overflow-hidden mx-2 sm:mx-3">
           
           {/* News Channel Headline Continuous Infinite Marquee Ticker */}
-          <div className="overflow-x-auto no-scrollbar w-full relative z-10 touch-pan-x">
+          <div className="overflow-x-hidden no-scrollbar w-full relative z-10 touch-pan-x">
             <div className="animate-news-ticker gap-3 text-[12px] font-semibold text-slate-700 py-0.5">
               {[1, 2].map((loopIdx) => (
                 <React.Fragment key={loopIdx}>
@@ -235,6 +235,9 @@ export default function PublicLanding({ onOpenAuth, lang = 'en' }) {
                     key={slide}
                     src={slide}
                     alt={`SwasthSaarthi Feature Graphic ${idx + 1}`}
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchpriority={idx === 0 ? 'high' : 'low'}
                     className={`absolute inset-0 w-full h-full object-contain transition-all duration-700 ease-in-out transform ${
                       idx === currentSlide ? 'opacity-100 scale-100 sm:scale-105 z-10' : 'opacity-0 scale-95 z-0'
                     }`}

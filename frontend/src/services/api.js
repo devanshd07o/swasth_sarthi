@@ -362,7 +362,7 @@ export const addDoctorRating = async (doctorId, ratingData) => {
   }
 };
 
-export const getDoctorPatients = async (doctorId, search = '') => {
+export const getDoctorPatients = async (doctorId, search = '', status = 'active') => {
   if (!doctorId || doctorId === 'null' || doctorId === 'undefined') {
     let doctorPatients = SEED_PATIENTS;
     if (search) {
@@ -377,7 +377,7 @@ export const getDoctorPatients = async (doctorId, search = '') => {
   }
   try {
     const res = await api.get(`/doctors/${doctorId}/patients`, {
-      params: { search: search || undefined }
+      params: { search: search || undefined, status: status || 'active' }
     });
     return res.data;
   } catch (err) {

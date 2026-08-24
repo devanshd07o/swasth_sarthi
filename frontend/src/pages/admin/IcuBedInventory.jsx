@@ -28,13 +28,13 @@ export default function IcuBedInventory() {
       {/* ─── Header Banner ──────────────────────────────────────────────────── */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-extrabold text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200 tracking-wider">
+          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 tracking-wider">
             <Activity className="w-3.5 h-3.5" />
-            Critical Care Capacity Module
+            Long-Term Therapy Capacity Module
           </span>
-          <h1 className="text-2xl font-bold text-slate-900 mt-2">ICU & Bed Inventory Capacity Fleet</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mt-2">Panchakarma & Therapy Suites Inventory</h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Real-time telemetry monitor of Ayush hospital beds, critical care ICU units, and ventilator availability.
+            Real-time telemetry monitor of Ayush inpatient suites, Panchakarma therapy units, and Rasayana herbal inventory.
           </p>
         </div>
 
@@ -47,21 +47,21 @@ export default function IcuBedInventory() {
       {/* ─── Summary Cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
-          <span className="text-xs font-bold text-slate-500 uppercase">Total Ayush Beds Grid</span>
-          <p className="text-3xl font-black text-slate-900">1,510 Beds</p>
-          <p className="text-[11px] font-semibold text-emerald-700">1,268 Currently Occupied (83.9%)</p>
+          <span className="text-xs font-bold text-slate-500 uppercase">Total Ayush IPD Capacity</span>
+          <p className="text-3xl font-black text-slate-900">1,510 Suites</p>
+          <p className="text-[11px] font-semibold text-emerald-700">1,268 Currently Active (83.9%)</p>
         </div>
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
-          <span className="text-xs font-bold text-slate-500 uppercase">National ICU Fleet</span>
-          <p className="text-3xl font-black text-teal-700">170 Units</p>
-          <p className="text-[11px] font-semibold text-teal-800">38 ICU Beds Instantly Available</p>
+          <span className="text-xs font-bold text-slate-500 uppercase">Panchakarma Therapy Fleet</span>
+          <p className="text-3xl font-black text-emerald-700">170 Suites</p>
+          <p className="text-[11px] font-semibold text-emerald-800">38 Suites Instantly Available</p>
         </div>
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
-          <span className="text-xs font-bold text-slate-500 uppercase">Active Ventilators</span>
-          <p className="text-3xl font-black text-violet-700">69 Ventilators</p>
-          <p className="text-[11px] font-semibold text-violet-800">Operational & ABDM Telemetry Sync</p>
+          <span className="text-xs font-bold text-slate-500 uppercase">Rasayana & Shodhna Units</span>
+          <p className="text-3xl font-black text-teal-700">69 Units</p>
+          <p className="text-[11px] font-semibold text-teal-800">Operational & ABDM Telemetry Sync</p>
         </div>
       </div>
 
@@ -69,8 +69,8 @@ export default function IcuBedInventory() {
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-100">
           <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <BedDouble className="w-5 h-5 text-teal-600" />
-            <span>Hospital-Wise Bed & ICU Capacity Status</span>
+            <BedDouble className="w-5 h-5 text-emerald-600" />
+            <span>Hospital-Wise Panchakarma & Therapy Capacity Status</span>
           </h3>
         </div>
 
@@ -79,11 +79,11 @@ export default function IcuBedInventory() {
             <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
               <tr>
                 <th className="p-4">Hospital Name</th>
-                <th className="p-4 text-center">Total Beds</th>
-                <th className="p-4 text-center">Occupied Beds</th>
-                <th className="p-4 text-center">Total ICU</th>
-                <th className="p-4 text-center">Available ICU</th>
-                <th className="p-4 text-center">Ventilators</th>
+                <th className="p-4 text-center">IPD Capacity</th>
+                <th className="p-4 text-center">Active Inpatients</th>
+                <th className="p-4 text-center">Panchakarma Suites</th>
+                <th className="p-4 text-center">Available Suites</th>
+                <th className="p-4 text-center">Rasayana Units</th>
                 <th className="p-4">Status</th>
               </tr>
             </thead>

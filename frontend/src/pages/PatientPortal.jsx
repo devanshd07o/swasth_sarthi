@@ -316,6 +316,25 @@ export default function PatientPortal({ currentUser, lang = 'en', initialView = 
   const loadPatientHistory = async (patientId) => {
     try {
       const data = await getPatientTimeline(patientId);
+      
+      // Merge signed prescriptions from localStorage key 'ss_patient_signed_prescriptions'
+      try {
+        const localSigned = JSON.parse(localStorage.getItem('ss_patient_signed_prescriptions') || '[]');
+        const curAbha = activePatient?.abha_id || abhaInput;
+        const matchingLocal = localSigned.filter(s => s.patient_id === patientId || s.abha_id === curAbha || (activePatient && s.patient_name === activePatient.name));
+        if (matchingLocal.length > 0) {
+          const combinedTimeline = [...matchingLocal, ...(data?.timeline || [])];
+          const seen = new Set();
+          const uniqueTimeline = combinedTimeline.filter(item => {
+            const k = item.id || item.case_id;
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          });
+          data.timeline = uniqueTimeline;
+        }
+      } catch (_) {}
+
       setTimelineData(data);
       if (data.document_vault) setPatientDocs(data.document_vault);
       if (data.timeline && data.timeline.length > 0) {
@@ -910,6 +929,7 @@ export default function PatientPortal({ currentUser, lang = 'en', initialView = 
           setIsBookingModalOpen={setIsBookingModalOpen}
           setWizardStep={changeWizardStep}
           setActiveView={setActiveView}
+          setActivePrescriptionForPrint={setActivePrescriptionForPrint}
           lang={lang}
         />
       )}

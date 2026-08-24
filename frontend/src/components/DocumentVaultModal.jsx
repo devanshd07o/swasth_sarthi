@@ -13,13 +13,22 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
   const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [fileDataUrl, setFileDataUrl] = useState(null);
+
   if (!isOpen) return null;
 
   const handleFileChange = async (e) => {
     const selected = e.target.files[0];
     if (!selected) return;
     setFile(selected);
-    
+
+    // Convert file to persistent Base64 Data URL so PDF/Image bytes persist across refreshes
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileDataUrl(reader.result);
+    };
+    reader.readAsDataURL(selected);
+
     // Trigger instant simulated AI OCR extraction
     setExtracting(true);
     try {
@@ -39,7 +48,7 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
     if (!file && !sourceHospital) return;
     setSaving(true);
     try {
-      const fileUrl = file ? URL.createObjectURL(file) : null;
+      const finalFileUrl = fileDataUrl || (file ? URL.createObjectURL(file) : null);
       const isImage = file ? file.type.startsWith('image/') : false;
       const isPdf = file ? file.type.includes('pdf') || file.name.endsWith('.pdf') : false;
 
@@ -48,7 +57,8 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
         patient_id: patientId || 'ABHA-9821-4501',
         file_name: file ? file.name : `${docType}_Scanned_${Date.now()}.pdf`,
         file_type: docType,
-        file_url: fileUrl,
+        file_url: finalFileUrl,
+        data_url: finalFileUrl,
         mime_type: file ? file.type : 'application/pdf',
         is_image: isImage,
         is_pdf: isPdf,
@@ -58,7 +68,7 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
         summary: (extractedData && extractedData.summary) ? extractedData.summary : `Scanned ${docType} from ${sourceHospital || 'Clinical Center'}. Structured for ABDM Vault.`
       };
       const saved = await uploadOcrDocument(patientId || 'ABHA-9821-4501', payload);
-      const fullDoc = { ...saved, file_url: fileUrl || saved.file_url, is_image: isImage, is_pdf: isPdf };
+      const fullDoc = { ...saved, file_url: finalFileUrl || saved.file_url, data_url: finalFileUrl, is_image: isImage, is_pdf: isPdf };
       try {
         const existing = JSON.parse(localStorage.getItem('ss_user_uploaded_docs') || '[]');
         const updated = [fullDoc, ...existing];

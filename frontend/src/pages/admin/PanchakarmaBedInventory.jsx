@@ -50,8 +50,8 @@ export default function PanchakarmaBedInventory() {
       {/* ─── Summary Cards ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-sm space-y-1.5">
-          <span className="text-xs font-extrabold text-slate-500 uppercase">{t('admin.totalIpdBeds', 'Total Ayush IPD Beds')}</span>
-          <p className="text-2xl sm:text-3xl font-black text-slate-900">1,510 Beds</p>
+          <span className="text-xs font-extrabold text-slate-500 uppercase">{t('admin.totalIpdBeds', 'Total Ayush IPD Capacity')}</span>
+          <p className="text-2xl sm:text-3xl font-black text-slate-900">1,510 IPD Suites</p>
           <p className="text-[11px] font-bold text-emerald-700">1,268 Currently Occupied (83.9%)</p>
         </div>
 
@@ -82,7 +82,7 @@ export default function PanchakarmaBedInventory() {
             <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 font-extrabold border-b border-slate-200">
               <tr>
                 <th className="p-3.5 sm:p-4">{t('admin.thHospital', 'Hospital Name')}</th>
-                <th className="p-3.5 sm:p-4 text-center">{t('admin.thIpdBeds', 'Total IPD Beds')}</th>
+                <th className="p-3.5 sm:p-4 text-center">{t('admin.thIpdBeds', 'Total IPD Capacity')}</th>
                 <th className="p-3.5 sm:p-4 text-center">{t('admin.thOccupied', 'Occupied IPD')}</th>
                 <th className="p-3.5 sm:p-4 text-center">{t('admin.thTherapySuites', 'Panchakarma Suites')}</th>
                 <th className="p-3.5 sm:p-4 text-center">{t('admin.thActiveTherapies', 'Active Therapies')}</th>
