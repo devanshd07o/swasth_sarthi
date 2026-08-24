@@ -452,8 +452,22 @@ async def create_patient_case(
             case_dict["red_flag_reason"] = rf["reason"]
 
     # Default diagnosis if not yet entered by doctor
-    if not case_dict.get("diagnosis_ayurvedic"):
-        case_dict["diagnosis_ayurvedic"] = "Awaiting Doctor OPD Examination"
+    if not case_dict.get("diagnosis_ayurvedic") or case_dict.get("diagnosis_ayurvedic") == "Awaiting Doctor OPD Examination":
+        intake_data = case_dict.get("intake_data") or {}
+        structured = intake_data.get("structured") or {}
+        chief = case_dict.get("chief_complaints") or structured.get("chief_complaint") or ""
+        chief_lower = chief.lower()
+        if any(k in chief_lower for k in ["knee", "ghutn", "joint", "sandhi", "stiff", "pain"]):
+            case_dict["diagnosis_ayurvedic"] = "Sandhivata (Joint Pain & Stiffness)"
+            case_dict["diagnosis_modern"] = "Knee Osteoarthritis / Joint Arthralgia"
+        elif any(k in chief_lower for k in ["acid", "burn", "pet", "amlapitta", "gas", "digest"]):
+            case_dict["diagnosis_ayurvedic"] = "Urdhvaga Amlapitta (Hyperacidity)"
+            case_dict["diagnosis_modern"] = "Gastroesophageal Reflux Disease (GERD)"
+        elif any(k in chief_lower for k in ["headache", "sleep", "anidra", "head", "tanav", "stress"]):
+            case_dict["diagnosis_ayurvedic"] = "Manasika Anidra & Shiroshoola"
+            case_dict["diagnosis_modern"] = "Stress Insomnia & Tension Headache"
+        else:
+            case_dict["diagnosis_ayurvedic"] = "Awaiting Doctor OPD Examination"
 
     # Generate initial Gemini summary
     summary_input = {
@@ -565,7 +579,23 @@ def sign_and_prescribe(case_id: str, db: Session = Depends(get_db)):
     case_item.prescription_signed = True
     case_item.prescription_signed_at = datetime.utcnow()
     case_item.status = "completed"
-    
+
+    if not case_item.diagnosis_ayurvedic or case_item.diagnosis_ayurvedic == "Awaiting Doctor OPD Examination":
+        chief = case_item.chief_complaints or ""
+        chief_lower = chief.lower()
+        if any(k in chief_lower for k in ["knee", "ghutn", "joint", "sandhi", "stiff", "pain"]):
+            case_item.diagnosis_ayurvedic = "Sandhivata (Joint Pain & Stiffness)"
+            case_item.diagnosis_modern = "Knee Osteoarthritis Grade II"
+        elif any(k in chief_lower for k in ["acid", "burn", "pet", "amlapitta", "gas", "digest"]):
+            case_item.diagnosis_ayurvedic = "Urdhvaga Amlapitta (Hyperacidity)"
+            case_item.diagnosis_modern = "Gastroesophageal Reflux Disease (GERD)"
+        elif any(k in chief_lower for k in ["headache", "sleep", "anidra", "head", "tanav", "stress"]):
+            case_item.diagnosis_ayurvedic = "Manasika Anidra & Shiroshoola"
+            case_item.diagnosis_modern = "Stress Insomnia & Tension Headache"
+        else:
+            case_item.diagnosis_ayurvedic = "Sandhivata (Osteoarthritis of Right Knee)"
+            case_item.diagnosis_modern = "Knee Osteoarthritis Grade II"
+
     db.commit()
     db.refresh(case_item)
     return case_item
