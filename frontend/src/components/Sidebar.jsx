@@ -80,8 +80,8 @@ export default function Sidebar({
       <aside 
         className={`h-full bg-white border-r border-slate-200/90 transition-all duration-300 ease-in-out flex flex-col justify-between overflow-hidden select-none shrink-0 ${
           isExpanded 
-            ? 'fixed inset-y-0 left-0 z-[1000] w-64 sm:w-72 p-3.5 shadow-2xl translate-x-0' 
-            : 'hidden md:flex md:w-16 p-2 items-center z-30 shadow-none'
+            ? 'fixed inset-y-0 left-0 z-[1000] w-64 sm:w-72 p-3.5 shadow-2xl translate-x-0 md:relative md:inset-auto md:z-30 md:w-64 md:shadow-none' 
+            : 'hidden md:flex md:relative md:w-16 p-2 items-center z-30 shadow-none'
         }`}
       >
         {/* TOP HEADER / LOGO / TOGGLE AREA */}
