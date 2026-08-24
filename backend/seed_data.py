@@ -46,8 +46,8 @@ def seed_database(force=False):
 
     doc2 = models.User(
         doctor_id="DOC-AYUR-102",
-        name="Dr. Ananya Sharma",
-        email="ananya.sharma@ayursaarthi.in",
+        name="Dr. Ananya Shastri",
+        email="ananya.shastri@ayursaarthi.in",
         password_hash="doctor123",
         role="doctor",
         qualification="BAMS, MD (Panchakarma Detox & Skin)",
@@ -65,8 +65,8 @@ def seed_database(force=False):
 
     doc3 = models.User(
         doctor_id="DOC-AYUR-103",
-        name="Dr. Vikramaditya Shastri",
-        email="vikram.shastri@ayursaarthi.in",
+        name="Dr. Vikramaditya Dev",
+        email="vikramaditya.dev@ayursaarthi.in",
         password_hash="doctor123",
         role="doctor",
         qualification="BAMS, MS (Shalya Tantra — Ayurvedic Surgery & Wound Care)",
@@ -113,7 +113,7 @@ def seed_database(force=False):
         abha_id="ABHA-9821-4501",
         uhid="ABHA-9821-4501",
         name="Ramesh Sharma",
-        age=52,
+        age=42,
         gender="male",
         contact="+91 9821450100",
         blood_group="B+",
@@ -238,8 +238,8 @@ def seed_database(force=False):
         doctor_name=doc1.name,
         doctor_qualification=doc1.qualification,
         hospital_name=doc1.hospital_name,
-        status="completed",
-        token_number="OPD-042",
+        status="active",
+        token_number="OPD-101",
         is_red_flag=False,
         chief_complaints="Janu Shoola (Knee joint pain), Morning stiffness for 45 mins, Right knee crepitus",
         history_present_illness="Gradual onset of right knee pain since 6 months, aggravated during cold winter mornings and stair climbing. Relieved by hot water bag application.",
@@ -331,15 +331,15 @@ def seed_database(force=False):
         ai_dosha_analysis={"Vata": "Decreasing (-25%)", "Pitta": "Normal", "Kapha": "Normal"}
     )
 
-    # Case 3: Sunita Devi (Dr. Rajesh Vaidya - GERD / Amlapitta)
+    # Case 3: Sunita Sharma (Dr. Ananya Shastri - GERD / Amlapitta)
     c3 = models.PatientCase(
         patient_id=p2.id,
-        doctor_id=doc1.id,
-        doctor_name=doc1.name,
-        doctor_qualification=doc1.qualification,
-        hospital_name=doc1.hospital_name,
-        status="completed",
-        token_number="OPD-055",
+        doctor_id=doc2.id,
+        doctor_name=doc2.name,
+        doctor_qualification=doc2.qualification,
+        hospital_name=doc2.hospital_name,
+        status="active",
+        token_number="OPD-102",
         is_red_flag=False,
         chief_complaints="Urdhvaga Amlapitta (Hyperacidity, Sour Belching, Retrosternal burning after meals)",
         history_present_illness="Suffering from recurrent heartburn, nausea, and sour taste in mouth for 8 months. Aggravated by tea on empty stomach and spicy curries.",
@@ -419,53 +419,53 @@ def seed_database(force=False):
         ai_case_summary_hi="अति गंभीर आपातकाल: 61 वर्षीय पुरुष में तीव्र हृदशूल। सामान्य कतार को बाईपास करके डॉक्टर कंसोल के शीर्ष पर प्राथमिकता दी गई।"
     )
 
-    # Case 5: Amitabh Verma (Dr. Rajesh Vaidya - Prameha / Type 2 Diabetes)
+    # Case 5: Priya Deshmukh (Dr. Vikramaditya Dev - Insomnia, Stress Headache & Eczema)
     c5 = models.PatientCase(
         patient_id=p3.id,
-        doctor_id=doc1.id,
-        doctor_name=doc1.name,
-        doctor_qualification=doc1.qualification,
-        hospital_name=doc1.hospital_name,
-        status="completed",
-        token_number="OPD-071",
+        doctor_id=doc3.id,
+        doctor_name=doc3.name,
+        doctor_qualification=doc3.qualification,
+        hospital_name=doc3.hospital_name,
+        status="active",
+        token_number="OPD-103",
         is_red_flag=False,
-        chief_complaints="Prameha (Type 2 Diabetes), Post-prandial lethargy, Polyuria at night (3-4 times), Dryness of palate",
-        history_present_illness="Diagnosed with Type 2 Diabetes 2 years ago. HbA1c 7.8%. Experiencing chronic fatigue and mental stress from corporate work.",
-        past_history="Metformin 500mg once daily. Mild dyslipidemia.",
-        family_history="Both parents are diabetic.",
-        personal_history="High stress IT managerial role, 10 hours screen time.",
-        dietary_lifestyle_habits="Excess carbohydrate intake, sweets during meetings, sedentary routine.",
-        prakriti="Kapha-Pitta Dominant",
-        vikriti="Kapha-Meda Dhatu Vriddhi, Kleda Sanchaya",
-        agni="Manda Agni (Slow Metabolism)",
+        chief_complaints="Anidra (Insomnia), Shiroshoola (Stress Headache) & Twacha Khujli (Skin Rash)",
+        history_present_illness="Patient reports difficulty falling asleep for past 3 weeks, accompanied by frontal headache and mild eczematous itching on forearms after sun exposure.",
+        past_history="No history of chronic hypertension or systemic illness. Pitta-Vata constitution.",
+        family_history="Mother had history of migraine headaches.",
+        personal_history="High stress IT professional, 9 hours daily screen work, late night work shifts.",
+        dietary_lifestyle_habits="Excess caffeine consumption, irregular meal timings, late night dinners.",
+        prakriti="Pitta-Vata Dominant",
+        vikriti="Pitta-Vata Vriddhi with Manasika Agni disturbance",
+        agni="Vishama Agni",
         koshtha="Madhyama Koshtha",
         ashtavidha_pariksha={
-            "nadi": "Kapha-Vaha Nadi (Manda, Gambhira / Slow, Deep)",
-            "mutra": "Prabhuta & Avila (Excess volume, turbid urine)",
+            "nadi": "Pitta-Vaha Nadi (Rapid, Sharp)",
+            "mutra": "Samyak",
             "mala": "Samyak",
-            "jihva": "Picchila & Saama (Sticky white coating)",
-            "shabda": "Gambhira",
-            "sparsha": "Snigdha & Sheeta (Oily, cool skin)",
+            "jihva": "Rakta & Saama (Mild yellow coating)",
+            "shabda": "Prakrita",
+            "sparsha": "Ushna & Rooksha",
             "drik": "Prakrita",
-            "aakriti": "Sthula (Overweight BMI 27.4)"
+            "aakriti": "Madhyama"
         },
-        vitals={"bp": "128/82 mmHg", "pulse": "74 bpm", "temp": "98.2 F", "spo2": "99%", "rr": "16/min"},
-        clinical_findings="Acanthosis nigricans on nape of neck. Mild central obesity. Fasting Blood Sugar 142 mg/dL.",
-        diagnosis_ayurvedic="Kaphaja Prameha (Madhumeha)",
-        diagnosis_modern="Type 2 Diabetes Mellitus with Metabolic Syndrome",
+        vitals={"bp": "118/76 mmHg", "pulse": "78 bpm", "temp": "98.4 F", "spo2": "99%", "rr": "16/min"},
+        clinical_findings="Frontal sinus tenderness on palpation. Mild erythema on inner forearms. No fever.",
+        diagnosis_ayurvedic="Manasika Anidra & Pittaja Shiroshoola",
+        diagnosis_modern="Stress-induced Insomnia & Tension Headache",
         medicines=[
-            {"name": "Nishamalaki Churna", "category": "Churna", "dosage": "3 grams twice daily before food", "duration": "45 days", "anupana": "Warm Water"},
-            {"name": "Chandraprabha Vati", "category": "Vati", "dosage": "2 tablets twice daily", "duration": "45 days", "anupana": "Lukewarm Water"},
-            {"name": "Asanadi Kashayam", "category": "Kwath", "dosage": "15 ml with 45 ml boiled warm water twice daily", "duration": "45 days", "anupana": "Warm Water"}
+            {"name": "Brahmi Vati", "category": "Vati", "dosage": "2 tabs bedtime with warm milk", "duration": "30 days", "anupana": "Warm Milk"},
+            {"name": "Manasamitra Vatakam", "category": "Vati", "dosage": "1 tab twice daily", "duration": "30 days", "anupana": "Warm Water"},
+            {"name": "Shatadhauta Ghrita", "category": "Ghrita", "dosage": "Local application on forearms", "duration": "30 days", "anupana": "External"}
         ],
-        anupana="मेथी दाना पानी (Fenugreek Seed Water) / गुनगुना पानी",
-        pathya_apathya="Pathya: Barley (Yava), Bitter gourd (Karela), Jamun seeds, Amla, Green gram (Moong), 45-min brisk walking. Apathya: Sugar, Refined flour (Maida), Potatoes, Day sleep (Diva Swapna), Fried food.",
-        follow_up_date="2026-10-05",
-        private_notes="Advised continuous glucose monitoring. Good compliance expected. Suggested stress reduction via Pranayama (Bhramari).",
-        prescription_signed=True,
-        prescription_signed_at=datetime.utcnow() - timedelta(days=28),
-        ai_case_summary_en="Amitabh Verma (38M) diagnosed with Kaphaja Prameha (Type 2 DM). Prescribed Nishamalaki & Chandraprabha Vati with Kapha-reducing regimen.",
-        ai_case_summary_hi="अमिताभ वर्मा (38 वर्ष) को कफज प्रमेह (डायबिटीज) का निदान। निशामलकी और चंद्रप्रभा वटी के साथ यव प्रधान आहार की सलाह दी गई।"
+        anupana="गुनगुना दूध (Warm Milk with Cow Ghee) / ब्राह्मी शर्बत",
+        pathya_apathya="Pathya: Shiroabhyanga with Ksheerabala oil, warm cow milk at night, calming Pranayama (Anulom-Vilom). Apathya: Late night screen usage, excessive tea/coffee, spicy foods.",
+        follow_up_date="2026-09-25",
+        private_notes="Patient responds well to Brahmi Vati and sleep hygiene counseling. Advised 10 PM digital detox.",
+        prescription_signed=False,
+        prescription_signed_at=None,
+        ai_case_summary_en="Priya Deshmukh (29F) presenting with Pitta-Vata Anidra (Insomnia & Stress Headache). Registered OPD token OPD-103 with Dr. Vikramaditya Dev.",
+        ai_case_summary_hi="प्रिया देशमुख (29 वर्ष) में पित्त-वात अनद्रा और सिरदर्द की शिकायत। डॉ. विक्रमादित्य देव के पास ओपीडी टोकन OPD-103 दर्ज।"
     )
 
     # Case 6: Priya Patel (Dr. Ananya Sharma - Twacha Roga / Eczema)

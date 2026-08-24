@@ -377,19 +377,19 @@ export default function LoginOTPScreen({ role = 'patient', onLoginSuccess, onRed
             </button>
             <button
               type="button"
-              onClick={() => handleDoctorDemoPreset('DOC-AYUR-204', 'Dr. Ananya Shastri', 'National Institute of Ayurveda (NIA), Jaipur', 'BAMS, MD (Ayurveda - Kayachikitsa)', 'AYUSH-REG-RAJ-2015-1108', '/avatars/dr_ananya_shastri.png')}
+              onClick={() => handleDoctorDemoPreset('DOC-AYUR-102', 'Dr. Ananya Shastri', 'National Institute of Ayurveda (NIA), Jaipur', 'BAMS, MD (Panchakarma & Skin)', 'AYUSH-REG-RAJ-2016-8921', '/avatars/dr_ananya_shastri.png')}
               className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Dr. Ananya Shastri (AYUSH-REG-RAJ-2015-1108)</span>
+              <span>Dr. Ananya Shastri (AYUSH-REG-RAJ-2016-8921)</span>
             </button>
             <button
               type="button"
-              onClick={() => handleDoctorDemoPreset('DOC-AYUR-308', 'Dr. Vikramaditya Dev', 'Faculty of Ayurveda, BHU, Varanasi', 'BAMS, MD (Ayurveda - Shalya Tantra)', 'AYUSH-REG-UP-2010-8820', '/avatars/dr_vikramaditya_dev.png')}
+              onClick={() => handleDoctorDemoPreset('DOC-AYUR-103', 'Dr. Vikramaditya Dev', 'Faculty of Ayurveda, BHU, Varanasi', 'BAMS, MS (Shalya Tantra)', 'AYUSH-REG-UP-2010-1120', '/avatars/dr_vikramaditya_dev.png')}
               className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-slate-800 rounded-xl border border-emerald-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             >
               <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Dr. Vikramaditya Dev (AYUSH-REG-UP-2010-8820)</span>
+              <span>Dr. Vikramaditya Dev (AYUSH-REG-UP-2010-1120)</span>
             </button>
           </div>
         )}
