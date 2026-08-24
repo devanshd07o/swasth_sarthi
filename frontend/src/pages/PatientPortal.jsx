@@ -968,7 +968,7 @@ export default function PatientPortal({ currentUser, lang = 'en', initialView = 
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xl flex flex-col items-center justify-center text-center space-y-4 max-w-sm w-full">
             <img
-              src="/loading_animation.gif"
+              src="./loading_animation.gif"
               alt="Loading"
               onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
               className="w-28 h-28 object-contain mx-auto"

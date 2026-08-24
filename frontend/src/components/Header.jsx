@@ -39,26 +39,26 @@ export default function Header({
             className="flex items-center gap-1.5 sm:gap-3 text-left group cursor-pointer py-0.5"
           >
             <img 
-              src="/emblem_of_india.svg" 
+              src="./emblem_of_india.svg" 
               alt="Satyamev Jayate Emblem of India" 
               className="h-9 sm:h-12 md:h-[50px] w-auto object-contain shrink-0 border-r border-slate-200/80 pr-1.5 sm:pr-3" 
             />
             <div className="flex items-center gap-1.5 sm:gap-2.5">
               <img 
-                src={logoHovered ? "/loading_animation.gif" : "/swasthsaarthi_static_logo.png"} 
+                src={logoHovered ? "./loading_animation.gif" : "./swasthsaarthi_static_logo.png"} 
                 alt="SwasthSaarthi Logo Emblem" 
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = '/swasthsaarthi_static_logo.png';
+                  e.target.src = './swasthsaarthi_static_logo.png';
                 }}
                 className="h-8 sm:h-11 md:h-12 w-auto object-contain group-hover:scale-105 transition-all duration-300 shrink-0 drop-shadow-xs" 
               />
               <img 
-                src="/swasthsaarthi_text_logo.png" 
+                src="./swasthsaarthi_text_logo.png" 
                 alt="SwasthSaarthi Text Logo" 
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = '/swasthsaarthi_text_logo.png';
+                  e.target.src = './swasthsaarthi_text_logo.png';
                 }}
                 className="block h-6 sm:h-8 md:h-10 w-auto object-contain group-hover:scale-[1.02] transition-all duration-300 drop-shadow-2xs" 
               />

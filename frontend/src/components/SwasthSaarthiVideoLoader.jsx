@@ -19,7 +19,7 @@ export default function SwasthSaarthiVideoLoader({
     <div className={`flex flex-col items-center justify-center gap-2.5 ${className}`}>
       <div className={`relative flex items-center justify-center shrink-0 ${sizeClasses}`}>
         <img
-          src="/loading_animation.gif"
+          src="./loading_animation.gif"
           alt="SwasthSaarthi Transparent Loading..."
           className="w-full h-full object-contain pointer-events-none drop-shadow-sm"
         />

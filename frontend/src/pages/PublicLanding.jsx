@@ -11,10 +11,10 @@ export default function PublicLanding({ onOpenAuth, lang = 'en' }) {
   const [activeArtIndex, setActiveArtIndex] = React.useState(0);
 
   const heroSlides = [
-    '/hero_slides/slide1.png',
-    '/hero_slides/slide2.png',
-    '/hero_slides/slide3.png',
-    '/hero_slides/slide4.png',
+    './hero_slides/slide1.png',
+    './hero_slides/slide2.png',
+    './hero_slides/slide3.png',
+    './hero_slides/slide4.png',
   ];
   const [currentSlide, setCurrentSlide] = React.useState(0);
 
@@ -340,7 +340,7 @@ export default function PublicLanding({ onOpenAuth, lang = 'en' }) {
       <footer className="w-full bg-transparent text-slate-600 py-6 px-4 sm:px-6 lg:px-8 relative z-10 font-body">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row items-center gap-2">
-            <img src="/swasthsaarthi_logo.png" alt="SwasthSaarthi" className="h-5 sm:h-6 w-auto object-contain opacity-85" />
+            <img src="./swasthsaarthi_logo.png" alt="SwasthSaarthi" className="h-5 sm:h-6 w-auto object-contain opacity-85" />
             <span className="hidden sm:inline text-slate-400/80">•</span>
             <span className="text-[11px] sm:text-xs text-slate-600 font-medium">Ministry of Ayush Government of India (SIH26047)</span>
           </div>
