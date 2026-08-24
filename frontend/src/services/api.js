@@ -713,41 +713,50 @@ export const analyseTranscriptGaps = async (transcript, patientId = null, langua
     const res = await api.post('/cases/analyse-gaps', { transcript, patient_id: patientId, language });
     return res.data;
   } catch (err) {
-    console.warn('Backend API call failed, generating local smart gap questions:', err);
-    const t = (transcript || '').toLowerCase();
-    
-    let gapQs = [];
-    if (t.includes('knee') || t.includes('jodh') || t.includes('joint') || t.includes('dard') || t.includes('pain') || t.includes('pair')) {
-      gapQs = [
-        { field: 'swelling_stiffness', question: language === 'hi' ? 'क्या घुटने/जोड़ में सूजन या सुबह अकड़न महसूस होती है?' : 'Is there any swelling or morning stiffness in the joint/knee?' },
-        { field: 'aggravating', question: language === 'hi' ? 'क्या चलने, सीढ़ी चढ़ने या वजन उठाने पर दर्द बढ़ता है?' : 'Does the pain worsen when walking, climbing stairs, or bearing weight?' },
-        { field: 'history', question: language === 'hi' ? 'क्या पहले कभी आर्थराइटिस, यूरिक एसिड या जोड़ों की चोट रही है?' : 'Any past history of arthritis, high uric acid, or joint injury?' }
-      ];
-    } else if (t.includes('stomach') || t.includes('pet') || t.includes('acidity') || t.includes('khana') || t.includes('seene') || t.includes('jalan')) {
-      gapQs = [
-        { field: 'timing', question: language === 'hi' ? 'क्या जलन/दर्द खाना खाने के तुरंत बाद होता है या खाली पेट?' : 'Does the pain/burning occur right after meals or on an empty stomach?' },
-        { field: 'bowel', question: language === 'hi' ? 'क्या पेट साफ होने में दिक्कत, खट्टी डकार या उल्टी जैसा महसूस होता है?' : 'Do you experience constipation, sour belching, or nausea?' },
-        { field: 'diet_trigger', question: language === 'hi' ? 'किस तरह का खाना (मसालेदार, चाय, तला-भुना) लेने से तकलीफ बढ़ती है?' : 'What specific foods (spicy, tea, fried) aggravate your discomfort?' }
-      ];
-    } else if (t.includes('skin') || t.includes('khujli') || t.includes('rash') || t.includes('itch')) {
-      gapQs = [
-        { field: 'spreading', question: language === 'hi' ? 'क्या खुजली/दाने शरीर के अन्य हिस्सों में फैल रहे हैं?' : 'Is the itching or rash spreading to other parts of the body?' },
-        { field: 'trigger', question: language === 'hi' ? 'क्या धूप, साबुन या किसी खास भोजन के बाद खुजली बढ़ती है?' : 'Does the itching worsen after sun exposure, soap, or specific foods?' }
-      ];
-    } else {
-      gapQs = [
-        { field: 'onset', question: language === 'hi' ? 'यह तकलीफ कितने दिनों से हो रही है और कब सबसे ज्यादा होती है?' : 'How many days have you had these symptoms and when are they most severe?' },
-        { field: 'relief', question: language === 'hi' ? 'किस चीज़ से आराम मिलता है और इसके साथ कोई अन्य लक्षण है?' : 'What provides relief and are there any associated symptoms?' }
-      ];
-    }
-
+    console.warn('Gap analysis API unavailable, using universal fallback questions:', err);
+    const hi = language === 'hi';
+    const gapQs = [
+      {
+        field: 'duration_onset',
+        question: hi
+          ? 'यह तकलीफ कितने समय से हो रही है और क्या यह अचानक शुरू हुई या धीरे-धीरे?'
+          : 'How long have you been experiencing this, and did it start suddenly or gradually?'
+      },
+      {
+        field: 'aggravating_relieving',
+        question: hi
+          ? 'किन चीज़ों से तकलीफ बढ़ती है और किन से आराम मिलता है (जैसे आराम, खाना, गर्मी/ठंड, एक्सरसाइज)?'
+          : 'What makes your symptoms worse or better — for example, rest, food, temperature changes, or physical activity?'
+      },
+      {
+        field: 'associated_symptoms',
+        question: hi
+          ? 'क्या इसके साथ बुखार, थकान, नींद न आना, भूख न लगना या कोई और तकलीफ भी है?'
+          : 'Are there any other symptoms alongside this — such as fever, fatigue, poor sleep, loss of appetite, or anything else bothering you?'
+      },
+      {
+        field: 'medical_history',
+        question: hi
+          ? 'क्या पहले कभी ऐसी तकलीफ रही है, या कोई पुरानी बीमारी है, और क्या आप कोई दवाई ले रहे हैं?'
+          : 'Have you had this before, do you have any chronic conditions, and are you currently taking any medications?'
+      },
+    ];
     return {
-      partial_structure: { chief_complaint: transcript.slice(0, 60), duration: 'Recent onset', severity: 'Moderate' },
+      partial_structure: { chief_complaint: transcript.slice(0, 80), duration: null, severity: 'Moderate' },
       gap_questions: gapQs,
-      suspected_dosha: 'Vata-Pitta Imbalance',
       is_red_flag: false,
       red_flag_reason: null
     };
+  }
+};
+
+export const extractQAPill = async (question, answer, language = 'en') => {
+  try {
+    const res = await api.post('/cases/extract-pill', { question, answer, language });
+    return res.data?.pill || null;
+  } catch (err) {
+    const cleanQ = (question || '').replace('?', '').replace('What', '').replace('How', '').trim().slice(0, 15);
+    return `${cleanQ}: ${(answer || '').slice(0, 20)}`;
   }
 };
 
@@ -758,22 +767,43 @@ export const completeStructuring = async (transcript, qaPairs, patientId = null,
     });
     return res.data;
   } catch (err) {
-    console.warn('Complete structuring API call failed, synthesizing local report:', err);
+    console.warn('Complete structuring API unavailable, building local summary:', err);
     const validQa = (qaPairs || []).filter(p => p.answer && p.answer !== '—' && p.answer !== 'skipped');
-    const qaSummary = validQa.map(p => `${p.question}: ${p.answer}`).join('; ');
-    
+    const qaSummary = validQa.map(p => `${p.question}: ${p.answer}`).join(' | ');
     return {
-      chief_complaint: transcript.slice(0, 50),
-      hpi: `Patient reports: ${transcript}. ${qaSummary ? 'Follow-up details: ' + qaSummary : ''}`,
-      duration: '3-5 days',
+      chief_complaint: transcript.slice(0, 80),
+      hpi: transcript,
+      duration: validQa.find(p => p.field === 'duration_onset')?.answer || null,
       severity: 'Moderate',
-      suspected_dosha: 'Vata-Kapha Imbalance',
-      suggested_pathya: 'Warm freshly cooked food, lukewarm water, adequate rest',
-      suggested_apathya: 'Avoid cold drinks, fried items, and heavy physical exertion',
-      clinical_summary: `The patient presented with: ${transcript}. Follow-up information gathered: ${qaSummary || 'Routine intake recorded'}. Ayurvedic evaluation indicates a Vata-Kapha imbalance requiring OPD clinical assessment.`,
-      suggested_investigations: 'Routine blood screening / OPD consultation',
+      suspected_dosha: null,
+      suggested_pathya: null,
+      suggested_apathya: null,
+      clinical_summary: qaSummary
+        ? `Patient described: "${transcript}". Additional details — ${qaSummary}.`
+        : `Patient described: "${transcript}".`,
+      suggested_investigations: null,
       is_red_flag: false,
       red_flag_reason: null
+    };
+  }
+};
+
+export const getLongitudinalSummary = async (patientId, cases = []) => {
+  try {
+    const res = await api.post('/cases/longitudinal-summary', { patient_id: patientId, cases });
+    return res.data;
+  } catch (err) {
+    return {
+      overall_summary: `Care history available for ${cases.length} recent visits.`,
+      key_points: [
+        `Primary condition: ${cases[0]?.chief_complaints || 'Ayurvedic Care'}`,
+        `Last consulting Vaidya: ${cases[0]?.doctor_name || 'Dr. Rajesh Vaidya'}`,
+        'Regular follow-up recommended.'
+      ],
+      recommendations: [
+        'Maintain balanced Pathya diet.',
+        'Schedule follow-up if symptoms persist.'
+      ]
     };
   }
 };

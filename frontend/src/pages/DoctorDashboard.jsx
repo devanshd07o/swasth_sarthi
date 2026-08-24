@@ -328,8 +328,8 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#12372A] text-amber-300 border border-emerald-800">
-                          Token #{queueNum}
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold bg-[#12372A] text-amber-300 border border-emerald-800 shadow-2xs">
+                          {p.token_number || `Token #${queueNum}`}
                         </span>
                         {isFirstInLine ? (
                           <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-600 text-white border border-emerald-700 animate-pulse flex items-center gap-1">
@@ -352,9 +352,12 @@ export default function DoctorDashboard({ onNewCase, onSelectPatient, onOpenTime
 
                     <div>
                       <h4 className="font-bold text-base text-slate-900 leading-snug group-hover:text-emerald-900 transition-colors">{p.name}</h4>
-                      <p className="text-xs text-slate-500 font-medium">
-                        {p.abha_id || p.uhid} • {p.gender ? p.gender.toUpperCase() : 'MALE'} • {p.age} yrs
-                      </p>
+                      <div className="flex flex-col text-[11px] text-slate-500 font-medium space-y-0.5 mt-0.5">
+                        <span className="font-semibold text-slate-700">ID / ABHA: {p.abha_id || p.uhid || p.patient_id} • {p.gender ? p.gender.toUpperCase() : 'MALE'}, {p.age} yrs</span>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 inline-block w-fit">
+                          🕒 Registered: {p.registration_time || 'Today'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 

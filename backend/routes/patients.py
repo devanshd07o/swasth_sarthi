@@ -172,6 +172,7 @@ def get_patient_timeline(
             "case_id": c.id,
             "date": c.created_at.strftime("%Y-%m-%d %H:%M"),
             "doctor_id": c.doctor_id,
+            "id": c.id,
             "doctor_name": c.doctor_name or "Consulting Vaidya",
             "doctor_qualification": c.doctor_qualification or "BAMS, MD",
             "hospital_name": c.hospital_name or "AyurSaarthi Center",

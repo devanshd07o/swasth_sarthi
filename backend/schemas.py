@@ -179,3 +179,14 @@ class AIDoshaRequest(BaseModel):
     symptoms: str
     age: Optional[int] = 30
 
+class ExtractPillRequest(BaseModel):
+    question: str
+    answer: str
+    language: Optional[str] = "en"
+
+class LongitudinalSummaryRequest(BaseModel):
+    patient_id: Optional[str] = None
+    cases: List[Dict[str, Any]] = []
+
+
+

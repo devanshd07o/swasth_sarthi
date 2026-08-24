@@ -118,42 +118,51 @@ async def extract_ocr_document(req: OCRExtractRequest):
     Simulates / performs AI OCR document extraction on uploaded medical documents.
     """
     sys_prompt = (
-        "You are an expert medical OCR parser for Indian clinical prescriptions and lab reports. "
+        "You are an expert medical OCR parser & clinical report summarizer for Indian clinical prescriptions, X-ray scans, and lab reports. "
         "Extract structured JSON data: "
         "doctor_or_hospital (name), "
-        "date (YYYY-MM-DD or estimated), "
-        "diagnoses (list), "
+        "date (YYYY-MM-DD), "
+        "diagnoses (list of strings), "
         "medicines (list of {name, dosage}), "
-        "summary (2 sentences plain English summary)."
+        "lab_values (list of strings e.g. Hb 13.5 g/dL, Fasting Sugar 112 mg/dL), "
+        "impression (1-2 sentence radiologist or lab impression), "
+        "ayurvedic_correlation (1 sentence Ayurvedic dosha correlation), "
+        "summary (3-4 bullet point clinical findings summary)."
     )
-    user_prompt = f"File: {req.file_name}, Document Type: {req.doc_type}. Content: {req.mock_raw_text or 'Ayurvedic prescription dated 2026-03-12 from AIIA OPD. Rx: Yograj Guggulu 2 tab BD, Maharasnadi Kwath 20ml BD. Dx: Sandhivata.'}"
+    user_prompt = f"File: {req.file_name}, Document Type: {req.doc_type}. Raw Content: {req.mock_raw_text or 'Clinical Scan Record: Knee Joint Space Narrowing Grade II, Osteophytes present. Rx: Yograj Guggulu 2 tabs BD, Maharasnadi Kwath 20ml BD. Dx: Sandhivata (Osteoarthritis).'}"
     
     try:
         raw = _chat(
             messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}],
             model="openai/gpt-oss-120b",
             key_idx=1,
-            max_tokens=350
+            max_tokens=400
         )
         data = json.loads(raw)
         return {
             "source_doctor_or_hospital": data.get("doctor_or_hospital", "All India Institute of Ayurveda"),
             "date": data.get("date", "2026-05-10"),
             "extracted_data": {
-                "diagnoses": data.get("diagnoses", ["Sandhivata / Osteoarthritis"]),
-                "medicines": data.get("medicines", [{"name": "Yograj Guggulu", "dosage": "2 tabs twice daily"}]),
+                "diagnoses": data.get("diagnoses", ["Sandhivata / Knee Osteoarthritis Grade II"]),
+                "medicines": data.get("medicines", [{"name": "Yograj Guggulu", "dosage": "2 tabs twice daily"}, {"name": "Maharasnadi Kwath", "dosage": "20ml BD"}]),
+                "lab_values": data.get("lab_values", ["Hb: 13.2 g/dL", "ESR: 24 mm/hr"]),
+                "impression": data.get("impression", "Bilateral knee joint space narrowing consistent with Sandhivata."),
+                "ayurvedic_correlation": data.get("ayurvedic_correlation", "Vata Vriddhi in Asthi Dhatu causing joint stiffness & Shoola.")
             },
-            "summary": data.get("summary", "Previous clinical record extracted from physical prescription file.")
+            "summary": data.get("summary", "• Joint space narrowing detected in knee scan\n• Prescribed classical Yograj Guggulu & Maharasnadi Kwath\n• Vata-Pitta dosha imbalance noted.")
         }
     except Exception:
         return {
-            "source_doctor_or_hospital": "Government Ayurvedic Dispensary",
+            "source_doctor_or_hospital": "Government Ayurvedic Hospital & Diagnostic Kiosk",
             "date": "2026-06-15",
             "extracted_data": {
-                "diagnoses": ["Amlapitta / Gastritis"],
-                "medicines": [{"name": "Avipattikar Churna", "dosage": "3g bedtime"}],
+                "diagnoses": ["Sandhivata / Knee Osteoarthritis"],
+                "medicines": [{"name": "Yograj Guggulu", "dosage": "2 tabs twice daily"}],
+                "lab_values": ["ESR: 22 mm/hr"],
+                "impression": "Joint space narrowing in knee radiological scan.",
+                "ayurvedic_correlation": "Vata Vriddhi in Asthi-Majja Dhatu."
             },
-            "summary": "Previous prescription scanned and digitized to ABDM Health Vault."
+            "summary": "• Scanned clinical prescription digitized to ABDM Health Vault\n• Prescribed Yograj Guggulu for joint stiffness\n• Radiologist impression indicates Grade II osteoarthritis."
         }
 
 @router.post("/generate-followup-questions")

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Mic, MicOff, AlertTriangle, Sparkles, ArrowRight, ChevronDown, ChevronUp,
   CheckCircle2, SkipForward, Brain, Loader2, RotateCcw, Send, User,
-  ClipboardList, MessageSquare, Stethoscope, X
+  MessageSquare, Stethoscope, X, Volume2, VolumeX, Radio, Volume1
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import RobotAvatarAnimation from '../../components/RobotAvatarAnimation';
+import { getVoiceNarration } from '../../services/api';
 
 /* ── Phase Step Indicator ─────────────────────────────────────────────────── */
 function PhaseBar({ phase }) {
@@ -105,10 +106,127 @@ export default function WizardStep2Voice({
   handleAnalyseGaps,
   handleGapAnswer, handleGapNext, handleGapSkip, toggleGapListening,
   handleSendToDoctor, handleResetIntake,
+  bookingDoctor,
+  aiExtractedPills = [],
+  lang = 'en',
   onBack, onNext
 }) {
   const { t } = useTranslation();
   const [promptsExpanded, setPromptsExpanded] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioRef = useRef(null);
+  const ttsEnabledRef = useRef(true);
+
+  // Keep ref in sync so useEffect callbacks don't go stale
+  useEffect(() => { ttsEnabledRef.current = ttsEnabled; }, [ttsEnabled]);
+
+  const stopAllAudio = useCallback(() => {
+    // Stop all global audio elements on the page
+    document.querySelectorAll('audio').forEach(a => {
+      try { a.pause(); a.currentTime = 0; } catch (_) {}
+    });
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.src = '';
+      } catch (_) {}
+      audioRef.current = null;
+    }
+    if (window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+    setIsPlayingAudio(false);
+    setIsAudioLoading(false);
+  }, []);
+
+  const speakText = useCallback(async (text) => {
+    if (!ttsEnabledRef.current || !text) return;
+    stopAllAudio();
+    setIsAudioLoading(true);
+
+    try {
+      // 1. Fetch HD MP3 audio from backend API (5-key Groq + ElevenLabs / Google Neural engine)
+      const arrayBuffer = await getVoiceNarration(text, lang);
+      if (arrayBuffer && arrayBuffer.byteLength > 100) {
+        const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio();
+        audioRef.current = audio;
+
+        audio.oncanplaythrough = async () => {
+          setIsAudioLoading(false);
+          setIsPlayingAudio(true);
+          try { await audio.play(); } catch (_) { setIsPlayingAudio(false); }
+        };
+        audio.onended = () => {
+          setIsPlayingAudio(false);
+          setIsAudioLoading(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        audio.onerror = () => {
+          setIsAudioLoading(false);
+          setIsPlayingAudio(false);
+          speakWithBrowserFallback(text);
+        };
+
+        audio.src = audioUrl;
+        audio.load();
+        return;
+      }
+    } catch (err) {
+      console.warn('[TTS Player] Backend speech fallback', err);
+    }
+
+    // 2. Browser fallback if API call fails
+    speakWithBrowserFallback(text);
+  }, [lang, stopAllAudio]);
+
+  const speakWithBrowserFallback = (text) => {
+    setIsAudioLoading(false);
+    if (!window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
+      utter.rate = 0.95;
+      utter.pitch = 1.25; // Higher feminine pitch
+
+      const allVoices = window.speechSynthesis.getVoices() || [];
+      const code = lang === 'hi' ? 'hi' : 'en';
+
+      // STRICT FEMALE VOICE FILTER — Blacklist ALL male names
+      const femaleVoice = allVoices.find(v =>
+        v.lang.startsWith(code) &&
+        /female|woman|zira|neha|aria|swara|kalpana|heera|google/i.test(v.name) &&
+        !/david|mark|george|male|guy|ryan|stefan|james|richard|pavel|ravi|hemant|gurdeep/i.test(v.name)
+      ) || allVoices.find(v =>
+        v.lang.startsWith(code) &&
+        !/david|mark|george|male|guy|ryan|stefan|james|richard|pavel|ravi|hemant|gurdeep/i.test(v.name)
+      ) || allVoices.find(v =>
+        !/david|mark|george|male|guy|ryan|stefan|james|richard|pavel|ravi|hemant|gurdeep/i.test(v.name)
+      );
+
+      if (femaleVoice) {
+        utter.voice = femaleVoice;
+      }
+
+      utter.onstart = () => setIsPlayingAudio(true);
+      utter.onend = () => setIsPlayingAudio(false);
+      utter.onerror = () => setIsPlayingAudio(false);
+      window.speechSynthesis.speak(utter);
+    } catch (_) {
+      setIsPlayingAudio(false);
+    }
+  };
+
+  // Cleanup TTS on unmount or phase change — NO AUTO-SPEAK to prevent voice overlapping!
+  useEffect(() => {
+    stopAllAudio();
+    return () => { stopAllAudio(); };
+  }, [stopAllAudio, gapIndex, intakePhase]);
 
   const answeredGaps = Object.values(gapAnswers).filter(a => a && a !== '—').length;
 
@@ -121,6 +239,35 @@ export default function WizardStep2Voice({
           onClose={() => setIsSendDoctorOpen(false)}
           sending={sendingToDoctor}
         />
+      )}
+
+      {/* ── GIF Loading Overlay ── */}
+      {(analysingGaps || completingStructure || sendingToDoctor) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xl flex flex-col items-center justify-center text-center space-y-4 max-w-sm w-full">
+            <img
+              src="/loading_animation.gif"
+              alt="Loading"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.style.display = 'none';
+              }}
+              className="w-28 h-28 object-contain mx-auto"
+            />
+            <div className="space-y-1">
+              <h4 className="text-sm font-extrabold text-slate-900">
+                {analysingGaps
+                  ? 'AI Analyzing Symptoms & Extracting Gaps...'
+                  : completingStructure
+                  ? 'AI Synthesizing Physician Clinical Intake...'
+                  : 'Transmitting EHR to Vaidya OPD Console...'}
+              </h4>
+              <p className="text-xs text-slate-500 font-medium">
+                Please wait while SwasthSaarthi AI processes your clinical intake...
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-5 animate-fade-in">
@@ -241,38 +388,59 @@ export default function WizardStep2Voice({
         {/* ══════════════════ PHASE 2: GAP Q&A ═════════════════════════════ */}
         {intakePhase === 'gap_qa' && (
           <div className="space-y-4 animate-fade-in">
-            {/* What AI already knows */}
-            {partialStructure && partialStructure.chief_complaint && (
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1.5">
+            {/* What AI already knows + Live updates as gap questions are answered */}
+            {(partialStructure && partialStructure.chief_complaint) || Object.keys(gapAnswers).length > 0 ? (
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5 animate-fade-in">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">
                   {t('patientPortal.aiAlreadyKnows', 'AI understood from your description')}
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {partialStructure.chief_complaint && (
-                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-semibold">
+                  {partialStructure?.chief_complaint && (
+                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-lg font-semibold">
                       {partialStructure.chief_complaint}
                     </span>
                   )}
-                  {partialStructure.duration && (
-                    <span className="px-2.5 py-1 bg-blue-50 text-blue-800 rounded-lg font-semibold">
+                  {partialStructure?.duration && (
+                    <span className="px-2.5 py-1 bg-blue-50 text-blue-800 border border-blue-100 rounded-lg font-semibold">
                       {partialStructure.duration}
                     </span>
                   )}
-                  {partialStructure.severity && (
-                    <span className="px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg font-semibold">
+                  {partialStructure?.severity && (
+                    <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-100 rounded-lg font-semibold">
                       {partialStructure.severity}
                     </span>
                   )}
+
+                  {/* AI Extracted Live Pills */}
+                  {aiExtractedPills.map((pill, pIdx) => (
+                    <span key={pIdx} className="px-2.5 py-1 bg-emerald-50 text-emerald-950 border border-emerald-200 rounded-lg font-semibold flex items-center gap-1 shadow-2xs animate-fade-in">
+                      <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                      <span>{pill}</span>
+                    </span>
+                  ))}
+
+                  {/* Live Gap Answered Pills */}
+                  {Object.entries(gapAnswers).map(([idx, ans]) => {
+                    if (!ans || ans === '—' || ans === 'skipped') return null;
+                    const gq = gapQuestions[parseInt(idx, 10)];
+                    const label = gq?.field ? gq.field.replace('_', ' ') : 'Detail';
+                    return (
+                      <span key={idx} className="px-2.5 py-1 bg-teal-50 text-teal-900 border border-teal-200 rounded-lg font-medium flex items-center gap-1 animate-fade-in">
+                        <span className="font-bold text-[10px] uppercase text-teal-700">{label}:</span>
+                        <span>{ans.length > 30 ? ans.slice(0, 30) + '…' : ans}</span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Gap questions header */}
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-[#12372A] flex items-center justify-center shrink-0">
                 <Brain className="w-4 h-4 text-amber-300" />
               </div>
-              <div>
+              <div className="flex-1">
                 <span className="text-sm font-bold text-slate-900 block">
                   {t('patientPortal.gapQaTitle', 'AI needs a few more details')}
                 </span>
@@ -280,6 +448,24 @@ export default function WizardStep2Voice({
                   {gapIndex + 1} {t('patientPortal.of', 'of')} {gapQuestions.length} · {answeredGaps} {t('patientPortal.answered', 'answered')}
                 </span>
               </div>
+              {/* TTS Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !ttsEnabled;
+                  setTtsEnabled(next);
+                  if (!next) stopAllAudio();
+                }}
+                title={ttsEnabled ? 'Turn off voice' : 'Turn on voice'}
+                className={`p-2 rounded-full border text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all ${
+                  ttsEnabled
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                    : 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200'
+                }`}
+              >
+                {ttsEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                <span className="text-[10px]">{ttsEnabled ? 'Voice On' : 'Voice Off'}</span>
+              </button>
             </div>
 
             {/* Progress */}
@@ -296,10 +482,41 @@ export default function WizardStep2Voice({
             {/* Current question */}
             {gapQuestions[gapIndex] && (
               <div className="space-y-3">
-                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase block mb-1">
-                    {t('patientPortal.question', 'Question')} {gapIndex + 1}
-                  </span>
+                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-1">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase">
+                      {t('patientPortal.question', 'Question')} {gapIndex + 1}
+                    </span>
+
+                    {/* Replay speaker button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isPlayingAudio) stopAllAudio();
+                        else speakText(gapQuestions[gapIndex].question);
+                      }}
+                      title="Replay question"
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all ${
+                        isPlayingAudio
+                          ? 'bg-emerald-600 text-white animate-pulse'
+                          : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800'
+                      }`}
+                    >
+                      {isAudioLoading ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-emerald-700" />
+                      ) : isPlayingAudio ? (
+                        <>
+                          <VolumeX className="w-3 h-3" />
+                          <span>Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-3 h-3" />
+                          <span>Replay</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <p className="text-sm font-semibold text-slate-900 leading-relaxed">
                     {gapQuestions[gapIndex].question}
                   </p>
@@ -362,7 +579,7 @@ export default function WizardStep2Voice({
           </div>
         )}
 
-        {/* ══════════════════ PHASE 3: COMPLETE STRUCTURED REPORT ══════════ */}
+        {/* ══════════════════ PHASE 3: YOUR AI HEALTH REPORT ══════════════ */}
         {intakePhase === 'complete' && structuredIntake && (
           <div className="space-y-4 animate-fade-in">
 
@@ -371,10 +588,10 @@ export default function WizardStep2Voice({
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
               <div>
                 <span className="text-sm font-bold text-emerald-900 block">
-                  {t('patientPortal.reportReady', 'Clinical Report Ready')}
+                  {t('patientPortal.reportReady', 'Your Health Report is Ready')}
                 </span>
                 <span className="text-[10px] text-emerald-700">
-                  {t('patientPortal.reportReadySub', 'AI has generated a complete physician-ready intake. Review below, then send to your doctor.')}
+                  {t('patientPortal.reportReadySub', 'AI has analysed your symptoms and conversation. Review your report below, then send it to your doctor.')}
                 </span>
               </div>
               <button
@@ -391,17 +608,18 @@ export default function WizardStep2Voice({
             {isRedFlag && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-xs font-semibold">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span>{redFlagReason || t('patientPortal.emergencyReasonDefault', 'Critical symptom detected.')}</span>
+                <span>{redFlagReason || t('patientPortal.emergencyReasonDefault', 'Critical symptom detected. You will be given priority.')}</span>
               </div>
             )}
 
-            {/* Structured Clinical Report Card */}
+            {/* ── AI Health Report Card ── */}
             <div className="rounded-2xl border border-emerald-100 overflow-hidden shadow-sm">
+              {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#12372A] to-emerald-800">
                 <div className="flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-amber-300" />
+                  <Sparkles className="w-4 h-4 text-amber-300" />
                   <span className="text-white font-bold text-xs uppercase tracking-wide">
-                    {t('patientPortal.intakeHeader', 'Structured Clinical Intake')}
+                    {t('patientPortal.intakeHeader', 'Your AI Health Summary')}
                   </span>
                 </div>
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
@@ -414,72 +632,177 @@ export default function WizardStep2Voice({
                 </span>
               </div>
 
-              <div className="p-4 bg-white space-y-3 text-xs">
-                {/* Primary row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { label: t('patientPortal.chiefComplaintLabel', 'Chief Complaint'), value: structuredIntake.chief_complaint, accent: true },
-                    { label: t('patientPortal.hpiLabel', 'Duration & HPI'), value: `${structuredIntake.duration || '—'} · ${structuredIntake.hpi || '—'}` },
-                    { label: t('patientPortal.doshaLabel', 'Suspected Dosha'), value: structuredIntake.suspected_dosha },
-                    { label: t('patientPortal.aggravatingLabel', 'Aggravating Factors'), value: structuredIntake.aggravating_factors },
-                    { label: t('patientPortal.relievingLabel', 'Relieving Factors'), value: structuredIntake.relieving_factors },
-                    { label: t('patientPortal.associatedLabel', 'Associated Symptoms'), value: structuredIntake.associated_symptoms },
-                  ].filter(f => f.value && f.value !== 'Not specified' && f.value !== 'Not reported').map((field, i) => (
-                    <div key={i} className={`p-3 rounded-xl border shadow-xs ${field.accent ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
-                      <span className="text-[10px] text-slate-500 font-semibold block uppercase mb-0.5">{field.label}</span>
-                      <span className={`font-semibold ${field.accent ? 'text-emerald-900' : 'text-slate-800'}`}>{field.value}</span>
+              <div className="p-4 bg-white space-y-4 text-xs">
+                {/* Point-wise clinical summary cards */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                    📋 Point-Wise Clinical Summary
+                  </span>
+
+                  {/* Point 1: Chief Complaint */}
+                  {structuredIntake.chief_complaint && (
+                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-emerald-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</div>
+                      <div className="flex-1">
+                        <span className="text-[10px] font-bold text-emerald-800 uppercase block">Chief Complaint</span>
+                        <span className="text-slate-900 font-bold text-xs">{structuredIntake.chief_complaint}</span>
+                        {structuredIntake.duration && <span className="text-[11px] text-slate-500 font-medium ml-2">({structuredIntake.duration})</span>}
+                      </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Point 2: HPI Narrative */}
+                  {structuredIntake.hpi && (
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-slate-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</div>
+                      <div className="flex-1">
+                        <span className="text-[10px] font-bold text-slate-600 uppercase block">History of Present Illness (HPI)</span>
+                        <p className="text-slate-800 font-medium leading-relaxed">{structuredIntake.hpi}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Point 3: Ayurvedic Dosha */}
+                  {structuredIntake.suspected_dosha && (
+                    <div className="p-3 bg-teal-50/80 border border-teal-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-teal-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</div>
+                      <div className="flex-1">
+                        <span className="text-[10px] font-bold text-teal-800 uppercase block">Ayurvedic Dosha Analysis</span>
+                        <span className="text-teal-950 font-bold text-xs">{structuredIntake.suspected_dosha}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Point 4: Aggravating & Relieving Factors */}
+                  {(structuredIntake.aggravating_factors || structuredIntake.relieving_factors) && (
+                    <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-amber-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">4</div>
+                      <div className="flex-1 space-y-1">
+                        <span className="text-[10px] font-bold text-amber-800 uppercase block">Triggers & Relief Factors</span>
+                        {structuredIntake.aggravating_factors && <p className="text-slate-800"><strong className="text-amber-900">Aggravating:</strong> {structuredIntake.aggravating_factors}</p>}
+                        {structuredIntake.relieving_factors && <p className="text-slate-800"><strong className="text-emerald-900">Relieving:</strong> {structuredIntake.relieving_factors}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Point 5: Associated Symptoms */}
+                  {structuredIntake.associated_symptoms && structuredIntake.associated_symptoms !== 'None reported' && (
+                    <div className="p-3 bg-indigo-50/80 border border-indigo-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-indigo-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">5</div>
+                      <div className="flex-1">
+                        <span className="text-[10px] font-bold text-indigo-800 uppercase block">Associated Symptoms</span>
+                        <span className="text-slate-800 font-medium">{structuredIntake.associated_symptoms}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Point 6: Pathya / Apathya */}
+                  {(structuredIntake.suggested_pathya || structuredIntake.suggested_apathya) && (
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-emerald-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">6</div>
+                      <div className="flex-1 space-y-1">
+                        <span className="text-[10px] font-bold text-slate-700 uppercase block">Diet & Lifestyle Guidelines (Pathya / Apathya)</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                          {structuredIntake.suggested_pathya && (
+                            <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-900 font-medium">
+                              <strong>✅ Pathya (Do):</strong> {structuredIntake.suggested_pathya}
+                            </div>
+                          )}
+                          {structuredIntake.suggested_apathya && (
+                            <div className="p-2 bg-rose-50 border border-rose-100 rounded-lg text-rose-900 font-medium">
+                              <strong>❌ Apathya (Avoid):</strong> {structuredIntake.suggested_apathya}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Point 7: Suggested Investigations */}
+                  {structuredIntake.suggested_investigations && structuredIntake.suggested_investigations !== 'None required at this stage' && (
+                    <div className="p-3 bg-purple-50/80 border border-purple-200/80 rounded-xl flex items-start gap-2.5 shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-purple-700 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">7</div>
+                      <div className="flex-1">
+                        <span className="text-[10px] font-bold text-purple-800 uppercase block">Suggested Clinical Investigations</span>
+                        <span className="text-slate-800 font-medium">{structuredIntake.suggested_investigations}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Clinical summary */}
+                {/* AI Assessment Summary Card — with Audio Player */}
                 {structuredIntake.clinical_summary && (
-                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                    <span className="text-[10px] text-blue-700 font-bold uppercase block mb-1">
-                      {t('patientPortal.clinicalSummary', 'Physician Summary')}
-                    </span>
+                  <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl space-y-2 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-blue-700 font-bold uppercase tracking-wide flex items-center gap-1.5">
+                        <Brain className="w-3.5 h-3.5 text-indigo-600" /> {t('patientPortal.clinicalSummary', 'Summary for Physician')}
+                      </span>
+
+                      {/* Play AI Audio Summary Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isPlayingAudio) {
+                            stopAllAudio();
+                          } else {
+                            speakText(`${t('patientPortal.clinicalSummary', 'Summary for Physician')}: ${structuredIntake.clinical_summary}`);
+                          }
+                        }}
+                        disabled={isAudioLoading}
+                        className={`px-3 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-xs ${
+                          isPlayingAudio
+                            ? 'bg-indigo-600 text-white animate-pulse'
+                            : 'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50'
+                        }`}
+                      >
+                        {isAudioLoading ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : isPlayingAudio ? (
+                          <>
+                            <VolumeX className="w-3 h-3" />
+                            <span>Stop Voice</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3 h-3 text-indigo-600" />
+                            <span>Listen to Voice Summary</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                     <p className="text-slate-800 font-medium leading-relaxed">{structuredIntake.clinical_summary}</p>
-                  </div>
-                )}
-
-                {/* Pathya / Apathya */}
-                {(structuredIntake.suggested_pathya || structuredIntake.suggested_apathya) && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {structuredIntake.suggested_pathya && (
-                      <div className="p-2.5 bg-emerald-50 border border-emerald-100 rounded-lg">
-                        <span className="text-[10px] text-emerald-700 font-bold uppercase block">✅ Pathya (Do)</span>
-                        <span className="text-slate-700 font-medium">{structuredIntake.suggested_pathya}</span>
-                      </div>
-                    )}
-                    {structuredIntake.suggested_apathya && (
-                      <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-lg">
-                        <span className="text-[10px] text-rose-700 font-bold uppercase block">❌ Apathya (Avoid)</span>
-                        <span className="text-slate-700 font-medium">{structuredIntake.suggested_apathya}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Suggested Investigations */}
-                {structuredIntake.suggested_investigations && structuredIntake.suggested_investigations !== 'None required at this stage' && (
-                  <div className="p-2.5 bg-amber-50 border border-amber-100 rounded-lg">
-                    <span className="text-[10px] text-amber-700 font-bold uppercase block">🔬 Suggested Investigations</span>
-                    <span className="text-slate-700 font-medium">{structuredIntake.suggested_investigations}</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* CTA Buttons */}
+            {/* ── Smart Send Button ── */}
             <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
-                onClick={() => setIsSendDoctorOpen(true)}
-                className="flex-1 py-3 bg-gradient-to-r from-[#12372A] to-emerald-700 hover:from-[#0B2B20] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm"
-              >
-                <Send className="w-4 h-4 text-amber-300" />
-                <span>{t('patientPortal.sendToDoctorBtn', 'Send Report to Doctor')}</span>
-              </button>
+              {bookingDoctor ? (
+                /* Doctor already selected in Step 4 — send directly */
+                <button
+                  type="button"
+                  onClick={() => handleSendToDoctor(bookingDoctor)}
+                  disabled={sendingToDoctor}
+                  className="flex-1 py-3 bg-gradient-to-r from-[#12372A] to-emerald-700 hover:from-[#0B2B20] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm disabled:opacity-60"
+                >
+                  {sendingToDoctor
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Sending to {bookingDoctor.name}…</span></>
+                    : <><Send className="w-4 h-4 text-amber-300" /><span>Send to {bookingDoctor.name} ({bookingDoctor.specialization})</span></>
+                  }
+                </button>
+              ) : (
+                /* No doctor selected yet — show selector modal */
+                <button
+                  type="button"
+                  onClick={() => setIsSendDoctorOpen(true)}
+                  className="flex-1 py-3 bg-gradient-to-r from-[#12372A] to-emerald-700 hover:from-[#0B2B20] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm"
+                >
+                  <Send className="w-4 h-4 text-amber-300" />
+                  <span>{t('patientPortal.sendToDoctorBtn', 'Select Doctor & Send Report')}</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onNext}

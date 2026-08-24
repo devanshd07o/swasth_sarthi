@@ -98,13 +98,14 @@ function speakWithBrowser(text, lang, onEnd) {
     const voices = window.speechSynthesis.getVoices();
     const code = lang === 'hi' ? 'hi' : 'en';
     const femaleVoice = voices.find(v =>
-      v.lang.startsWith(code) && /female|woman|zira|aria|neha|google|microsoft/i.test(v.name)
-    ) || voices.find(v => v.lang.startsWith(code)) || voices[0];
+      v.lang.startsWith(code) && /female|woman|zira|aria|neha|swara|kalpana|heera|google/i.test(v.name) &&
+      !/david|mark|george|male|guy|ryan|stefan|james|richard|pavel|ravi|hemant|gurdeep/i.test(v.name)
+    ) || voices.find(v => v.lang.startsWith(code) && !/david|mark|george|male|guy|ryan|stefan|james/i.test(v.name)) || voices[0];
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
     utterance.rate = VOICE_PLAYBACK_SPEED; // 1.3x speed
-    utterance.pitch = 1.05;
+    utterance.pitch = 1.25; // Feminine pitch
     if (femaleVoice) utterance.voice = femaleVoice;
 
     utterance.onend = () => { if (onEnd) onEnd(); };

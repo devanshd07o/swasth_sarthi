@@ -211,6 +211,44 @@ async def analyse_transcript_gaps(req: schemas.IntakeStructuringRequest):
     }
 
 
+@router.post("/extract-pill")
+async def extract_qa_pill(req: schemas.ExtractPillRequest):
+    """
+    Extracts a concise, standardized clinical pill from a Q&A pair.
+    Used for live 'AI Understood' bar incremental updates.
+    """
+    q = req.question.strip()
+    a = req.answer.strip()
+    if not a or a in ("—", "skipped", "skipped question"):
+        return {"pill": None}
+
+    sys_prompt = (
+        "You are an Ayurvedic clinical scribe. Convert the patient's Q&A pair into a concise clinical pill. "
+        "Format: 2 to 5 words max with a clean prefix like 'Onset: 3 days', 'Trigger: Stair climbing', 'Associated: Mild nausea'. "
+        "Output strictly valid JSON with key: pill."
+    )
+    user_prompt = f"Question: {q}\nPatient Answer: {a}"
+
+    try:
+        raw = _chat(
+            messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}],
+            model="openai/gpt-oss-120b",
+            key_idx=0,
+            max_tokens=200
+        )
+        if raw:
+            import json as _json
+            data = _json.loads(raw)
+            if isinstance(data, dict) and data.get("pill"):
+                return {"pill": data.get("pill")}
+    except Exception as e:
+        print("[Extract Pill LLM Warning]:", e)
+
+    # Clean fallback if LLM parse fails
+    clean_q = q.replace("?", "").replace("What", "").replace("How", "").replace("Do you", "").strip()[:18]
+    return {"pill": f"{clean_q}: {a[:25]}"}
+
+
 @router.post("/complete-structuring")
 async def complete_full_structuring(req: schemas.CompleteStructuringRequest):
     """
@@ -308,6 +346,73 @@ async def complete_full_structuring(req: schemas.CompleteStructuringRequest):
         "qa_pairs": [{"question": p.question, "answer": p.answer} for p in req.qa_pairs]
     }
     return structured
+
+
+@router.post("/longitudinal-summary")
+async def generate_longitudinal_summary(req: schemas.LongitudinalSummaryRequest):
+    """
+    Takes up to 5 recent doctor visit summaries/cases for a patient and
+    uses AI to generate a 3-4 point continuity care summary & recommendation.
+    """
+    cases = req.cases[:5]
+    if not cases:
+        return {
+            "overall_summary": "No completed consultations recorded yet.",
+            "key_points": ["Register for an OPD consultation to build your care history."],
+            "recommendations": ["Follow-up with an Ayush Vaidya for personalized Ayurvedic advice."]
+        }
+
+    case_summaries = []
+    for idx, c in enumerate(cases):
+        doc_name = c.get("doctor_name") or c.get("doctor", {}).get("name") if isinstance(c.get("doctor"), dict) else "Ayush Vaidya"
+        diag = c.get("diagnosis") or c.get("chief_complaints") or "OPD Consultation"
+        notes = c.get("history_present_illness") or c.get("treatment_plan") or ""
+        date = str(c.get("created_at") or "Recent Visit")[:10]
+        case_summaries.append(f"Visit #{idx+1} ({date}) with {doc_name}: Diagnosis/Complaints: '{diag}'. Notes/Plan: '{notes}'")
+
+    summary_context = "\n".join(case_summaries)
+
+    sys_prompt = (
+        "You are a senior Ayurvedic Chief Medical Officer synthesizing a patient's care continuity summary. "
+        "Review up to 5 recent doctor visit records. "
+        "Synthesize a clean 3-to-4 point longitudinal summary of their health progress and clinical recommendations. "
+        "Output strictly valid JSON object with keys:\n"
+        "{\n"
+        '  "overall_summary": "1-2 sentence overall health progress synthesis",\n'
+        '  "key_points": ["Point 1: ...", "Point 2: ...", "Point 3: ..."],\n'
+        '  "recommendations": ["Rec 1: ...", "Rec 2: ..."]\n'
+        "}"
+    )
+    user_prompt = f"Patient Recent Visit History:\n{summary_context}"
+
+    try:
+        raw = _chat(
+            messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}],
+            model="openai/gpt-oss-120b",
+            key_idx=0,
+            max_tokens=500
+        )
+        if raw:
+            import json as _json
+            data = _json.loads(raw)
+            if isinstance(data, dict) and data.get("key_points"):
+                return data
+    except Exception as e:
+        print("[Longitudinal Summary Error]:", e)
+
+    # Fallback response
+    return {
+        "overall_summary": f"Reviewed {len(cases)} recent clinical consultations.",
+        "key_points": [
+            f"Primary condition tracked: {cases[0].get('chief_complaints', 'Ayurvedic Care')}",
+            f"Last consulting physician: {cases[0].get('doctor_name', 'Doctor')}",
+            "Regular follow-up and Panchakarma regime recommended."
+        ],
+        "recommendations": [
+            "Maintain consistent dietary pathya according to your Prakriti.",
+            "Schedule follow-up consultation if symptoms recur."
+        ]
+    }
 
 
 @router.post("/", response_model=schemas.PatientCaseResponse)

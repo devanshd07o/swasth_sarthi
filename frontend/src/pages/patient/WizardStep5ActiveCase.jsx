@@ -1,6 +1,21 @@
 import React from 'react';
-import { Stethoscope, Clock, FileText, ShieldCheck, Pill } from 'lucide-react';
+import { Stethoscope, Clock, FileText, ShieldCheck, Pill, Lock, Calendar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+const formatDateTime = (item) => {
+  const raw = item?.created_at || item?.timestamp || item?.date;
+  if (!raw) {
+    const now = new Date();
+    return now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ' • ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+  const dateObj = new Date(raw);
+  if (isNaN(dateObj.getTime())) {
+    return String(raw);
+  }
+  const formattedDate = dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const formattedTime = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return `${formattedDate} at ${formattedTime}`;
+};
 
 export default function WizardStep5ActiveCase({
   bookingSuccessCase,
@@ -8,11 +23,16 @@ export default function WizardStep5ActiveCase({
   setActiveView,
   setWizardStep,
   setActivePrescriptionForPrint,
-  isDashboard = false
+  isDashboard = false,
+  onStartNewIntake
 }) {
   const { t } = useTranslation();
-  
+
   if (isDashboard) {
+    const rawTimeline = Array.isArray(timelineData?.timeline) ? timelineData.timeline : [];
+    const signedPrescriptions = rawTimeline.filter(item => item.prescription_signed === true || item.status === 'completed' || (item.medicines && item.medicines.length > 0));
+    const pendingCases = rawTimeline.filter(item => item.prescription_signed !== true && item.status !== 'completed' && (!item.medicines || item.medicines.length === 0));
+
     return (
       <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4 animate-fade-in">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -30,13 +50,30 @@ export default function WizardStep5ActiveCase({
           </span>
         </div>
 
-        {timelineData?.timeline?.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
-            {t('patientPortal.noConsultationsRecorded', 'No consultations recorded yet. Start by booking a consultation in the wizard.')}
+        {/* Pending Consultation Banner */}
+        {pendingCases.length > 0 && (
+          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-1 animate-fade-in shadow-2xs">
+            <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
+              <Clock className="w-4 h-4 text-amber-600 animate-spin-slow shrink-0" />
+              <span>⏳ Active OPD Consultation in Progress ({pendingCases[0].token_number || 'OPD Token'})</span>
+            </div>
+            <p className="text-[11px] text-amber-800 font-medium pl-6">
+              Consultation with <strong>{pendingCases[0].doctor_name || 'Dr. Rajesh Vaidya'}</strong> is active. Your official prescription will be published here automatically once the Doctor examines and digitally signs your case sheet.
+            </p>
+          </div>
+        )}
+
+        {signedPrescriptions.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-1">
+            <Lock className="w-6 h-6 text-slate-400 mx-auto mb-1" />
+            <span className="font-bold text-slate-700 block">No Signed Prescriptions Available Yet</span>
+            <p className="text-[11px] text-slate-500">
+              Digital prescriptions unlock automatically after your Vaidya completes and signs the Ashtavidha OPD consultation.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {timelineData?.timeline?.map((item, idx) => (
+            {signedPrescriptions.map((item, idx) => (
               <div key={idx} className="p-5 bg-white hover:bg-emerald-50/30 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs transition-all">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div>
@@ -52,8 +89,12 @@ export default function WizardStep5ActiveCase({
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                      {item.hospital_name} • {t('patientPortal.consultationDateLabel', 'Consultation Date:')} {item.date}
+                    <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1 flex-wrap mt-0.5">
+                      <span>{item.hospital_name}</span>
+                      <span>•</span>
+                      <Calendar className="w-3.5 h-3.5 text-emerald-600 inline shrink-0" />
+                      <Clock className="w-3.5 h-3.5 text-emerald-600 inline shrink-0" />
+                      <span className="font-bold text-slate-700">{formatDateTime(item)}</span>
                     </p>
                   </div>
 
@@ -133,6 +174,7 @@ export default function WizardStep5ActiveCase({
   }
 
   const currentCase = bookingSuccessCase || timelineData?.timeline?.[0];
+  const isSigned = currentCase?.prescription_signed === true || currentCase?.status === 'completed';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -157,19 +199,47 @@ export default function WizardStep5ActiveCase({
           <h3 className="text-xl font-semibold text-slate-900">
             {t('patientPortal.consultationWith', 'Consultation with')} {currentCase?.doctor_name || "Dr. Rajesh Vaidya"}
           </h3>
-          <p className="text-xs text-slate-600 font-medium">
-            {currentCase?.hospital_name || "All India Institute of Ayurveda"} • {t('patientPortal.todaysQueueSlot', "Today's Queue Slot")}
+          <p className="text-xs text-slate-600 font-medium flex items-center gap-1.5 pt-0.5 flex-wrap">
+            <span>{currentCase?.hospital_name || "All India Institute of Ayurveda"}</span>
+            <span>•</span>
+            <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+            <Clock className="w-3.5 h-3.5 text-emerald-700" />
+            <span className="font-bold text-slate-800">{formatDateTime(currentCase)}</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveView('dashboard')}
-            className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer"
-          >
-            <FileText className="w-4 h-4" />
-            <span>{t('patientPortal.btnViewPrescriptionDiet', 'View Digital Prescription & Diet')}</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {isSigned ? (
+            <button
+              onClick={() => setActiveView('dashboard')}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>{t('patientPortal.btnViewPrescriptionDiet', 'View Digital Prescription & Diet')}</span>
+            </button>
+          ) : (
+            <div className="flex flex-col items-start sm:items-end gap-1">
+              <button
+                disabled={true}
+                className="px-4 py-2.5 bg-slate-200 text-slate-500 font-bold text-xs rounded-xl flex items-center gap-2 border border-slate-300 opacity-85 cursor-not-allowed shadow-2xs"
+              >
+                <Lock className="w-4 h-4 text-slate-500" />
+                <span>{t('patientPortal.prescriptionPendingSign', '🔒 Prescription Pending Doctor Sign')}</span>
+              </button>
+              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                ⏳ OPD Consultation in progress
+              </span>
+            </div>
+          )}
+
+          {onStartNewIntake && (
+            <button
+              onClick={onStartNewIntake}
+              className="px-4 py-2.5 bg-[#12372A] hover:bg-[#0B2B20] text-amber-300 font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer border border-emerald-500/30"
+            >
+              <span>🔄 {t('patientPortal.startNewIntake', 'Start New Intake Session')}</span>
+            </button>
+          )}
         </div>
       </div>
 

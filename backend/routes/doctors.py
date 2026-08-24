@@ -110,16 +110,22 @@ def get_doctor_patients(
         doctor_id = "DOC-AYUR-101"
 
     doc = db.query(models.User).filter(
-        (models.User.id == doctor_id) | (models.User.doctor_id == doctor_id)
+        (models.User.id == doctor_id) | 
+        (models.User.doctor_id == doctor_id)
     ).first()
-    if not doc:
-        # Fallback to primary doctor if not found
-        doc = db.query(models.User).filter(models.User.role == "doctor").first()
-        if not doc:
-            raise HTTPException(status_code=404, detail="Doctor not found")
 
-    # Fetch cases for this doctor
-    cases = db.query(models.PatientCase).filter(models.PatientCase.doctor_id == doc.id).all()
+    valid_ids = set()
+    if doctor_id and doctor_id not in ("null", "undefined", "none"):
+        valid_ids.add(doctor_id)
+    if doc:
+        if doc.id: valid_ids.add(doc.id)
+        if doc.doctor_id: valid_ids.add(doc.doctor_id)
+    
+    valid_ids_list = [v for v in valid_ids if v]
+    if not valid_ids_list:
+        return []
+
+    cases = db.query(models.PatientCase).filter(models.PatientCase.doctor_id.in_(valid_ids_list)).all()
     patient_ids = list(set(c.patient_id for c in cases))
 
     patients = db.query(models.Patient).filter(models.Patient.id.in_(patient_ids)).all() if patient_ids else []
@@ -164,16 +170,21 @@ def get_doctor_patients(
             "gender": p.gender,
             "contact": p.contact,
             "blood_group": p.blood_group,
+            "token_number": latest_case.token_number if (latest_case and latest_case.token_number) else "OPD-101",
+            "registration_time": latest_case.created_at.strftime("%d %b %Y at %I:%M %p") if (latest_case and latest_case.created_at) else "Today",
             "total_visits_with_doctor": len(p_cases),
             "latest_visit_date": latest_case.created_at.strftime("%Y-%m-%d") if latest_case else "N/A",
             "latest_case_created_at": latest_case.created_at.isoformat() if latest_case else "1970-01-01T00:00:00",
             "latest_chief_complaint": latest_case.chief_complaints if latest_case else (p.medical_history or "Initial Consult"),
+            "prakriti": latest_case.prakriti if (latest_case and latest_case.prakriti) else (p.prakriti or "Vata-Pitta"),
+            "vikriti": latest_case.vikriti if (latest_case and latest_case.vikriti) else "Vata Vriddhi",
+            "status": latest_case.status if latest_case else "active",
+            "prescription_signed": latest_case.prescription_signed if latest_case else False,
             "row_tag": row_tag,
+            "tag": row_tag,
             "is_red_flag": False,
             "red_flag_reason": None,
-            "token_number": latest_case.token_number if latest_case else "OPD-100",
-            "latest_case_id": latest_case.id if latest_case else None,
-            "status": latest_case.status if latest_case else "active"
+            "latest_case_id": latest_case.id if latest_case else None
         })
 
     # FIFO Per-Day Queue Sorting: Earliest registered patient first

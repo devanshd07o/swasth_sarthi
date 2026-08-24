@@ -6,7 +6,7 @@ import {
   addSymptomLog, structureVoiceIntake, createPatient,
   transcribeAudioGroqWhisper, sendAuthOtp, verifyAuthOtp,
   generateFollowupQuestions, generateSummaryPdf,
-  analyseTranscriptGaps, completeStructuring
+  analyseTranscriptGaps, completeStructuring, extractQAPill
 } from '../services/api';
 import DoctorProfileModal from '../components/DoctorProfileModal';
 import DocumentVaultModal from '../components/DocumentVaultModal';
@@ -20,11 +20,30 @@ import WizardStep3Vault from './patient/WizardStep3Vault';
 import WizardStep4Discover from './patient/WizardStep4Discover';
 import WizardStep5ActiveCase from './patient/WizardStep5ActiveCase';
 import SymptomDiaryView from './patient/SymptomDiaryView';
+import RecentFollowupsView from './patient/RecentFollowupsView';
 
-export default function PatientPortal({ currentUser, lang = 'en' }) {
+export default function PatientPortal({ currentUser, lang = 'en', initialView = 'dashboard' }) {
   const { t } = useTranslation();
 
-  const [activeView, setActiveView] = useState('wizard_flow');
+  const [activeView, setActiveView] = useState(initialView);
+
+  React.useEffect(() => {
+    if (initialView) setActiveView(initialView);
+  }, [initialView]);
+
+  const handleReset5StepWizard = () => {
+    setWizardStep(1);
+    setMaxUnlockedStep(1);
+    localStorage.setItem('ss_wizard_step', '1');
+    localStorage.setItem('ss_max_unlocked_step', '1');
+    setTranscript('');
+    setStructuredIntake(null);
+    setGapAnswers({});
+    setAiExtractedPills([]);
+    setBookingSuccessCase(null);
+    setBookingDoctor(null);
+    setActiveView('wizard_flow');
+  };
 
   const [wizardStep, setWizardStep] = useState(() => {
     try {
@@ -411,15 +430,31 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
     setGapListeningIdx(null);
   };
 
+  const [aiExtractedPills, setAiExtractedPills] = useState([]);
+
   const handleGapAnswer = (idx, answer) => {
     setGapAnswers(prev => ({ ...prev, [idx]: answer }));
   };
 
   const handleGapNext = async () => {
     stopActiveGapMic();
+    const currentQ = gapQuestions[gapIndex];
+    const currentAns = gapAnswers[gapIndex];
+
+    if (currentQ && currentAns && currentAns.trim() && currentAns !== '—' && currentAns !== 'skipped') {
+      try {
+        const pill = await extractQAPill(currentQ.question, currentAns, lang);
+        if (pill) {
+          setAiExtractedPills(prev => {
+            if (!prev.includes(pill)) return [...prev, pill];
+            return prev;
+          });
+        }
+      } catch (_) {}
+    }
+
     const nextIdx = gapIndex + 1;
     if (nextIdx >= gapQuestions.length) {
-      // All gap questions answered → run complete structuring
       await handleCompleteStructuring();
     } else {
       setGapIndex(nextIdx);
@@ -572,7 +607,8 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
       setBookingSuccessCase(createdCase);
       setBookingDoctor(doctor);
       setIsSendDoctorOpen(false);
-      setWizardStep(5);
+      changeWizardStep(5);
+      setActiveView('wizard_flow');
       loadPatientHistory(activePatient.id);
     } catch (err) {
       alert('Failed to send to doctor. Please try again.');
@@ -690,29 +726,43 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
     }
   };
 
+  const [bookingLoading, setBookingLoading] = useState(false);
+
   const handleBookConsultation = async () => {
     if (!bookingDoctor || !activePatient) return;
+    setBookingLoading(true);
     try {
+      const gapQA = gapQuestions.map((gq, i) => ({ question: gq.question, answer: gapAnswers[i] || '—' }));
       const casePayload = {
         patient_id: activePatient.id,
         doctor_id: bookingDoctor.id,
         chief_complaints: structuredIntake?.chief_complaint || transcript || 'Regular OPD Follow-up Consultation',
-        history_present_illness: structuredIntake?.hpi || bookingNotes || 'Patient registered consultation via MediKiosk portal.',
+        history_present_illness: structuredIntake?.hpi || structuredIntake?.clinical_summary || bookingNotes || 'Patient registered consultation via MediKiosk portal.',
         prakriti: activePatient.prakriti || 'Vata-Kapha',
         vikriti: structuredIntake?.suspected_dosha || 'Vata Vriddhi',
         is_red_flag: isRedFlag,
         red_flag_reason: redFlagReason || null,
-        intake_data: { transcript, structured: structuredIntake, notes: bookingNotes, documents: patientDocs },
+        intake_data: {
+          transcript,
+          partial_structure: partialStructure,
+          structured: structuredIntake,
+          gap_qa: gapQA,
+          notes: bookingNotes,
+          documents: patientDocs
+        },
         status: 'active',
         token_number: isRedFlag ? `EMERG-${Math.floor(100 + Math.random() * 900)}` : `OPD-${Math.floor(100 + Math.random() * 900)}`
       };
       const createdCase = await createCase(casePayload);
       setBookingSuccessCase(createdCase);
       setIsBookingModalOpen(false);
-      setWizardStep(5);
+      changeWizardStep(5);
+      setActiveView('wizard_flow');
       loadPatientHistory(activePatient.id);
     } catch (err) {
       alert('Failed to register consultation.');
+    } finally {
+      setBookingLoading(false);
     }
   };
 
@@ -797,6 +847,9 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               toggleGapListening={toggleGapListening}
               handleSendToDoctor={handleSendToDoctor}
               handleResetIntake={handleResetIntake}
+              aiExtractedPills={aiExtractedPills}
+              bookingDoctor={bookingDoctor}
+              lang={lang}
               onBack={() => changeWizardStep(1)} onNext={() => changeWizardStep(3)}
             />
           )}
@@ -829,19 +882,35 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
               setWizardStep={changeWizardStep}
               setActivePrescriptionForPrint={setActivePrescriptionForPrint}
               isDashboard={false}
+              onStartNewIntake={handleReset5StepWizard}
             />
           )}
         </div>
       )}
 
       {activeView === 'dashboard' && (
-        <WizardStep5ActiveCase
-          bookingSuccessCase={bookingSuccessCase}
-          timelineData={timelineData}
-          setActiveView={setActiveView}
+        <div className="space-y-6">
+          <WizardStep5ActiveCase
+            bookingSuccessCase={bookingSuccessCase}
+            timelineData={timelineData}
+            setActiveView={setActiveView}
+            setWizardStep={changeWizardStep}
+            setActivePrescriptionForPrint={setActivePrescriptionForPrint}
+            isDashboard={true}
+            onStartNewIntake={handleReset5StepWizard}
+          />
+        </div>
+      )}
+
+      {activeView === 'recent_followups' && (
+        <RecentFollowupsView
+          patientHistory={timelineData?.timeline || []}
+          activePatient={activePatient}
+          setBookingDoctor={setBookingDoctor}
+          setIsBookingModalOpen={setIsBookingModalOpen}
           setWizardStep={changeWizardStep}
-          setActivePrescriptionForPrint={setActivePrescriptionForPrint}
-          isDashboard={true}
+          setActiveView={setActiveView}
+          lang={lang}
         />
       )}
 
@@ -873,6 +942,28 @@ export default function PatientPortal({ currentUser, lang = 'en' }) {
         }}
         lang={lang}
       />
+
+      {/* ── GIF Booking Loading Overlay ── */}
+      {bookingLoading && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xl flex flex-col items-center justify-center text-center space-y-4 max-w-sm w-full">
+            <img
+              src="/loading_animation.gif"
+              alt="Loading"
+              onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+              className="w-28 h-28 object-contain mx-auto"
+            />
+            <div className="space-y-1">
+              <h4 className="text-sm font-extrabold text-slate-900">
+                Processing OPD Registration & Token...
+              </h4>
+              <p className="text-xs text-slate-500 font-medium">
+                Transmitting intake payload to Vaidya OPD Console...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <PrescriptionPrintModal
         caseData={activePrescriptionForPrint}

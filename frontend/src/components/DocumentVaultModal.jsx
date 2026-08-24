@@ -55,8 +55,7 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
         file_size_kb: file ? (file.size / 1024).toFixed(1) : '240',
         date: docDate,
         source_doctor_or_hospital: sourceHospital || 'Government Ayurvedic Hospital',
-        extracted_data: extractedData || { summary: 'Digitized document record' },
-        summary: `Scanned ${docType} from ${sourceHospital || 'Clinical Center'}. Structured for ABDM Vault.`
+        summary: (extractedData && extractedData.summary) ? extractedData.summary : `Scanned ${docType} from ${sourceHospital || 'Clinical Center'}. Structured for ABDM Vault.`
       };
       const saved = await uploadOcrDocument(patientId || 'ABHA-9821-4501', payload);
       const fullDoc = { ...saved, file_url: fileUrl || saved.file_url, is_image: isImage, is_pdf: isPdf };
@@ -127,6 +126,40 @@ export default function DocumentVaultModal({ patientId, isOpen, onClose, onDocum
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Quick Test Sample Scans */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-bold text-slate-500 uppercase block w-full">Or attach sample medical scan for instant test:</span>
+            <button
+              type="button"
+              onClick={async () => {
+                setDocType('X-Ray / Radiology');
+                setSourceHospital('All India Institute of Ayurveda Diagnostic Wing');
+                setExtracting(true);
+                const res = await extractOcrDocument('knee_xray_scan.svg', 'X-Ray / Radiology', 'Knee X-ray scan: Joint space narrowing Grade II, Subchondral Sclerosis.');
+                setExtractedData(res.extracted_data);
+                setExtracting(false);
+              }}
+              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-xl border border-emerald-300 flex items-center gap-1 cursor-pointer transition-all"
+            >
+              <span>🖼️ Knee X-Ray Scan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                setDocType('Prescription');
+                setSourceHospital('Government Ayush OPD Dispensary');
+                setExtracting(true);
+                const res = await extractOcrDocument('ayurvedic_parchaa_scan.svg', 'Prescription', 'Ayurvedic prescription: Yograj Guggulu 2 tab BD, Rasnadi Kwath 15ml BD. Dx: Sandhivata.');
+                setExtractedData(res.extracted_data);
+                setExtracting(false);
+              }}
+              className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 text-[11px] font-bold rounded-xl border border-teal-300 flex items-center gap-1 cursor-pointer transition-all"
+            >
+              <span>📄 Ayurvedic Parcha Scan</span>
+            </button>
           </div>
 
           {extracting && (
